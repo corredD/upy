@@ -1,0 +1,48 @@
+//cloud_ui_file_name="/Library/MGLTools/1.5.6.up/MGLToolsPckgs/pyubic/houdini/cmd_ui.ui"
+//dialogs = hou.ui.createDialog(cloud_ui_file_name)
+// Single UI value assignment
+//value := <int|float|string> ;
+
+// Simple menu item list
+//menuvalue = [SELECT_MENU|STRING_MENU]
+//{
+//    "item1"
+//    "item2"
+//}
+
+//grouping gadget
+//[gadgetname =] [containertype]
+//{
+ //   [attributes] 
+//
+//    [gadgets]
+//}
+
+//single gadget
+//gadgetname = type attributes ;
+//
+//lod.val := 1.0;
+//filename.val := "default.geo"
+//color.val[0] = 0.0f;
+//color.val[1] = 0.0f;
+//color.val[2] = 0.0f;
+//color.val[3] = 1.0f;
+NORMAL_WINDOW "Window Name" 
+//[ICON(iconname)] 
+
+filename.val := "default.bgeo";
+
+filename.gad = FILENAME_FIELD(geo) "Geometry File":1.5 VALUE(filename.val);
+
+dialog.win = DIALOG "Save As..."
+{
+    HSTRETCH LOOK(plain) LAYOUT(vertical) JUSTIFY(center, center)
+        VALUE(open.val)
+
+    filename.gad HSTRETCH;
+   
+    ROW 
+    {
+        ACTION_BUTTON "Save" VALUE(save.val) SENDS(1);
+        ACTION_BUTTON "Cancel" VALUE(save.val) SENDS(0);
+    }

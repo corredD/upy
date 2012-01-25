@@ -1,0 +1,90 @@
+#
+# Copyright (c) 2010
+#	Side Effects Software Inc.  All rights reserved.
+#
+# Redistribution and use of Houdini Development Kit samples in source and
+# binary forms, with or without modification, are permitted provided that the
+# following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. The name of Side Effects Software may not be used to endorse or
+#    promote products derived from this software without specific prior
+#    written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE `AS IS' AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+# NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#----------------------------------------------------------------------------
+#
+# Example dialog to accompany cmd_ui.C. For this file to be found, it should
+# be placed into one of the following locations off of HOUDINI_PATH:
+#   $HFS/houdini/config/Applications/cmd_ui
+#   $HOME/houdiniX.Y/config/Applications/cmd.ui
+# Note that on OSX, the HOME directory is different:
+#   $HOME/Library/Preferences/houdini/X.Y/config/Applications/cmd_ui/cmd_ui.ui
+#
+
+#define LABEL_WIDTH	1.5
+
+mymenu.val = SELECT_MENU
+{
+    "Item 0"
+    "Item 1"
+    "Item 3"
+    "Item 4"
+    "Item 5"
+}
+
+dlg.gad = DIALOG "Importer"
+{
+    LAYOUT(vertical) STRETCH MARGIN(0.1) SPACING(0.1) LOOK(plain) EXCLUSIVE
+	VALUE(dlg.val) PREF_SIZE(5.5, 4.5)
+
+    FILENAME_FIELD "Filename" VALUE(filename.val) HSTRETCH;
+
+    SEPARATOR;
+
+    SELECT_MENU_BUTTON MENU(mymenu.val);
+
+    SEPARATOR;
+
+    {
+	LAYOUT(cell)	# cell layouts are useful for table layouts
+	
+	TOGGLE_BUTTON "Cameras":LABEL_WIDTH   CELL(0,0) VALUE(cameras.val);
+	TOGGLE_BUTTON "Lights":LABEL_WIDTH    CELL(0,1) VALUE(lights.val);
+	TOGGLE_BUTTON "Geometry":LABEL_WIDTH  CELL(1,0) VALUE(geometry.val);
+	TOGGLE_BUTTON "Animation":LABEL_WIDTH CELL(1,1) VALUE(animation.val);
+    }
+
+    {
+	LAYOUT(vertical) LOOK(feather)	# This gives a border
+
+	LABEL "Attributes:":LABEL_WIDTH;
+	RADIO_BUTTON "Point":LABEL_WIDTH  SENDS(0) VALUE(attrib.val);
+	RADIO_BUTTON "Vertex":LABEL_WIDTH SENDS(1) VALUE(attrib.val);
+	RADIO_BUTTON "Detail":LABEL_WIDTH SENDS(2) VALUE(attrib.val);
+    }
+
+    SEPARATOR;
+
+    # Status bar
+    LABEL(bold) VALUE(status.val) HSTRETCH;
+
+    SEPARATOR;
+
+    {
+	LAYOUT(horizontal) JUSTIFY(right,center) HSTRETCH
+	ACTION_BUTTON "Import" VALUE(import.val);
+	ACTION_BUTTON "Close" SENDS(0) VALUE(dlg.val);
+    }
+
+}

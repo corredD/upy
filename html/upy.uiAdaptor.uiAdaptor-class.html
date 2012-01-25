@@ -1,0 +1,1149 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>upy.uiAdaptor.uiAdaptor</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="upy-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="upy-module.html">Package&nbsp;upy</a> ::
+        <a href="upy.uiAdaptor-module.html">Module&nbsp;uiAdaptor</a> ::
+        Class&nbsp;uiAdaptor
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="upy.uiAdaptor.uiAdaptor-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class uiAdaptor</h1><p class="nomargin-top"><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor">source&nbsp;code</a></span></p>
+<h1 class="heading">The uiAdaptor abstract class</h1>
+    <p>This is the main class from which all adaptor derived. The uiAdaptor
+    give access to the basic function need for create and display a 
+    gui.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="__init__"></a><span class="summary-sig-name">__init__</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">**kw</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">list/array</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#timeFunction" class="summary-sig-name">timeFunction</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">function</span>,
+        <span class="summary-sig-arg">*args</span>)</span><br />
+      Mesure the time for performing the provided function.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.timeFunction">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#callbackaction" class="summary-sig-name">callbackaction</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">item</span>,
+        <span class="summary-sig-arg">*args</span>)</span><br />
+      Abstract function to call the item callback function, with the given 
+      args</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.callbackaction">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="check_addAction"></a><span class="summary-sig-name">check_addAction</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">funct</span>,
+        <span class="summary-sig-arg">action</span>,
+        <span class="summary-sig-arg">*args</span>,
+        <span class="summary-sig-arg">**kw</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.check_addAction">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_callElemAction" class="summary-sig-name" onclick="show_private();">_callElemAction</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">item</span>)</span><br />
+      Abstract function to call the item callback function, with the given 
+      args.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._callElemAction">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_callElem" class="summary-sig-name" onclick="show_private();">_callElem</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">block</span>,
+        <span class="summary-sig-arg">evt</span>)</span><br />
+      Abstract function to call the item callback function that correspond 
+      to the given event.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._callElem">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_command" class="summary-sig-name" onclick="show_private();">_command</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*args</span>)</span><br />
+      Main function to handle the event from the gui.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._command">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">dictionary</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_addLayout" class="summary-sig-name" onclick="show_private();">_addLayout</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">name</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">width</span>=<span class="summary-sig-default">10</span>,
+        <span class="summary-sig-arg">height</span>=<span class="summary-sig-default">10</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">tooltip</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">elems</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">type</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">frame</code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">wcolor</span>=<span class="summary-sig-default"><code class="variable-group">[</code>1.0<code class="variable-op">, </code>0.0<code class="variable-op">, </code>0.0<code class="variable-op">, </code>1.0<code class="variable-group">]</code></span>,
+        <span class="summary-sig-arg">collapse</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">variable</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Return a dictionary reprensenting one sublayout, such as the 
+      collapsable frame.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._addLayout">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">dictionary</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_addElemt" class="summary-sig-name" onclick="show_private();">_addElemt</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">name</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">width</span>=<span class="summary-sig-default">10</span>,
+        <span class="summary-sig-arg">height</span>=<span class="summary-sig-default">10</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">tooltip</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">action</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">value</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">variable</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">type</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string">label</code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">icon</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">maxi</span>=<span class="summary-sig-default">10</span>,
+        <span class="summary-sig-arg">mini</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">step</span>=<span class="summary-sig-default">1</span>,
+        <span class="summary-sig-arg">show</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">trigger</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">sub</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">precision</span>=<span class="summary-sig-default">4.0</span>)</span><br />
+      Return a dictionary reprensenting one sublayout, such as the 
+      collapsable frame.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._addElemt">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">int</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_draw" class="summary-sig-name" onclick="show_private();">_draw</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">block</span>,
+        <span class="summary-sig-arg">y</span>)</span><br />
+      Function to draw a block by line in the main layout of the gui.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._draw">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">int</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_drawFrame" class="summary-sig-name" onclick="show_private();">_drawFrame</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">bloc</span>,
+        <span class="summary-sig-arg">x</span>,
+        <span class="summary-sig-arg">y</span>)</span><br />
+      Function to draw a block as a frame layout of the gui.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._drawFrame">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_drawElem" class="summary-sig-name" onclick="show_private();">_drawElem</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">elem</span>,
+        <span class="summary-sig-arg">x</span>,
+        <span class="summary-sig-arg">y</span>,
+        <span class="summary-sig-arg">w</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">h</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Function to draw a elem/item in function of his type</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._drawElem">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="addVar"></a><span class="summary-sig-name">addVar</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">typ</span>,
+        <span class="summary-sig-arg">val</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.addVar">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getVal"></a><span class="summary-sig-name">getVal</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">elem</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.getVal">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setVal"></a><span class="summary-sig-name">setVal</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">elem</span>,
+        <span class="summary-sig-arg">val</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.setVal">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">boolean</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#_createLayout" class="summary-sig-name" onclick="show_private();">_createLayout</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Main function to initialised and draw the gui.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._createLayout">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="drawError"></a><span class="summary-sig-name">drawError</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">errormsg</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.drawError">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="startLayout"></a><span class="summary-sig-name">startLayout</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">m</span>=<span class="summary-sig-default">1</span>,
+        <span class="summary-sig-arg">n</span>=<span class="summary-sig-default">1</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.startLayout">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="endLayout"></a><span class="summary-sig-name">endLayout</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.endLayout">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="startBlock"></a><span class="summary-sig-name">startBlock</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">m</span>=<span class="summary-sig-default">1</span>,
+        <span class="summary-sig-arg">n</span>=<span class="summary-sig-default">1</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.startBlock">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="endBlock"></a><span class="summary-sig-name">endBlock</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.endBlock">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="upy.uiAdaptor.uiAdaptor-class.html#handleMenuEvent" class="summary-sig-name">handleMenuEvent</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">ev</span>,
+        <span class="summary-sig-arg">menu</span>)</span><br />
+      This function handle the particular menu event, especially for 
+      submenu level action</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.handleMenuEvent">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="fileDialog"></a><span class="summary-sig-name">fileDialog</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="summary-sig-arg">callback</span>=<span class="summary-sig-default">None</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.fileDialog">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="close"></a><span class="summary-sig-name">close</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.close">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getDirectory"></a><span class="summary-sig-name">getDirectory</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      return software directory for script and preferences</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.getDirectory">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="SetTitle"></a><span class="summary-sig-name">SetTitle</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">title</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.SetTitle">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="x"></a><span class="summary-name">x</span> = <code title="5">5</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="y"></a><span class="summary-name">y</span> = <code title="800">800</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="title"></a><span class="summary-name">title</span> = <code title="''"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="MENU_ID"></a><span class="summary-name">MENU_ID</span> = <code title="{}"><code class="variable-group">{</code><code class="variable-group">}</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="bid"></a><span class="summary-name">bid</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="id"></a><span class="summary-name">id</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="notebookend"></a><span class="summary-name">notebookend</span> = <code title="False">False</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="widgetGap"></a><span class="summary-name">widgetGap</span> = <code title="6">6</code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">array Object</span>
+    </td><td class="summary">
+        <a name="_layout"></a><span class="summary-name">_layout</span> = <code title="[]"><code class="variable-group">[</code><code class="variable-group">]</code></code><br />
+      the array of block that will define the gui windows layout
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">menu Object</span>
+    </td><td class="summary">
+        <a name="_menu"></a><span class="summary-name">_menu</span> = <code title="None">None</code><br />
+      the menu of the gui windows
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">Bool</span>
+    </td><td class="summary">
+        <a name="_timer"></a><span class="summary-name">_timer</span> = <code title="False">False</code><br />
+      Whether callback execution time is mesured
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="timeFunction"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">timeFunction</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">function</span>,
+        <span class="sig-arg">*args</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.timeFunction">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Mesure the time for performing the provided function.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>function</code></strong> (function) - the function to execute</li>
+        <li><strong class="pname"><code>args</code></strong> (liste) - the liste of arguments for the function</li>
+    </ul></dd>
+    <dt>Returns: list/array</dt>
+        <dd>the center of mass of the coordinates</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="callbackaction"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">callbackaction</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">item</span>,
+        <span class="sig-arg">*args</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.callbackaction">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Abstract function to call the item callback function, with the given 
+  args</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>item</code></strong> (dictionary) - the widget for which we want to call the action callback</li>
+        <li><strong class="pname"><code>args</code></strong> (liste) - the liste of arguments for the function</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_callElemAction"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_callElemAction</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">item</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._callElemAction">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Abstract function to call the item callback function, with the given 
+  args. If timer is defined, the execution time will be mesured and 
+  printed.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>item</code></strong> (dictionary) - the widget for which we want to call the action callback</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_callElem"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_callElem</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">block</span>,
+        <span class="sig-arg">evt</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._callElem">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Abstract function to call the item callback function that correspond 
+  to the given event.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>block</code></strong> (array of item dictionary) - the block layout</li>
+        <li><strong class="pname"><code>evt</code></strong> (Int) - the event</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_command"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_command</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*args</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._command">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Main function to handle the event from the gui. The function loop over
+  all block's item, and will call the function according the current 
+  event.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>args</code></strong> (list or args) - depending of the host the event's format is not the same.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_addLayout"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_addLayout</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">name</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">width</span>=<span class="sig-default">10</span>,
+        <span class="sig-arg">height</span>=<span class="sig-default">10</span>,
+        <span class="sig-arg">label</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">tooltip</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">elems</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">type</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">frame</code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">wcolor</span>=<span class="sig-default"><code class="variable-group">[</code>1.0<code class="variable-op">, </code>0.0<code class="variable-op">, </code>0.0<code class="variable-op">, </code>1.0<code class="variable-group">]</code></span>,
+        <span class="sig-arg">collapse</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">variable</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._addLayout">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return a dictionary reprensenting one sublayout, such as the 
+  collapsable frame.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>id</code></strong> (int) - the Id of the layout</li>
+        <li><strong class="pname"><code>name</code></strong> (string) - name of the layout</li>
+        <li><strong class="pname"><code>width</code></strong> (int) - width  of the layout</li>
+        <li><strong class="pname"><code>height</code></strong> (int) - height of the layout</li>
+        <li><strong class="pname"><code>label</code></strong> (string) - label of the layout</li>
+        <li><strong class="pname"><code>tooltip</code></strong> (string) - tooltip to display for the layout</li>
+        <li><strong class="pname"><code>elems</code></strong> (list or dictionary) - list or dictionary of item dictionary to put in the layout</li>
+        <li><strong class="pname"><code>type</code></strong> (string) - type of layout</li>
+        <li><strong class="pname"><code>wcolor</code></strong> (array) - color of the layout</li>
+        <li><strong class="pname"><code>collapse</code></strong> (boolean) - used for the collapsable frame</li>
+    </ul></dd>
+    <dt>Returns: dictionary</dt>
+        <dd>the layout to be draw</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_addElemt"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_addElemt</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">name</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">width</span>=<span class="sig-default">10</span>,
+        <span class="sig-arg">height</span>=<span class="sig-default">10</span>,
+        <span class="sig-arg">label</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">tooltip</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string"></code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">action</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">value</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">variable</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">type</span>=<span class="sig-default"><code class="variable-quote">'</code><code class="variable-string">label</code><code class="variable-quote">'</code></span>,
+        <span class="sig-arg">icon</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">maxi</span>=<span class="sig-default">10</span>,
+        <span class="sig-arg">mini</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">step</span>=<span class="sig-default">1</span>,
+        <span class="sig-arg">show</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">trigger</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">sub</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">precision</span>=<span class="sig-default">4.0</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._addElemt">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return a dictionary reprensenting one sublayout, such as the 
+  collapsable frame.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>id</code></strong> (int) - the Id of the layout</li>
+        <li><strong class="pname"><code>name</code></strong> (string) - name of the layout</li>
+        <li><strong class="pname"><code>action</code></strong> (function) - the function callback</li>
+        <li><strong class="pname"><code>width</code></strong> (int) - width  of the layout</li>
+        <li><strong class="pname"><code>height</code></strong> (int) - height of the layout</li>
+        <li><strong class="pname"><code>value</code></strong> (int/str/float/bool) - the default value of the items</li>
+        <li><strong class="pname"><code>variable</code></strong> (python variable) - the variable storing the state of the item</li>
+        <li><strong class="pname"><code>type</code></strong> (string) - type of items, ie button,label,slider,...</li>
+        <li><strong class="pname"><code>label</code></strong> (string) - label of the layout</li>
+        <li><strong class="pname"><code>tooltip</code></strong> (string) - tooltip to display for the layout</li>
+        <li><strong class="pname"><code>icon</code></strong> (string) - filename for bitmap used as an icon for the item, if its 
+          supported by the host.</li>
+        <li><strong class="pname"><code>maxi</code></strong> (int/float) - max value for the item, ie slider</li>
+        <li><strong class="pname"><code>mini</code></strong> (int/float) - min value for the item, ie slider</li>
+        <li><strong class="pname"><code>step</code></strong> (int/float) - step value for the item, ie slider</li>
+        <li><strong class="pname"><code>show</code></strong> (boolean) - hide/shot the items</li>
+        <li><strong class="pname"><code>trigger</code></strong> ()</li>
+        <li><strong class="pname"><code>sub</code></strong> (dictionary) - used for subitems</li>
+        <li><strong class="pname"><code>precision</code></strong> (float) - How many decimals will be displayed</li>
+    </ul></dd>
+    <dt>Returns: dictionary</dt>
+        <dd>the item to be draw</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_draw"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_draw</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">block</span>,
+        <span class="sig-arg">y</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._draw">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Function to draw a block by line in the main layout of the gui. block 
+  is an array. [c1,c2,c3] or {0:[c1,c2,c3],1:[c1,c2,c3]} for two lines with
+  same height.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>block</code></strong> (array or dictionary) - list or dictionary of item dictionary</li>
+        <li><strong class="pname"><code>y</code></strong> (int) - position on y in the gui windows, used for blender</li>
+    </ul></dd>
+    <dt>Returns: int</dt>
+        <dd>the new horizontal position, used for blender</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_drawFrame"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_drawFrame</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">bloc</span>,
+        <span class="sig-arg">x</span>,
+        <span class="sig-arg">y</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._drawFrame">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Function to draw a block as a frame layout of the gui.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>bloc</code></strong> (array or dictionary) - list or dictionary of item dictionary</li>
+        <li><strong class="pname"><code>x</code></strong> (int) - position on x in the gui windows, used for blender</li>
+        <li><strong class="pname"><code>y</code></strong> (int) - position on y in the gui windows, used for blender</li>
+    </ul></dd>
+    <dt>Returns: int</dt>
+        <dd>the new horizontal position, used for blender</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_drawElem"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_drawElem</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">elem</span>,
+        <span class="sig-arg">x</span>,
+        <span class="sig-arg">y</span>,
+        <span class="sig-arg">w</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">h</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._drawElem">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Function to draw a elem/item in function of his type</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>elem</code></strong> (array or dictionary) - list or dictionary of item dictionary</li>
+        <li><strong class="pname"><code>x</code></strong> (int) - position on x in the gui windows</li>
+        <li><strong class="pname"><code>y</code></strong> (int) - position on y in the gui windows</li>
+        <li><strong class="pname"><code>w</code></strong> (int) - force the width of the item</li>
+        <li><strong class="pname"><code>h</code></strong> (int) - force the height of the item</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_createLayout"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_createLayout</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor._createLayout">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Main function to initialised and draw the gui. The function setup the 
+  windows, the tite, the menu, and call the draw function.</p>
+  <dl class="fields">
+    <dt>Returns: boolean</dt>
+        <dd>True</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="handleMenuEvent"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">handleMenuEvent</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">ev</span>,
+        <span class="sig-arg">menu</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="upy.uiAdaptor-pysrc.html#uiAdaptor.handleMenuEvent">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>This function handle the particular menu event, especially for submenu
+  level action</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>ev</code></strong> (int) - the current event</li>
+        <li><strong class="pname"><code>menu</code></strong> (dictionary) - the current menu</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="upy-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    on Fri Oct 28 09:07:29 2011
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
