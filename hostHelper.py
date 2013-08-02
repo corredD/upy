@@ -3,9 +3,8 @@
 Created on Sun Dec  5 23:30:44 2010
 
 @author: Ludovic Autin - ludovic.autin@gmail.com
-matrix and transformation came from 
-http://www.lfd.uci.edu/~gohlke/code/transformations.py.html
 """
+import sys
 import os
 import math
 import random
@@ -28,6 +27,9 @@ except:
     
 from upy import colors
 
+if sys.version_info >= (3,0,0):
+    unicode = str
+
 class Helper:
     """
     The Helper abstract Object
@@ -35,7 +37,16 @@ class Helper:
     This is the main class from which all helper derived. The Helper 
     give access to the basic function need for create and edit object 
     in the host.
+    
     Most of the function define at this loevel are overwrite by the class child.
+    matrix and transformation came from  http://www.lfd.uci.edu/~gohlke/code/transformations.py.html
+    
+    >>> import upy
+    >>> hClass = upy.getHelperClass()
+    >>> helper = helper.hClass()
+    
+    See examples in upy/examples
+
     """
     _usenumpy = usenumpy
     _MGLTools = False
@@ -43,33 +54,110 @@ class Helper:
     BONES = None
     IK = None
     
+    CAM_OPTIONS = {"ortho" :"ortho","persp" : "persp" }#define the type of camera
+    LIGHT_OPTIONS = {"Area":"AREA","Sun":"SUN","Spot":"SPOT"}#define the type of light
+
+
+    dupliVert = False
+    
     def __init__(self,):
         try :
             import DejaVu
             _MGLTools = True
         except :
             _MGLTools = False
-        self.createColorsMat()
+#        self.createColorsMat()
+        self.noise_type ={
+              "boxNoise":None,
+              "buya":None,
+              "cellNoise":None,
+              "cellVoronoi":None,
+              "cranal":None,
+              "dents":None,
+              "displacedTurbulence":None,
+              "electrico":None,
+              "fbm":None,
+              "fire":None,
+              "gas":None,
+              "hama":None,
+              "luka":None,
+              "modNoie":None,
+              "naki":None,
+              "noise":None,
+              "none":None,
+              "nutous":None,
+              "ober":None,
+              "pezo":None,
+              "poxo":None,
+              "sema":None,
+              "sparseConvolution":None,
+              "stupl":None,
+              "turbulence":None,
+              "vlNoise":None,
+              "voronoi1":None,
+              "voronoi2":None,
+              "voronoi3":None,
+              "wavyTurbulence":None,
+              "zada":None,       
+             }
+        self.usenumpy = self._usenumpy
+#==============================================================================
+# mathutils
+#==============================================================================
 
-    def fit_view3D(self,):
-        pass
-
-    
     def norm(self,a ,b,c):
-        """ result = math.sqrt( a*a + b*b + c*c)
-        a,b,c being double
+        """    
+        return the norm of the vector [a,b,c]  
+           
+        >>> result = helper.norm(a,b,c) #a,b,c being double
+        
+        @type a: float
+        @param a:  first value of the vector
+        @type b: float
+        @param b:  second value of the vector
+        @type c: float
+        @param c:  thid value of the vector
+     
+        @rtype: float
+        @return: the norm of the vector
+         
         """
         return (math.sqrt( a*a + b*b + c*c))
 
     def normalize(self,A):
-        """Normalize the Vector A"""
-        norm = math.sqrt( A[0]*A[0] + A[1]*A[1] + A[1]*A[1])
+        """    
+        return the normalized vector A [x,y,z] 
+           
+        >>> a = [1.0,3.0,5.0]
+        >>> a_normalized = helper.normalize(a) 
+        
+        @type A: vector
+        @param A:  the 3d vector
+        @rtype: vector
+        @return: the normalized 3d vecor
+        """
+        norm = self.norm(A[0],A[1],A[2])
         if (norm ==0.0) : return A
-        else :return A/norm
+        else :return [A[0]/norm,A[1]/norm,A[2]/norm]
         
     def measure_distance(self,c0,c1,vec=False):
         """ measure distance between 2 point specify by x,y,z
-        c0,c1 should be Numeric.array"""
+        c0,c1 should be Numeric.array
+        
+        >>> a = [1.0,3.0,5.0]
+        >>> b = [5.0,1.0,2.0]
+        >>> distance = helper.measure_distance(a,b) 
+        >>> distance, vector_a_to_b = helper.measure_distance(a,b)
+        
+        @type c0: vector
+        @param c0:  the first 3d vector
+        @type c1: vector
+        @param c1:  the second 3d vector        
+        @type vec: Boolean
+        @param vec:  if the function return the vector c1-c0          
+        @rtype: float ? vector
+        @return: the distance, and optionly the distance vetor
+        """
         if usenumpy :
             d = numpy.array(c1) - numpy.array(c0)
             s = numpy.sum(d*d)
@@ -84,29 +172,61 @@ class Helper:
         else :
             return math.sqrt(s)
 
-
-
-
-    def randpoint_onsphere(self,radius,biased=None):
+    #direction, angle authorized
+    def advance_randpoint_onsphere(self,radius,marge=pi,vector=None):
+        #radius r, inclination θ, azimuth φ 
+        r=radius
+        azimuth=random.uniform(-1,1) * ( marge * 2.0 )
+        inclination=random.uniform(-1,1) * ( marge )     
+        x=r*sin(inclination)*cos(azimuth)
+        y=r*sin(inclination)*sin(azimuth)
+        z=r*cos(inclination)
+        pos = [x,y,z]
+        if vector is not None :
+            absolute_vector=numpy.array([0,0,radius])
+            matrice = self.rotVectToVect(absolute_vector,vector)
+            pos = self.ApplyMatrix([pos,],matrice)[0]
+        return pos
+        
+    def randpoint_onsphere(radius,biased=None):
         """ 
         Generate a random point on the outside of a sphere.
+        
+        >>> r = 2.0
+        >>> bias = 2.0
+        >>> point = helper.randpoint_onsphere(r) 
+        >>> point2 = helper.randpoint_onsphere(r,bias)
+        
+        @type radius: float
+        @param radius:  the radius of the sphere
+        @type biased: float
+        @param biased:  optional float vale to use instead of the random function      
+        
+        @rtype: vector
+        @return: a random 3d point on the sphere of the given radius  
+        
         -points (x,y,z) so that (x-a)^2 +(y-b)^2 + (z-c)^2 = R^2
+        
         -To generate a random point on the sphere, it is necessary only 
         to generate two random numbers, z between -R and R, phi between 
-        0 and 2 pi, each with a uniform distribution
+        0 and 2 pi, each with a uniform distribution.
+        
         To find the latitude (theta) of this point, note that z=R*sin(theta), 
         so theta=sin-1(z/R); its longitude is (surprise!) phi.
+        
         In rectilinear coordinates, 
         tetha = asin-1(z/R)
         x=R*cos(theta)*cos(phi), 
         y=R*cos(theta)*sin(phi), 
         z=R*sin(theta)= (surprise!) z.
+        
         -hemispher
         theta (0 <= theta < 360) and phi (0 <= phi <= pi/2)
         x = cos(sqrt(phi)) cos(theta)
         y = cos(sqrt(phi)) sin(theta)
         z = sin(sqrt(phi)) 
         A whole sphere is obtained by simply randomising the sign of z. 
+        
         -Azimuth axis is X axis. The elevation angle is measured as the angle 
         between the Z-axis pointing upwards and the radius vector. 
         From elementary spherical geometry:
@@ -114,10 +234,6 @@ class Helper:
         Y coordinate=r*cos(pi/2-el)*sin(az)
         Z Coordinate=r*sin(pi/2-el)
 
-        r=1.1;
-        az=pi/4;
-        el=pi/4;
-        plot3(r*sin(az)*cos(el), r*sin(az)*sin(el), r*cos(az), 'k*', 'MarkerSize',10
         """
         if biased is not None:
             theta = biased * ( 2 * pi )
@@ -133,8 +249,26 @@ class Helper:
 
 
     def rotatePoint(self,pt,m,ax):
-        """ rotate the point pt [x,y,z] around axe ax[0],ax[1],ax[2] by ax[3] radians,
+        """ 
+        Rotate the point pt [x,y,z] around axe ax[0],ax[1],ax[2] by ax[3] radians,
         and translate by m [x,y,z].
+        
+        >>> point = [1.0,2.0,0.0]
+        >>> trans = [5.0,0.0,0.0]
+        >>> axes = [1.0,0.0,0.0,math.pi]
+        >>> point = helper.rotatePoint(point,trans,axes) 
+        >>> print point
+        [6.0, -2.0, 2.4492935982947064e-16] #[6.0, -2.0, 0.0]
+        
+        @type pt: 3d vector
+        @param pt:  the 3d point to be rotated
+        @type m: 3d vector
+        @param m:  translation to apply after rotation      
+        @type ax: 4d vector
+        @param ax:  axe of rotation ax[0],ax[1],ax[2] and angle ax[3] radians      
+        
+        @rtype: 3d vector
+        @return: the transformed point  
         """
         x=pt[0]
         y=pt[1]
@@ -160,8 +294,9 @@ class Helper:
 
     def eulerToMatrix(self,euler): #double heading, double attitude, double bank
         """
-        code from 'http://www.euclideanspace.com/maths/geometry/rotations/conversions/'.
-        this conversion uses NASA standard aeroplane conventions as described on page:
+        Code from 'http://www.euclideanspace.com/maths/geometry/rotations/conversions/'.
+        
+        This conversion uses NASA standard aeroplane conventions as described on page:
         'http://www.euclideanspace.com/maths/geometry/rotations/euler/index.htm'
     
         Coordinate System: right hand
@@ -177,7 +312,15 @@ class Helper:
         [m10 m11 m12]
     
         [m20 m21 m22]
-    
+
+        >>> euler = [0.8,3.14,2.0]#radians
+        >>> emat = helper.eulerToMatrix(euler)
+        >>> print emat
+        [[-0.69670582573323303, 0.65275180908484898, -0.29751650059422086, 0.0], 
+         [0.0015926529164868282, 0.41614630875957009, 0.90929627358879683, 0.0], 
+         [0.71735518109654839, 0.6330381706044601, -0.29097116474265428, 0.0], 
+         [0.0, 0.0, 0.0, 1.0]]
+ 
         @type euler:   3d array
         @param euler:  the euler angle to convert in matrice
     
@@ -209,19 +352,26 @@ class Helper:
         m[2][1] = sh*sa*cb + ch*sb
         m[2][2] = -sh*sa*sb + ch*cb
         return m
-        
-
 
     def getTubeProperties(self,coord1,coord2):
         """
-        From two point return the length, and the orientation from one to another
+        From two point return the length, and the orientation from one to another.
+        This function is used to build a cylinder from two points (see oneCylinder function)
+
+        >>> coord1 = [1.0,0.0,0.0]
+        >>> coord2 = [2.0,0.0,0.0]
+        >>> distance,rsz,rz,coord = helper.getTubeProperties(coord1,coord2)
+        >>> helper.setTransformation(obj,trans=coord,scale=[1., 1., distance],
+                               rot=[0.,rz,rsz])
+        
         @type  coord1: vector
         @param coord1: first point
         @type  coord2: vector
         @param coord2: second point
     
         @rtype:   tupple
-        @return:  length, orientation, and intermediate point
+        @return:  length, orientation (rotation XY,Z), and intermediate point OR 
+         length and matrix of transformation (see getTubePropertiesMatrix that use numpy)
         """
         x1 = float(coord1[0])
         y1 = float(coord1[1])
@@ -235,26 +385,43 @@ class Helper:
         return laenge,wsz,wz,[float(x1+x2)/2,(y1+y2)/2,(z1+z2)/2]
 
 
-
-
     def update(self,):
         """
         Update the host viewport, ui or gl draw
         This function can't be call in a thread.
+        
+        * overwrited by children class for each host
         """
         pass
+    
     def fit_view3D(self):
         """
-        Function that should recenter the viewport to the object in the scene
+        Function that should recenter the viewport to the object in the scene.
+        
+        * overwrited by children class for each host
         """
         pass
 
     def checkName(self,name):
         """
-        Check the name of the molecule/filename to avoid invalid caracter for the 
-        host. ie maya didnt support object name starting with number. If a invalid 
+        Check the provide name to avoid invalid caracter for the 
+        host. ie maya didnt support object name starting with number, and automatically rename the object. 
+        In order to retrieve the object use this functon. If a invalid 
         caracter is found, the caracter is removed.
-    
+        This function can be change in the features, as it currently only look for number.
+        
+        
+        >>> name = "1sphere"   
+        >>> sphere_obj,sphere_mesh = helper.Sphere(name) 
+        >>> print (sphere_obj,sphere_mesh)#in maya
+        (u'sphere', u'makeNurbSphere1')
+        >>> corrected_name  = helper.checkName(name)
+        >>> print (corrected_name)
+        sphere
+        >>> sphere = helper.getObject(name) 
+        >>> print (sphere)
+        sphere
+        
         @type  name: string
         @param name: name of the molecule.
         @rtype:   string
@@ -269,8 +436,17 @@ class Helper:
         
     def getObject(self,name):
         """
-        retrieve an object from his name. 
-    
+        Retrieve an object from his name. 
+        
+        * overwrited by children class for each host
+
+        >>> oname = "mysphere"
+        >>> object= helper.getObject(oname)
+        >>> print oname,object#the result depnds on the host
+        mysphere <c4d.BaseObject object at 0x1e4fc4b0> # Cinema4D
+        mysphere    # Maya
+        
+        
         @type  name: string
         @param name: request name of an host object
         
@@ -281,7 +457,14 @@ class Helper:
 
     def getObjectName(self,o):
         """
-        Return the name of an host object
+        Return the name of an host object.
+        
+        * overwrited by children class for each host
+    
+        >>> obj = helper.Sphere("mySphere")
+        >>> name = helper.getObjectName(obj)
+        >>> print (name)
+        mySphere
     
         @type  o: hostObject
         @param o: an host object
@@ -290,29 +473,82 @@ class Helper:
         """
         pass
 
+    
+    @classmethod
     def getCurrentScene(self,):
         """
-        Return the current/active working document or scene
+        Return the current/active working document or scene.
+        
+        * overwrited by children class for each host
     
+        >>> sc = helper.getCurrentScene()
+        >>> print (sc)
+        None #in maya there is no scene concept
+        <bpy_strct, Scene("Scene")  #blender 2.6
+        [Scene "Scene"]             #blender 2.49b
+        <c4d.documents.BaseDocument object at 0x246c01a0>  #Cinema4D
+        
         @rtype:   scene
         @return:  the active scene
         """        
         pass
 
+    @classmethod    
+    def getCurrentSceneName(self):
+        """
+        Return the current/active working document or scene name.
+        
+        * overwrited by children class for each host
+
+        >>> scname = helper.getCurrentSceneName()
+        >>> print (scname)
+        None        #maya
+        Scene       #blender 2.6
+        Scene       #blender 2.49b
+        Untitled    #Cinema4D
+     
+        @rtype:   strng
+        @return:  the active scene name
+        """        
+        pass
+
     def getCurrentSelection(self,):
         """
-        Return the current/active selected object in the document or scene
-    
+        Return the current/active selected object in the document or scene.
+        
+        * overwrited by children class for each host
+
+        >>> liste_objects = helper.getCurrentSelection()
+        >>> print (liste_objects)
+        [<c4d.BaseObject object at 0x1e4fd3a0>, <c4d.BaseObject object at 0x1e4fd3d0>] #cinema4D
+        
+        
         @rtype:   liste
         @return:  the list of selected object
         """        
         pass
 
+    def setCurrentSelection(self,obj):
+        """
+        Return the current/active selected object in the document or scene.
+        
+        * overwrited by children class for each host
+
+        >>> liste_objects = [helper.getObject("obj1"),helper.getObject("obj2")]
+        >>> helper.setCurrentSelection(liste_objects)
+ 
+        @type  obj: hostObject
+        @param obj: the object to be selected  
+         """        
+        pass
+ 
+ 
     def getPosUntilRoot(self,object):
         """
         Go through the hierarchy of the object until reaching the top level, 
         increment the position to get the transformation due to parents. 
-    
+        DEPRECATED 
+        
         @type  object: hostObject
         @param object: the object   
     
@@ -335,9 +571,10 @@ class Helper:
     def addObjectToScene(self,doc,object,parent=None,centerRoot=True,rePos=None):
         """
         Insert/add an object to the current document under the specified parent, and
-        at the specified location
-    
-    
+        at the specified location. This function is used by all the basic object creation function. 
+        
+        * overwrited by children class for each host
+        
         @type  doc: hostScene
         @param doc: the scene where to insert the object   
         @type  object: hostObject
@@ -377,7 +614,8 @@ class Helper:
         at the specified location. This function is an alias for addObjectToScene to
         permit to some script to work either in dejavu and the host.
     
-    
+        * overwrited by children class for each host
+        
         @type  object: hostObject
         @param object: the object to insert
         @type  parent: hostObject
@@ -394,7 +632,12 @@ class Helper:
 
     def ObjectsSelection(self,listeObjects,typeSel="new"):
         """
-        Modify the current object selection.
+        Modify the current object selection. Redundant with setCurrentSelection.
+        
+        This function make the distinction between adding (typeSel="add") object to the selection and creating
+        a new selection (typeSel="new")
+        
+        * overwrited by children class for each host
         
         @type  listeObjects: list
         @param listeObjects: list of object to joins
@@ -411,22 +654,23 @@ class Helper:
         """
         Merge the given liste of object in one unique geometry.
         
+        * overwrited by children class for each host
+        
         @type  listeObjects: list
         @param listeObjects: list of object to joins
         """    
         sc = self.getCurrentScene()
-        #put here the code to add the liste of object to the selection
-    #    sc.SetSelection(listeObjects[0],c4d.SELECTION_NEW)
-    #    for i in range(1,len(listeObjects)):
-    #        sc.SetSelection(listeObjects[i],c4d.SELECTION_ADD)
-        #then call the command/function that joins the object selected
-    #    c4d.CallCommand(CONNECT)
         
     
-    
-    def addCameraToScene(self,name,Type,focal,center,scene):
+    def addCameraToScene(self,name,Type,focal,center,scene,**kw):
         """
         Add a camera object to the scene
+        
+        * overwrited by children class for each host
+        
+        >>> sc = helper.getCurrentScene()
+        >>> center=[0.,-12.,40.]
+        >>> cam = helper.addCameraToScene("cam1","persp",30.,center,sc)    
     
         @type  name: string
         @param name: name of the camera
@@ -438,21 +682,25 @@ class Helper:
         @param center: the position of the camera
         @type  scene: host scene
         @param scene: the scene
-        
+        #we  add a **kw for futur arguments
         """    
-         
-        cam = None
-        #cam.SetPos(center)
-        #cam perspective or parrallel
-        #cam focal = float(focal)  #
-        #most of the time we apply a rotation to get the same result as in PMV
-        #cam rotZ = pi/2.
-        self.addObjectToScene(scene,cam,centerRoot=False)    
+        pass
+#        cam = None
+#        self.addObjectToScene(scene,cam)    
     
-    def addLampToScene(name,Type,rgb,dist,energy,soft,shadow,center,scene):
+    def addLampToScene(self,name,Type='Area',rgb=[1.,1.,1.],dist=25.0,energy=1.0,
+                       soft=1.0,shadow=False,center=[0.,0.,0.],sc=None,**kw):
         """
         Add a light to the scene
-    
+
+        * overwrited by children class for each host
+        
+        
+        >>> sc = helper.getCurrentScene()
+        >>> center=[0.,-12.,40.]
+        >>> color = [1.,1.,1.]
+        >>> light = helper.addLampToScene("light1","Sun",color,20.,1.0,1.0,True,center,sc)
+        
         @type  name: string
         @param name: name of the instance
         @type  Type: light hostType/int etc..
@@ -469,6 +717,7 @@ class Helper:
         @param shadow: does the light produce shadow
         @type  scene: host scene
         @param scene: the scene
+        #we  add a **kw for futur arguments
         """    
         dicType={'Area':0,'Sun':3}
         lamp = None#c4d.BaseObject(LIGHT)
@@ -481,25 +730,27 @@ class Helper:
             #lampe shadow 
             pass
         self.addObjectToScene(scene,lamp,centerRoot=False)    
-        """
-        lampe.setDist(dist)
-        lampe.setSoftness(soft)
-        """
+
 
     def newEmpty(self,name,location=None,parentCenter=None,**kw):
         """
-        Create a new Null Object
-    
+        Create a new Null/Empty Object
+        
+        * overwrited by children class for each host
+
+        >>> empty = helper.newEmpty("null1",location=[10.0,0.0,0.0])
+        >>> empty_child = helper.newEmpty("null2",location=[15.0,0.0,0.0],parent = empty)
+        
         @type  name: string
         @param name: name of the empty
         @type  location: list
         @param location: position of the null object
         @type  parentCenter: list
-        @param parentCenter: position of the parent object
+        @param parentCenter: position of the parent object DEPRECATED
         
         @type kw: dictionary
-        @param kw: you can add your own keyword
-       
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+            -"parent"
         @rtype:   hostObject
         @return:  the null object
         """
@@ -510,21 +761,30 @@ class Helper:
             #set the position of the object to location       
         return empty
     
-    def newInstance(self,name,object,location=None,hostmatrice=None,matrice=None):
+    def newInstance(self,name,object,location=None,hostmatrice=None,matrice=None,**kw):
         """
         Create a new Instance from another Object
+        
+        * overwrited by children class for each host
+        
+        >>> sph = helper.Sphere("sph1")
+        >>> instance_sph = helper.newInstance("isph1",sph,location = [10.0,0.0,0.0])
+        
     
         @type  name: string
         @param name: name of the instance
         @type  object: hostObject
-        @param object: the object to herit from   
+        @param object: the object to inherit from   
         @type  location: list/Vector
         @param location: position of the null object
         @type  hostmatrice: list/Matrix 
         @param hostmatrice: transformation matrix in host format
         @type  matrice: list/Matrix
         @param matrice: transformation matrix in epmv/numpy format
-       
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+            -"parent"
+            -"material"       
         @rtype:   hostObject
         @return:  the instance object
         """
@@ -536,74 +796,78 @@ class Helper:
             pass
         #set the instance matrice
         self.setObjectMatrix(object,matrice=matrice,hostmatrice=hostmatrice)
+        return None       
+
+    def getMasterInstance(self,instance,**kw):
+        """
+        Return the object use for the instanciation
+        """
         return instance
-   
-    def translateObj(self,object,position,use_parent=True):
-        """
-        Translation : Move the object to the vector position 
-    
-        @type  object: hostObject
-        @param object: the object   
-        @type  position: liste/array
-        @param position: the new object position px,py,pz  
-        @type  use_parent: boolean
-        @param use_parent: if the parent position is used
-        """
-        pass
-    
-    def scaleObj(self,object,sc):
-        """
-        Scale : scale the object by the vector scale 
-    
-        @type  object: hostObject
-        @param object: the object   
-        @type  sc: float or liste/array
-        @param sc: the scale vector s,s,s or sx,sy,sz  
-        """
-        pass
         
-    def rotateObj(self,object,rotation):
+
+    def updateMasterInstance(self,instance, objects,add=True,hide=True,**kw):
         """
-        Translation : Move the object to the vector position 
-        This method could take either, a matrice, a euler array, a quaternion...
+        Update the reference of the passed instance by adding/removing-hiding objects
+        
+        * overwrited by children class for each host
+        
+        >>> sph = helper.Sphere("sph1")
+        >>> instance_sph = helper.newInstance("isph1",sph,location = [10.0,0.0,0.0])
+        
     
-        @type  object: hostObject
-        @param object: the object   
-        @type  rotation: liste/array - matrice
-        @param rotation: the new object rotation  
+        @type  instance: string/hostObj
+        @param instance: name of the instance
+        @type  objects: list hostObject/string
+        @param objects: the list of object to remove/add to the instance reference   
+        @type  add: bool
+        @param add: if True add the objec else remove
+        @type  hide: bool 
+        @param hide: hide instead of remove
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
         """
         pass
-
-
-    def getTranslation(self,name,absolue=True):
-        """
-        Return the current position (translation)  of the  given object in absolute or local world
-        
-        @type  name: hostObject
-        @param name: the object name
-    
-       
-        @rtype:   3d vector/list
-        @return:  the position   
-        """
-        return [0.,0.,0.]
         
 
     def toggleDisplay(self,object,display):
         """
-        Toggle on/off the display/visibility/rendermode of an hostObject in the host viewport
-    
+        Toggle on/off the display/visibility/rendermode of an hostObject in the host viewport.
+                
+        * overwrited by children class for each host
+
+        >>> helper.toggleDisplay("polygone1",True)
+        >>> obj = helper.getObject("polygone1")
+        >>> helper.toggleDisplay(obj,False)       
+        
         @type  object: hostObject
         @param object: the object   
         @type  display: boolean
         @param display: if the object is displayed
         """    
 
+    def toggleXray(self,object,xray):
+        """
+        Toggle on/off the Xray visibility of an hostObject in the host viewport. Currently not supported in Maya
+        
+        * overwrited by children class for each host
+
+        >>> helper.toggleXray("polygone1",True)
+        >>> obj = helper.getObject("polygone1")
+        >>> helper.toggleXray(obj,False)       
+        
+        @type  object: hostObject
+        @param object: the object   
+        @type  xray: boolean
+        @param xray: if the object is Xray displayed
+        """    
+        print("not supported yet in ",self.host)
     
     def getVisibility(self,obj,editor=True, render=False, active=False):    
         """
         return the editor/renedring/active visibility state of the given object
-    
+        
+        * overwrited by children class for each host
+        
         @type  obj: hostObject
         @param obj: the object   
         @type  editor: boolean
@@ -618,25 +882,49 @@ class Helper:
         """    
         pass
     
+
+    def setViewport(self,**kw):
+        """
+        set the property of the viewport
+        
+        * overwrited by children class for each host
+        
+        @type  kw: dictionary
+        @param kw: the list of parameter and their value to change   
+        """    
+        print ("setViewport helper class")
+        pass        
     
     def toggleEditMode(self):
-        """Turn off edit mode (if any)"""
+        """
+        Turn off edit mode (if any)
+        
+        """
         pass
 
     def restoreEditMode(self, editmode=1):
-        """Restor any edit mode"""
+        """
+        Restor any edit mode (if any)
+        """
         pass
     
-    def setObjectMatrix(self,object,matrice,hostmatrice=None):
+    def setObjectMatrix(self,object,matrice,hostmatrice=None,absolue=True,**kw):
         """
-        set a matrix to an hostObject
-    
+        Set a matrix to an hostObject
+        
+        * overwrited by children class for each host
+        
         @type  object: hostObject
         @param object: the object who receive the transformation 
         @type  hostmatrice: list/Matrix 
         @param hostmatrice: transformation matrix in host format
         @type  matrice: list/Matrix
         @param matrice: transformation matrix in epmv/numpy format
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation        
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+
         """
     
         if hostmatrice !=None :
@@ -649,8 +937,10 @@ class Helper:
 
     def concatObjectMatrix(self,object,matrice,hostmatrice=None):
         """
-        apply a matrix to an hostObject
-    
+        Apply a matrix to an hostObject
+        
+        * overwrited by children class for each host
+        
         @type  object: hostObject
         @param object: the object who receive the transformation
         @type  hostmatrice: list/Matrix 
@@ -669,7 +959,188 @@ class Helper:
             #set the new matrice
             pass
 
+   
+    def translateObj(self,object,position,use_parent=True,absolue=True,**kw):
+        """
+        Global Translation : Move the object to the vector position     
+        
+        * overwrited by children class for each host
+        
+        @type  object: hostObject
+        @param object: the object   
+        @type  position: liste/array
+        @param position: the new object position px,py,pz  
+        @type  use_parent: boolean
+        @param use_parent: if the parent position is used
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation        
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+        
+        """
+        pass
+    
+    def scaleObj(self,object,absolue=True,**kw):
+        """
+        Global Scale : scale the object by the vector scale 
+        
+        * overwrited by children class for each host
+        
+        @type  object: hostObject
+        @param object: the object
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation        
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+ 
+        """
+        pass
+
+
+        
+    def rotateObj(self,object,rotation,absolue=True,**kw):
+        """
+        Global Rotation : Rotate the object 
+        This method take a 3d array [rotation_X,rotatio_Y,rotation_Z]
+        
+        * overwrited by children class for each host
+        
+        @type  object: hostObject
+        @param object: the object   
+        @type  rotation: liste/array - matrice
+        @param rotation: the new object rotation
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation        
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+       
+        """
+        pass
+
+    def setTranslation(self,name,pos=[0.0,0.,0.],absolue=True,**kw):
+        """
+        Return the current position (translation)  of the  given object in absolute or local world
+        
+        * overwrited by children class for each host
+        
+        @type  name: hostObject
+        @param name: the object name
+        @type  pos: list<float>
+        @param pos: the new position        
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+  
+        """
+        pass
+
+    def getTranslation(self,name,absolue=True,**kw):
+        """
+        Return the current position (translation)  of the  given object in absolute or local world
+        
+        * overwrited by children class for each host
+        
+        @type  name: hostObject
+        @param name: the object name
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+    
+       
+        @rtype:   3d vector/list
+        @return:  the position   
+        """
+        return [0.,0.,0.]
+
+
+    def getSize(self,name,**kw):
+        """
+        Return the current size in x, y and z of the  given object if applcable
+        
+        * overwrited by children class for each host
+        
+        @type  name: hostObject
+        @param name: the object name
+       
+        @rtype:   3d vector/list
+        @return:  the size in x y and z   
+        """
+        return [0.,0.,0.]
+
+    def getScale(self,name,absolue=True,**kw):
+        """
+        Return the current scale of the  given object in absolute or local world
+        
+        * overwrited by children class for each host
+        
+        @type  name: hostObject
+        @param name: the object name
+        @type  absolue: Boolean
+        @param absolue: absolute or local transformation    
+       
+        @rtype:   3d vector/list
+        @return:  the scale   
+        """
+        return [1.,1.,1.]
+
+    def resetTransformation(self,object,**kw):
+        """
+        ReSet the transformation of a given Object to identity
+        
+        * can be overwriten by children class for each host
+        
+        @type  object: string or Object
+        @param object: the object who receive the identity transformation
+        """
+        m= [[1.,0.,0.,0.],
+           [ 0.,1.,0.,0.],
+           [ 0.,0.,1.,0.],
+           [ 0.,0.,0.,1.]]
+        self.setObjectMatrix(object,m)
+    
+        
+    def setTransformation(self,name,mat=None,rot=None,scale=None,trans=None,order="str",**kw):
+        """
+        Set the transformatio of a given Object
+        
+        * can be overwriten by children class for each host
+        
+        @type  name: string
+        @param name: the object who receive the transformation 
+        @type  mat: list/Matrix 
+        @param mat: transformation matrix
+        @type  rot: list
+        @param rot: rotation along [X,Y,Z]
+        @type  scale: list
+        @param scale: scale along [X,Y,Z]
+        @type  trans: list
+        @param trans: translation along [X,Y,Z]
+        @type  order: string
+        @param order: order of transformation
+        @type  kw: Dictionary
+        @param kw: additional arguemts      
+        """
+        obj = self.getObject(name)
+        absolue  = True       
+        if "abs" in kw :
+            absolue=kw["abs"]
+        if mat is not None :
+            self.setObjectMatrix(obj,mat,absolue=absolue)
+        if rot is not None:
+            self.rotateObj(obj,rot,absolue=absolue)
+        if scale is not None:
+            self.scaleObj(obj,scale,absolue=absolue)
+        if trans is not None:
+            self.translateObj(obj,trans,absolue=absolue)
+
     def updateTubeObjs(self,listeObj,listePts,listeInd=None):
+        """
+        This function will update a liste of Tupe according the given liste of new points.
+        One Tube is define by two 3d points. 
+        
+        """
         if listeInd is None :
             [self.updateTubeObj(listeObj[i],listePts[j],listePts[j+1]) \
                 for i,j in zip(list(range(len(listeObj))),list(range(len(listePts))))]
@@ -697,12 +1168,23 @@ class Helper:
         return col
         
     def addMaterialFromDic(self,dic):
+        """
+        Add material to the current scene given a dictionary {"name":[r,b,g]}
+        
+        
+        >>> matDic={"mat1":[0,0,0],"mat2":[1,1,1]}
+        >>> helper.addMaterialFromDic(matDic)    
+
+        @type  dic: Dictionary
+        @param dic: the name:color dictionary for creating materials
+        
+        """
         #dic: Name:Color
         [self.addMaterial(x,dic[x]) for x in list(dic.keys())]
 
     def createColorsMat(self):
         """
-        Create a Material for all defined colors
+        Create a Material for all defined colors in upy.colors
     
         @rtype:   list
         @return:  the list of the new colors material 
@@ -715,7 +1197,7 @@ class Helper:
     def retrieveColorMat(self,color):
         """
         Retrieve a material in the current document from his color (r,g,b), if his 
-        color correpond to a DejaVu color
+        color is defined in upy.colors
     
         @type  color: array
         @param color: the material color (r,g,b)
@@ -723,16 +1205,37 @@ class Helper:
         @rtype:   hostMaterial
         @return:  the material of color color
         """            
+        if color is None :
+            return None
         doc = self.getCurrentScene()
+        mat = self.getMaterial(color)
+        print(mat,color,type(mat)) 
+        if mat is not None and type(mat) != list and type(mat) != tuple:
+            return mat
+        if len(mat) == 1 :
+            if mat[0] is not None and type(mat[0]) != list and type(mat[0]) != tuple:
+                return mat[0]
+        print (type(color) )
+        if type(color) == str or type(color) == unicode :
+            if color in colors.cnames :
+                 if mat is None :
+                     return self.addMaterial(color,eval("colors."+col))
+            else :
+                return mat
         for col in colors.cnames:
-            if color == eval("colors."+col) :
-                return self.getMaterial(col)    
-        return None
+            if tuple(color) == eval("colors."+col) :
+                mat = self.getMaterial(col)  
+                if mat is None :
+                     return self.addMaterial(col,eval("colors."+col))
+        name= "customMat"+str(color[0])+str(color[1])+str(color[2])
+        return self.addMaterial(name.replace(".",""), color)
         
     def addMaterial(self,name, color):
         """
         Add a material in the current document 
-    
+        
+        * overwrited by children class for each host
+        
         @type  name: string
         @param name: the material name
         @type  color: array
@@ -743,14 +1246,20 @@ class Helper:
         """    
         pass
 
-    def assignMaterial (self,mat, object):
+    def assignMaterial(self,object,matname,texture = True,**kw):
         """
         Assign the provided material to the object 
-    
-        @type  mat: mat
-        @param mat: the material
+        
+        * overwrited by children class for each host
+        
         @type  object: hostApp object
-        @param object: the object
+        @param object: the object    
+        @type  matname: string
+        @param matname: the material name
+        @type  texture: Boolean
+        @param texture: is the material use a textue
+        @type  kw: dictionary
+        @param kw: additional keywords options       
         """    
         #verify if the mat exist, if the string.
         #apply it to the object
@@ -759,7 +1268,9 @@ class Helper:
     def colorMaterial(self,mat,col):
         """
         Color a given material using the given color (r,g,b).
-    
+        
+        * overwrited by children class for each host
+        
         @type  mat: hostMaterial
         @param mat: the material to change
         @type  col: array
@@ -772,13 +1283,83 @@ class Helper:
         pass
 
     def getMaterial(self,name):
+        """
+        Get the maerial of the given name.
+        
+        * overwrited by children class for each host
+        
+        @type  name: string
+        @param name: the name of the desired material
+        
+        @rtype:   hostMaterial
+        @return:  the new material 
+        """ 
         pass
+    
 
     def getAllMaterials(self):
-        pass
+        """
+        Get all the maerials of the current scene.
+        
+        * overwrited by children class for each host
+        
+        @rtype:   list
+        @return:  the list of all materials available
+        """ 
+
+    def changeMaterialProperty(self,material, **kw):
+        """
+        Change a material properties.
+        
+        * overwrited by children class for each host
+        
+        @type  material: string/Material
+        @param material: the material to modify
+        @type  kw: dictionary
+        @param kw: propertie to modify with new value
+            - color
+            - specular
+            - ...
+            
+        """
+        mat =self.getMaterial(material)
+        if mat is None :
+            return
+
+    def getMaterialProperty(self,material, **kw):
+        """
+        Get a material properties.
+        
+        * overwrited by children class for each host
+        
+        @type  material: string/Material
+        @param material: the material to modify
+        @type  kw: dictionary
+        @param kw: propertie to modify with new value
+            - color
+            - specular
+            - ...
+            
+        """
+        mat =self.getMaterial(material)
+        if mat is None :
+            return
+        
 
     def colorObject(self,obj,color,**options):
-        """Apply the given color to the given object, 
+        """
+        Apply the given color to the given object, 
+        
+        * overwrited by children class for each host
+        
+        @type  obj: string or hostObject
+        @param obj: the object to be colored
+        @type  color: list
+        @param color: the color to apply [r,g,b]
+        @type  options: Dictionary
+        @param options: additional keyword options :
+            useMaterial : crete a materal with the given color and assign it to the object
+            useObjectColors : change the color propertie of the object (Viewport)
         """        
         useMaterial = False
         useObjectColors = False        
@@ -790,31 +1371,126 @@ class Helper:
         
     def changeColor(self,obj,colors,perVertex=False,proxyObject=True,doc=None,pb=False,
                     facesSelection=None,faceMaterial=False):
-        """Apply the given set of color to the given object, 
-        if the object is a mesh this functino handle the color per vertex
+        """
+        Apply the given set of color to the given object, 
+        if the object is a mesh this function handle the color per vertex.
+        
+        * overwrited by children class for each host
+        
+        @type  obj: string or hostObject
+        @param obj: the object to be colored
+        @type  colors: list
+        @param colors: the list of colors to apply [[r,g,b],[r,g,b],...]
+        @type  perVertex: Boolean
+        @param perVertex: is it color per Vertex
+        @type  proxyObject: Boolean
+        @param proxyObject: special keyword for Cinema4D which doesnt support vertex color
+        @type  doc: Scene
+        @param doc: the current working documents
+        @type  pb: Boolean
+        @param pb: use the progress bar 
+        @type  facesSelection: liste
+        @param facesSelection: only assign color to the given face selecion
+        @type  faceMaterial: Boolean
+        @param faceMaterial: assign color per Face        
         """
         pass
     
     def changeObjColorMat(self,obj,color):
-        """change the diffuse color of the object material"""
+        """
+        Change the diffuse color of the object material.
+        
+        * overwrited by children class for each host
+        
+        @type  obj: string or hostObject
+        @param obj: the object forwhich we want to change e material color
+        @type  color: list
+        @param color: the new color to apply [r,g,b]       
+        """
         pass
 
     
     def getMesh(self,name):
+        """
+        Get the mesh of given name
+        
+        * overwrited by children class for each host
+
+        @type  name: string
+        @param name: the name of the deired mesh
+        
+        @rtype:   hostMesh
+        @return:  the mesh
+        """ 
         return name
 
+
+    def getLayers(self, scn):
+        """
+        Return a list of active layers of a scene or an object
+        """
+        return []
+
+    def setLayers(self, scn, layers):
+        """
+        Set the layers of a scene or an object, expects a list of integers
+        """
+
     def checkIsMesh(self,name):
+        """
+        Verify that name correspond to a valid mesh.
+        
+        * overwrited by children class for each host
+
+        @type  name: string
+        @param name: the name of the deired mesh
+        
+        @rtype:   hostMesh
+        @return:  the mesh
+        """ 
         return name
 
     def getName(self,object):
-        return ""
+        """
+        Return the name of an host object. Redundant with getObjecName
+        
+        * overwrited by children class for each host
+    
+        >>> obj = helper.Sphere("mySphere")
+        >>> name = helper.getObjectName(obj)
+        >>> print (name)
+        mySphere
+    
+        @type  object: hostObject
+        @param object: an host object
+        @rtype:   string
+        @return:  the name of the host object
+        """
+
+    def setName(self,object,name):
+        """
+        Set the name of an host object. Redundant with getObjecName
+        
+        * overwrited by children class for each host
+    
+        >>> obj = helper.Sphere("mySphere")
+        >>> name = "mySpinningsphere"
+        >>> helper.setName(obj,name)
+    
+        @type  object: hostObject
+        @param object: an host object
+        @type  name: string
+        @param name: the new name
+        """
         
     def reParent(self,objs,parent):
         """
         Change the object parent using the specified parent objects
     
+        * overwrited by children class for each host
+        
         @type  objs: hostObject
-        @param objs: the object to be reparented
+        @param objs: the object or liste of objects to be reparented
         @type  parent: hostObject
         @param parent: the new parent object
         """    
@@ -822,7 +1498,15 @@ class Helper:
 
 
     def deleteChildrens(self,obj):
-        #recursively delete childrenobject
+        """
+        Delete recursively all the children of the given object.
+        
+        @type  obj: hostObject
+        @param obj: the object for which we want to delete the childs
+        """    
+        
+        #recursively delete obj and childrenobject
+        obj = self.getObject(obj)
         childs = self.getChilds(obj)
 #        print childs
         if childs :
@@ -835,7 +1519,9 @@ class Helper:
 
     def constraintLookAt(self,object):
         """
-        Cosntraint an hostobject to llok at the camera
+        Cosntraint an hostobject to look at the camera. 
+        
+        * overwrited by children class for each host
         
         @type  object: Hostobject
         @param object: object to constraint
@@ -845,9 +1531,11 @@ class Helper:
 #===============================================================================
 #     Basic object
 #===============================================================================
-    def Text(self,name="",string="",parent=None,size=5.,pos=None,font=None,lookAt=False):
+    def Text(self,name="",string="",parent=None,size=5.,pos=None,font=None,lookAt=False,**kw):
         """
         Create a hostobject of type Text.
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the circle
@@ -863,6 +1551,8 @@ class Helper:
         @param font: the font to use
         @type  lookAt: boolean
         @param lookAt: either the text  is constraint to look at the camera/view
+        @type  kw: dictionary
+        @param kw: additional keywords options 
         
         @rtype:   hostObject
         @return:  the created text object
@@ -870,14 +1560,18 @@ class Helper:
         text = None
         return text
         
-    def Circle(self,name, rad=1.):
+    def Circle(self,name, rad=1.,**kw):
         """
         Create a hostobject of type 2d circle.
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the circle
         @type  rad: float
         @param rad: the radius of the cylinder (default = 1.)
+        @type  kw: dictionary
+        @param kw: additional keywords options 
         
         @rtype:   hostObject
         @return:  the created circle
@@ -886,10 +1580,44 @@ class Helper:
         circle=None
         #set name and rad for the circle
         return circle
+
+    def rerieveAxis(self,axis):
+        """
+        Return the axis from the given array (X,Y or Z +/-).
+        
+        @type  axis: list
+        @param axis: the aray [x,y,z]
+        
+        @rtype:   string
+        @return:  the axis of the array
+        """            
+        dic = {"+X":[1.,0.,0.],"-X":[-1.,0.,0.],"+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
+                    "+Z":[0.,0.,1.],"-Z":[0.,0.,-1.]}
+        for k in dic :
+            if list(axis) == dic[k]:
+                return k
+
+    def CylinderHeadTails(self,cylinder,**kw):
+        res = self.getPropertyObject(cylinder, 
+                        key=["pos","rotation","length","axis"])
+        if res is None :
+            return None,None
+        pos,rot,l,axis = res
+#        if self.usenumpy :
+        h=(numpy.array(axis) * l/2.0)
+        t=(numpy.array(axis) * l/2.0)
+        m = numpy.matrix(rot)
+        h,t=self.ApplyMatrix([h,t],m.I)
+        head = numpy.array(pos) + h
+        tail = numpy.array(pos) - t
+        #self.ToMat(rot))#invert/transpose he matrix?
+        return head, tail
     
-    def Cylinder(self,name,radius=1.,length=1.,res=16, pos = [0.,0.,0.]):
+    def Cylinder(self,name,radius=1.,length=1.,res=16, pos = [0.,0.,0.],**kw):
         """
         Create a hostobject of type cylinder.
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the cylinder
@@ -901,20 +1629,19 @@ class Helper:
         @param res: the resolution/quality of the cylinder
         @type  pos: array
         @param pos: the position of the cylinder
+        @type  kw: dictionary
+        @param kw: additional keywords options
         
-        @rtype:   hostObject
-        @return:  the created cylinder
+        @rtype:   hostObject,hostMesh
+        @return:  the created cylinder object and mesh
         """    
-    
-        baseCyl = None #use the hostAPI
-    #    baseCyl radius = radius
-    #    baseCyl length = length
-    #    baseCyl resolution = res
-        return baseCyl
+        return None,None
     		
-    def Sphere(self,name,radius=1.0,res=0, pos = [0.,0.,0.]):
+    def Sphere(self,name,radius=1.0,res=0, pos = [0.,0.,0.],**kw):
         """
         Create a hostobject of type sphere.
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the sphere
@@ -924,21 +1651,36 @@ class Helper:
         @param res: the resolution/quality of the sphere
         @type  pos: array
         @param pos: the position of the cylinder
+        @type  kw: dictionary
+        @param kw: additional keywords options
         
-        @rtype:   hostObject
-        @return:  the created sphere
+        @rtype:   hostObject,hostMesh
+        @return:  the created sphere object and mesh
         """    
     
         QualitySph={"0":6,"1":4,"2":5,"3":6,"4":8,"5":16} 
-        baseSphere = None#c4d.BaseObject(c4d.Osphere)
-    #    baseSphere radius = radius
-    #    baseSphere resolution = QualitySph[str(res)]
-    #    baseSphere position = position
-        return baseSphere
+        return None,None
+
+    def getBoxSize(self,name,**kw):
+        """
+        Return the current size in x, y and z of the  given Box if applcable
         
-    def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1):
+        * overwrited by children class for each host
+        
+        @type  name: hostObject
+        @param name: the Box name
+       
+        @rtype:   3d vector/list
+        @return:  the size in x y and z   
+        """        
+        return [1.,1.,1.]
+        
+    def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,
+                visible=1,**kw):
         """
         Create a hostobject of type cube.
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the box
@@ -950,9 +1692,11 @@ class Helper:
         @param cornerPoints: the upper-left and bottom right corner point coordinates
         @type  visible: booelan
         @param visible: visibility of the cube after creation (deprecated)
+        @type  kw: dictionary
+        @param kw: additional keywords options
         
-        @rtype:   hostObject
-        @return:  the created box
+        @rtype:   hostObject,hostMesh
+        @return:  the created box object and mesh
         """    
         #put your code
         box=None
@@ -965,12 +1709,14 @@ class Helper:
         #position the cube to center
         #set the dimension to size
         #return the box
-        return box
+        return box,None
 
     def updateBox(self,box,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,
-                    visible=1, mat = None):
+                    visible=1, mat = None,**kw):
         """
         Update the given box.
+        
+        * overwrited by children class for each host
         
         @type  box: string 
         @param box: name of the box
@@ -982,7 +1728,8 @@ class Helper:
         @param cornerPoints: the new upper-left and bottom right corner point coordinates
         @type  visible: booelan
         @param visible: visibility of the cube after creation (deprecated)
-
+        @type  kw: dictionary
+        @param kw: additional keywords options
         """    
         #put your code
         box=None
@@ -994,19 +1741,23 @@ class Helper:
             center=(numpy.array(cornerPoints[0])+numpy.array(cornerPoints[1]))/2.
         #position the cube to center
         #set the dimension to size
-
+        
+    
     def getCornerPointCube(self,obj):
         """
         Return the corner Point of the Given Cube/Box
-        
+
         @type  obj: string
         @param obj: name of the box
          
         @rtype:   array 2x3
         @return:  the upper-left and bottom right corner point coordinates
         """    
-        
-        size = self.ToVec(obj[1100])#this will broke other host!
+        size = self.ToVec(self.getBoxSize(obj))
+#        try :
+#            size = self.ToVec(obj[1100])#this will broke other host!
+#        except :
+#            size = self.ToVec(self.getScale(obj))
         center = self.ToVec(self.getTranslation(obj))
 #        print center
         cornerPoints=[]
@@ -1021,11 +1772,13 @@ class Helper:
         cornerPoints=[[lc[0],lc[1],lc[2]],[uc[0],uc[1],uc[2]]]
         return cornerPoints
         
-    def spline(self,name, points,close=0,type=1,scene=None,parent=None):
+    def spline(self,name, points,close=0,type=1,scene=None,parent=None,**kw):
         """
         This will return a hostApp spline/curve object according the given list
         of point.
         
+        * overwrited by children class for each host
+
         @type  name: string
         @param name: name for the object
         @type  points: liste/array vector
@@ -1038,9 +1791,11 @@ class Helper:
         @param scene: the current scene
         @type  parent: hostObject
         @param parent: the parent for the curve
-    
-        @rtype:   hostObject
-        @return:  the created spline
+        @type  kw: dictionary
+        @param kw: additional keywords options
+        
+        @rtype:   hostObject,hostMesh
+        @return:  the created spline object and data
         """
         #create the spline
         spline=None
@@ -1058,6 +1813,8 @@ class Helper:
         """
         Create a hostobject of type cube.
         
+        * overwrited by children class for each host
+        
         @type  name: string
         @param name: name of the plane
         @type  center: array
@@ -1071,8 +1828,8 @@ class Helper:
         @type  kw: dictionary
         @param kw: list of additional arguments : "material", subdivision", axis"
         
-        @rtype:   hostObject
-        @return:  the created plane
+        @rtype:   hostObject,hostMesh
+        @return:  the created plane object and data
         """    
         #put your code
         plane=None
@@ -1085,11 +1842,13 @@ class Helper:
         #position the cube to center
         #set the dimension to size
         #return the box
-        return plane
+        return plane,None
 
     def update_spline(self,name,coords):
         """
-        This will update the spline point coordinate
+        This will update the spline points coordinates
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name for the spline to update
@@ -1102,7 +1861,7 @@ class Helper:
 #===============================================================================
 #     Platonic
 #===============================================================================
-    #this already exist in c4d
+    #this already exist in c4d,overwrite in host if support it
     #also exist in glut
     def Platonic(self,name,Type,radius,**kw):
         """ Generate one of the 5 platonic solid. The name of each figure is derived from its number of faces: respectively "tetra" 4, "hexa" 6, "ocata" 8, "dodeca" 12, and 20.
@@ -1469,9 +2228,21 @@ class Helper:
         ob,obme = self.createsNmesh(name,v,None,f)
         return ob,obme
         
+
+    def reporthook(self,count, blockSize, totalSize):
+        percent = float(count*blockSize/totalSize)
+        self.progressBar(percent,"Downloading...")
+        print (percent)
+        if percent >=1.:
+            self.resetProgressBar()
+        
     
     def progressBar(self,progress,label):
-        """ update the progress bar status by progress value and label string
+        """ 
+        Update the progress bar status by progress value and label string
+        
+        * overwrited by children class for each host
+        
         @type  progress: Int/Float
         @param progress: the new progress
         @type  label: string
@@ -1479,83 +2250,101 @@ class Helper:
         """                
         pass
 
-    def resetProgressBar(self,value):
-        """reset the Progress Bar, using value"""
-        pass
+    def resetProgressBar(self,value=None):
+        """
+        Reset the Progress Bar, using value
 
+        * overwrited by children class for each host
         
+        """
+        pass
+    
 #===============================================================================
 #     Texture Mapping / UV
 #===============================================================================
     def getUVs(self):
-        pass
+        """
+        Reset the Progress Bar, using value
+
+        * overwrited by children class for each host
         
-    def setUVs(self):
-        pass
-        
-    def getUV(self,object,faceIndex,vertexIndex,perVertice=True):
-        pass
-        
-    def setUV(self,object,faceIndex,vertexIndex,uv,perVertice=True):
+        """
         pass
 
-    
+        
+    def setUVs(self):
+        """
+        Reset the Progress Bar, using value
+
+        * overwrited by children class for each host
+        
+        """
+        pass
+
+        
+    def getUV(self,object,faceIndex,vertexIndex,perVertice=True):
+        """
+        Return the UV coordinate of the given object according faceIndex and vertexIndex 
+
+        * overwrited by children class for each host
+        
+        @type  object: string/hostObject
+        @param object: the object from which we want the UV        
+        @type  faceIndex: list
+        @param faceIndex: the liste of face index for which we want the UV
+        @type  vertexIndex: list
+        @param vertexIndex: the liste of vertex index for which we want the UV
+        @type  perVertice: Boolean
+        @param perVertice: UV coordinate access per verticer or per face
+        
+        @rtype:   list
+        @return:  the list of UV coordinates for the given object according faceIndex and vertexIndex             
+        """
+        pass
+
+        
+    def setUV(self,object,faceIndex,vertexIndex,uv,perVertice=True):
+        """
+        Update/Set the UV coordinate of the given object according faceIndex and vertexIndex 
+
+        * overwrited by children class for each host
+        
+        @type  object: string/hostObject
+        @param object: the object from which we want to update the UV        
+        @type  faceIndex: list
+        @param faceIndex: the liste of face index for which we want to update the UV
+        @type  vertexIndex: list
+        @param vertexIndex: the liste of vertex index for which we want to update the UV
+        @type  uv: list
+        @param uv: the new uv coordinate [i,j]        
+        @type  perVertice: Boolean
+        @param perVertice: UV coordinate access per verticer or per face
+        
+        """
+        pass
+
     
 #===============================================================================
 #     mesh
 #===============================================================================
     
-    def writeMeshToFile(self,filename,verts=None,faces=None,vnorms=[],fnorms=[]):
-        file = open(filename+'.indpolvert', 'w')
-        [(file.write("%f %f %f %f %f %f\n"%tuple(tuple(v)+tuple(n))))
-             for v,n in zip(verts, vnorms) ] 
-##        map( lambda v, n, f=file: \
-##                 f.write("%f %f %f %f %f %f\n"%tuple(tuple(v)+tuple(n))),
-##             verts, vnorms)
-        file.close()
 
-        file = open(filename+'.indpolface', 'w')
-        for v, face in zip(fnorms, faces):
-            [file.write("%d "%ind ) for ind in face]
-            #map( lambda ind, f=file: f.write("%d "%ind ), face )
-            file.write("%f %f %f\n"%tuple(v))
-        file.close()        
-    
-    def readMeshFromFile(self,filename):
-        filename = os.path.splitext(filename)[0]
-        f = open(filename+'.indpolvert')
-        lines = f.readlines()
-        data = [l.split() for l in lines]
-        f.close()
-        
-        verts = [(float(x[0]), float(x[1]), float(x[2])) for x in data]
-        norms = [(float(x[3]), float(x[4]), float(x[5])) for x in data]
-        
-        f = open(filename+'.indpolface')
-        lines = f.readlines()
-        data = [l.split() for l in lines]
-        f.close()
-
-        faces = []
-        fnorms = []
-        for line in data:
-            faces.append( list(map( int, line[:-3])) )
-            fnorms.append( list(map( float, line[-3:])) )
-        return verts,faces,norms
-
-    def writeToFile(self,polygon,filename):
-        """swriteToFile(filename)
-        Creates a .vert and a face file describing this indexed polygons geoemtry.
-        only vertices, and noramsl are saved the the .vert file (x y z nx ny nz)
-        and 0-based topoly in the .face file (i, j, k, ... ).
-        """
-        print(polygon,self.getName(polygon))
-        faces,vertices,vnormals,fnormals = self.DecomposeMesh(self.getMesh(polygon),
-                                                edit=False,copy=False,tri=True,transform=True,fn=True)
-        self.writeMeshToFile(filename,verts=vertices,faces=faces,
-                             vnorms=vnormals,fnorms=fnormals)
 
     def findClosestPoint(self,point,object,transform=True):
+        """
+        Find the closest vertices to the given 3d points in Python implementation 
+        
+        @type  point: 3 points
+        @param point: the point to look up       
+        @type  object: hostObj/hostMesh/String
+        @param object: the object to scan for closest vertices
+        @type  transform: Boolean
+        @param transform: take in account the object transformation or not
+        
+        @rtype  :list
+        @return : the minimal distance found and the closest vertices in the given polygon       
+        """
+        
         #python lookup for closest point,probably not the fastest way
         vertices = self.getMeshVertices(object)
         if transform :
@@ -1563,15 +2352,19 @@ class Helper:
             vertices = self.ApplyMatrix(vertices,self.ToMat(mat))
         #bhtree?
         mini=9999.0
+        miniv=vertices[0]
         for v in range(len(vertices)):
             d = self.measure_distance(vertices[v],point)
             if d < mini : 
                 mini =d
-        return mini
+                miniv = vertices[v]
+        return mini,miniv
 
     def ToMat(self,mat):
         """
         Return a python (4,4) matrice array from a host matrice
+    
+        * overwrited by children class for each host
     
         @type  mat: host matrice array
         @param mat: host matrice array 
@@ -1584,6 +2377,8 @@ class Helper:
         """
         Return a python xyz array from a host xyz array/vector
     
+        * overwrited by children class for each host
+        
         @type  v: host vector array
         @param v: host vector array 
         @rtype:   array
@@ -1595,16 +2390,45 @@ class Helper:
 # Advanced Objects
 #===============================================================================
     def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,
-                     material=None,proxyCol=False,color=[[1,0,0],],):
-        """function that generate a Polygon object from the given vertices, face and normal.
-        material or color can be passed and apply to the created polygon.
-        Return the object and the mesh
+                     material=None,proxyCol=False,color=[[1,0,0],],**kw):
         """
+        Function that generate a Polygon object from the given vertices, face and normal.
+        material or color can be passed and apply to the created polygon.
+        Return the object and the mesh.
+        
+        * overwrited by children class for each host
+        
+        @type  name: string
+        @param name: name of the pointCloud
+        @type  vertices: list
+        @param vertices: the list of vertices
+        @type  vnormals: list
+        @param vnormals: the list of vertices normal
+        @type  faces: list
+        @param faces:  the list of normal
+        @type  smooth: string
+        @param smooth: smooth the mesh or not
+        @type  material: hostMaterial
+        @param material: the material to apply to the mesh object
+        @type  proxyCol: Boolean
+        @param proxyCol: special option for C4D DEPRECATED
+        @type  color: list
+        @param color: color to apply to the mesh object         
+        @type  kw: dictionary
+        @param kw: dictionary of arg options, ie :
+            'parent'   hostAp parent object
+    
+        @rtype:   hostObj/hostMesh
+        @return:  the polygon object and data
+        """        
         pass
     
     def PointCloudObject(self,name,**kw):
         """
         This function create a special polygon which have only point.
+        See createsNmesh or particul if the hostdoes no support only point mesh
+        
+        * overwrited by children class for each host
         
         @type  name: string
         @param name: name of the pointCloud
@@ -1615,19 +2439,18 @@ class Helper:
             'parent'   hostAp parent object
     
         @rtype:   hostApp obj
-        @return:  the polygon object
+        @return:  the polygon object and data
         """
-        pass
-        
-        
-    
+        return None,None
     
     def addBone(self,i,armData,headCoord,tailCoord,
                 roll=10,hR=0.5,tR=0.5,dDist=0.4,boneParent=None,
-                name=None,editMode=True):
+                name=None,editMode=True,**kw):
         """
         Add one bone to an armature.
         Optional function for creation of the armature
+        
+        * overwrited by children class for each host
         
         @type  i: int
         @param i: indice for the new bone
@@ -1639,31 +2462,43 @@ class Helper:
         @param tailCoord: coordinate of the tail of the bone
         @type  boneParent: bone
         @param boneParent: the parent for the created bone
+        @type  kw: dictionary
+        @param kw: dictionary of arg options
     
         @rtype:   bone
         @return:  the created bone
         """        
         eb=None
         return eb
+
+    def updateArmature(self,basename,x,listeName=None,scn=None,root=None,**kw) :
+        pass
         
     def armature(self,name,coords,**kw):
         """
         Create an armature along the given coordinates
         
+        * overwrited by children class for each host
+        
         @type  name: string
         @param name: name of the armature object
         @type  coords: list of array xyz
-        @param coords: coordinate foreach bone   
+        @param coords: coordinate foreach bone 
+        @type  kw: dictionary
+        @param kw: dictionary of arg options
+        
         @rtype:   host Object,list of bone
         @return:  the created armature and the created bones      
         """                
         pass
         #return armObj,bones
     
-    def oneMetaBall(self,metab,rad,coord):
+    def oneMetaBall(self,metab,rad,coord,**kw):
         """
         Add one ball to a metaball object.
         Optional function for creation of the metaball
+        
+        * overwrited by children class for each host
         
         @type  metab: metaball host data
         @param metab: the metaball
@@ -1671,7 +2506,9 @@ class Helper:
         @param rad: radius for the new ball
         @type  coord: array xyz
         @param coord: coordinate of the ball
-    
+        @type  kw: dictionary
+        @param kw: dictionary of arg options
+        
         @rtype:   ball/None
         @return:  the ball or None
         """        
@@ -1681,58 +2518,843 @@ class Helper:
         """
         Create a metaballs along the given coordinates
         
+        * overwrited by children class for each host
+        
         @type  name: string
         @param name: name of the metaballs object
         @type  listePt: list of array xyz
         @param listePt: coordinate foreach bone  
         @type  listeR: list of float
         @param listeR: radius foreach ball 
+        @type  kw: dictionary
+        @param kw: dictionary of arg options
+               
+        @rtype:   host Object,list of bone/metaball data
+        @return:  the created metaballs,the created ball     
+        """                
+        return None,None
+
+#==============================================================================
+# Particle
+#==============================================================================
+    def particle(self,name,coords,group_name=None,radius=None,color=None,hostmatrice=None,**kw):
+        """
+        Create a particle system along the given coordinates
+        
+        * overwrited by children class for each host
+        
+        @type  name: string
+        @param name: name of the particle system
+        @type  coords: list of array xyz
+        @param coords: coordinate foreach particle  
+        @type  radius: list of float
+        @param radius: radius foreach particle 
+        @type  kw: dictionary
+        @param kw: dictionary of arg options
+        
         @rtype:   host Object,list of bone/metaball data
         @return:  the created metaballs,the created ball     
         """                
         pass
 
+    def updateParticles(self,newPos,PS=None,**kw): 
+        """
+        Update the particle system along the given new coordinates.
+        remove or add particle.
+        
+        * overwrited by children class for each host
+        
+        @type  newPos: list of array xyz
+        @param newPos: coordinate foreach particle  
+        @type  PS: Particle object
+        @param PS: the particle system
+        @type  kw: dictionary
+        @param kw: dictionary of arg options         
+        """                
+        pass        
+
+    def getParticles(self,name,**kw):
+        """
+        Return a particle system along the given name
+        
+        * overwrited by children class for each host
+        
+        @type  name: string
+        @param name: name of the particle system
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   host Object particle data
+        @return:  the created particle    
+        """                
+        return None
+        
+    def setParticulesPosition(self,newPos,PS=None,**kw):    
+        """
+        Update he particle position of a particle system along the given new coordinates
+        
+        * overwrited by children class for each host
+         
+        @type  newPos: list of array xyz
+        @param newPos: coordinate foreach particle  
+        @type  PS: Particle object
+        @param PS: the particle system
+        @type  kw: dictionary
+        @param kw: dictionary of arg options           
+        """                
+        pass        
+
+    def getParticulesPosition(self,PS=None,**kw):    
+        """
+        Get the particle position of a particle system
+         
+        * overwrited by children class for each host
+         
+        @type  PS: Particle object
+        @param PS: the particle system
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list of array xyz
+        @return:  coordinate foreach particle                    
+        """                
+        pass        
+
 #===============================================================================
 # Mesh Function
 #===============================================================================
+    def getMeshVertice(self,poly,vertex_indice,**kw):
+        """
+        Get the vertices of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the vertices
+        @type  vertex_indice: int
+        @param vertex_indice: return only the give vertice coordinates       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list of float xyz
+        @return:  coordinate for one vertice of the given object                    
+        """                
+        pass
 
-    def getMeshVertices(self,poly,selected=False):
-        #return selected vertices of the given polygon in python format
+    def getMeshVertices(self,poly,selected=False,**kw):
+        """
+        Get the vertices of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the vertices
+        @type  selected: Boolean
+        @param selected: return only the selected vertices or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list of array xyz
+        @return:  coordinate for all or for selected vertices of the given object                    
+        """                
         pass
         
-    def getMeshNormales(self,poly,selected=False):
-        #return selected normals of the given polygon in python format
+    def getMeshNormales(self,poly,selected=False,**kw):
+        """
+        Get the normals of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the normals
+        @type  selected: Boolean
+        @param selected: return only the selected normals or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list of array xyz
+        @return:  coordinate for all or for selected normals of the given object                    
+        """                
         pass
         
-    def getMeshEdge(self,hostedge):
-        #return the host edge of the given polygon in python format
+    def getMeshEdge(self,hostedge,**kw):
+        """
+        Convert the host edge in python format
+         
+        * overwrited by children class for each host
+         
+        @type  hostedge: hostEdge
+        @param hostedge: the edge to conver to python 
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list
+        @return:  the edge in python format                   
+        """                
         pass
         
-    def getMeshEdges(self,poly,selected=False):
-        #return selected edges of the given polygon in python format
+    def getMeshEdges(self,poly,selected=False,**kw):
+        """
+        Get the edges of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the edges
+        @type  selected: Boolean
+        @param selected: return only the selected edges or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list
+        @return:  all or selected edges of the given object                    
+        """                
+        pass
+
+    def getFaceEdges(self, poly, faceindice, selected=False,**kw):
+        """
+        Get the edges of the given face object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the edges of the face
+        @type  faceindice: int
+        @param faceindice: the face indice               
+        @type  selected: Boolean
+        @param selected: return only the selected edges or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list
+        @return:  all or selected edges of the given face                    
+        """                
         pass
         
-    def getFace(self,hostface,r=True):
-        #return the host face of the given polygon in python format
+    def getFace(self,hostface,r=True,**kw):
+        """
+        Convert the face edge in python format
+         
+        * overwrited by children class for each host
+         
+        @type  hostface: hostFace
+        @param hostface: the face to convert to python 
+        @type  kw: dictionary
+        @param kw: dictionary of arg options. 
+            - r=True : Cinema4D reverse face order
+        
+        @rtype:   list
+        @return:  the face in python format [i,j,k]               
+        """                
         pass
             
-    def getFaces(self,object,selected=False):
-        #return selected faces of the given polygon in python format
+    def getFaces(self,object,selected=False,**kw):
+        """
+        Get the faces of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  object: hostObject
+        @param object: the object from which we want the faces
+        @type  selected: Boolean
+        @param selected: return only the selected faces or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list
+        @return:  all or selected faces of the given object                    
+        """                
+        pass
+
+        
+    def getMeshFaces(self,poly,selected=False,**kw):
+        """
+        Get the faces of the given polygon object data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want the faces
+        @type  selected: Boolean
+        @param selected: return only the selected faces or not       
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+        
+        @rtype:   list
+        @return:  all or selected faces of the given object                    
+        """                
+        return self.getFaces(poly,selected=selected,**kw)
+
+    def setMeshVertice(self, poly, vertice_indice,vertice_coordinate, select=True,**kw):
+        """
+        Set the vertice for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to set the vertice
+        @type  vertice_indice: int
+        @param vertice_indice: vertice indice  
+        @type  vertice_coordinate: list<float>[3]
+        @param vertice_coordinate: x y z coordinate for vertice vertice_indice      
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def setMeshVertices(self, poly, vertices_coordinates, vertices_indices=None, select=True,**kw):
+        """
+        Set the vertices for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to set the vertices 
+        @type  vertices_coordinates: list<float>[3]
+        @param vertices_coordinates: x y z coordinates for all vertice or vertices_indices  
+        @type  vertices_indices: array<int>
+        @param vertices_indices: list of vertices indices         
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+        
+    def setMeshFace(self,obj,faceindce,face_vertices_indices,select=True,**kw):
+        """
+        Set the  face for the given face
+         
+        * overwrited by children class for each host
+         
+        @type  obj: hostObject
+        @param obj: the object from which we want to set the face
+        @type  faceindce: int
+        @param faceindce: the face indice  
+        @type  vertices_indices: array<int>
+        @param vertices_indices: list of vertices indices             
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+    
+    def setMeshFaces(self, obj,faces_vertices_indices,faces=None, select=True,**kw):
+        """
+        Set the faces  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  obj: hostObject
+        @param obj: the object from which we want to set the faces
+        @type  faces_vertices_indices: list<array<int>>
+        @param faces_vertices_indices: list of faces vertices indices        
+        @type  faces: array<int>
+        @param faces: list of faces indices    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def setMeshEdge(self,obj,edgeindce,edge_vertices_indices,select=True,**kw):
+        """
+        Set the edge for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to set the edge
+        @type  edgeindce: int
+        @param edgeindce: egde indice
+        @type  edge_vertices_indices: array<int>
+        @param edge_vertices_indices: list of edge vertices indices         
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+
+    def setMeshEdges(self, obj, edges_vertices_indices,edges, select=True,**kw):
+        """
+        Set the edges selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the edges
+        @type  edge_vertices_indices: list<array<int>>
+        @param edge_vertices_indices: list of edges vertices indices          
+        @type  edges: array<int>
+        @param edges: list of edges indices    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def addMeshVertice(self, poly, vertice_coordinate, **kw):
+        """
+        Add the vertice for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to add the vertice
+        @type  vertice_coordinate: list<float>[3]
+        @param vertice_coordinate: x y z coordinate for the new vertice            
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def addMeshVertices(self, poly, vertices_coordinates, vertices_indices=None,**kw):
+        """
+        Add the vertices for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to add the vertices 
+        @type  vertices_coordinates: list<float>[3]
+        @param vertices_coordinates: x y z coordinates for all vertice or vertices_indices     
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+        
+    def addMeshFace(self,obj,face_vertices_indices,**kw):
+        """
+        Add the  face for the given face
+         
+        * overwrited by children class for each host
+         
+        @type  obj: hostObject
+        @param obj: the object from which we want to add the face
+        @type  vertices_indices: array<int>
+        @param vertices_indices: list of vertices indices                     
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+    
+    def addMeshFaces(self, obj,faces_vertices_indices,**kw):
+        """
+        Add the faces  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  obj: hostObject
+        @param obj: the object from which we want to add the faces
+        @type  faces_vertices_indices: list<array<int>>
+        @param faces_vertices_indices: list of faces vertices indices        
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def addMeshEdge(self,obj,edge_vertices_indices,**kw):
+        """
+        Set the edge for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to add the edge
+        @type  edge_vertices_indices: array<int>
+        @param edge_vertices_indices: list of edge vertices indices         
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+
+    def addMeshEdges(self, obj, edges_vertices_indices,**kw):
+        """
+        Add the edges selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to add the edges
+        @type  edge_vertices_indices: list<array<int>>
+        @param edge_vertices_indices: list of edges vertices indices                
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
         pass
         
-    def getMeshFaces(self,poly,selected=False):
-        #return selected faces of the given polygon in python format
-        return self.getFaces(poly,selected=selected)
-
-    def triangulate(self,poly):
+    def selectVertice(self, poly, vertice_indice, select=True,**kw):
         """
-        Convert quad to triangle the selected face of the given polygon object
+        Set the vertice selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the vertice
+        @type  vertice_indice: int
+        @param vertice_indice: vertice indice    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def selectVertices(self, poly, vertices_indices, select=True,**kw):
+        """
+        Set the vertices selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the vertices
+        @type  vertices_indices: array<int>
+        @param vertices_indices: list of vertices indices    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+        
+    def selectFace(self,obj,faceindce,select=True,**kw):
+        """
+        Set the  selecion status  for the given face
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the face
+        @type  faceindce: int
+        @param faceindce: the face indice  
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+    
+    def selectFaces(self, obj, faces, select=True,**kw):
+        """
+        Set the faces selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the faces
+        @type  faces: array<int>
+        @param faces: list of faces indices    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def selectEdge(self,obj,edgeindce,select=True,**kw):
+        """
+        Set the edge selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the edge
+        @type  edgeindce: int
+        @param edgeindce: egde indice
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+
+    def selectEdges(self, obj, edges, select=True,**kw):
+        """
+        Set the edges selecion status  for the given mesh data
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to select the edges
+        @type  edges: array<int>
+        @param edges: list of edges indices    
+        @type  select: Boolean
+        @param select: select status          
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def deleteMeshVertices(self,poly, vertices=None,select=False,**kw):
+        """
+        Delete the give vertices indices
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to delete the vertices
+        @type  faces: array<int>
+        @param faces: list of vertices indices or None for all    
+        @type  select: Boolean
+        @param select: delete selected faces         
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def deleteMeshFaces(self,poly, faces=None,select=False,**kw):
+        """
+        Delete the give faces indices
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to delete the faces
+        @type  faces: array<int>
+        @param faces: list of faces indices or None for all    
+        @type  select: Boolean
+        @param select: delete selected faces         
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def deleteMeshEdges(self,poly, edges=None,select=False,**kw):
+        """
+        Delete the give edges indices
+         
+        * overwrited by children class for each host
+         
+        @type  poly: hostObject
+        @param poly: the object from which we want to delete the edges
+        @type  faces: array<int>
+        @param faces: list of edges indices or None for all    
+        @type  select: Boolean
+        @param select: delete selected faces         
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                   
+        """                
+        pass
+
+    def getFacesfromV(self,vindice,faces):
+#        print vindice
+        ifaces=[]  
+        indfaces=[]
+        for i,f in enumerate(faces) :
+#            print (vindice, f)
+            if vindice in f :
+#                print "OK"
+                ifaces.append(f)
+                indfaces.append(i)
+        return indfaces,ifaces
+        
+    def FixNormals(self,v,f,vn,fn=None):
+        newnormals=[]
+        for indice,vertex in enumerate(v) :
+            ifaces,faces = self.getFacesfromV(indice,f)
+            n=[]
+#            print len(faces)
+            for i,af in enumerate(faces) :
+                if fn is not None:
+                    n.append(fn[ifaces[i]])
+                else :
+                    for iv in af :
+                        n.append(vn[iv])
+            nn=numpy.average(numpy.array(n),0)
+#            print nn
+            newnormals.append(nn)
+        return newnormals
+       
+    def toggle(self,variable,value):
+        variable = value
+
+# Quad
+#    0   1
+#    3   2
+# Tri
+#    0   1  3
+#    3   1  2
+#OR
+#   Quad A B C D
+#   Triangles A B C / A C D
+#   Triangles A B D / D B C (compare A-C B-D)
+    def triangulateFace(self,f,vertices):
+        A=vertices[f[0]]
+        B=vertices[f[1]]
+        C=vertices[f[2]]
+        D=vertices[f[3]]
+        a=self.measure_distance(A,C)
+        b=self.measure_distance(B,D)
+        if a < b :
+            return [[f[0],f[1],f[2]],[f[0],f[2],f[3]]]
+        else :
+            return [[f[0],f[1],f[3]],[f[3],f[1],f[3]]]
+
+    def triangulateFaceArray(self,faces,vertices):
+        trifaces=[]
+        for f in faces :
+            if len(f) == 2 :
+               trifaces.append([f[0],f[1],f[1]])
+            elif len(f) == 3 :
+               trifaces.append(f)
+            elif len(f) == 4 : #triangulate
+               trifaces.extend(triangulateFace(f))
+#               f1 = [f[0],f[1],f[3]]
+#               f2 = [f[3],f[1],f[2]]
+#               trifaces.extend([f1,f2])
+        return trifaces 
+        
+    def triangulateFaceArray(self,faces):
+        trifaces=[]
+        for f in faces :
+            if len(f) == 2 :
+               trifaces.append([f[0],f[1],f[1]])
+            elif len(f) == 3 :
+               trifaces.append(f)
+            elif len(f) == 4 : #triangulate
+               f1 = [f[0],f[1],f[3]]
+               f2 = [f[3],f[1],f[2]]
+               trifaces.extend([f1,f2])
+        return trifaces 
+
+#    from pymunk.vec2d import Vec2d
+#    from pymunk.util import is_clockwise, calc_area, is_convex
+
+    ### "hidden" functions
+    
+    def _is_corner(self,a,b,c):
+       # returns if point b is an outer corner
+       return not(is_clockwise([a,b,c]))
+       
+    def _point_in_triangle(self,p,a,b,c):
+       # measure area of whole triangle
+       whole = abs(calc_area([a,b,c]))
+       # measure areas of inner triangles formed by p
+       parta = abs(calc_area([a,b,p]))
+       partb = abs(calc_area([b,c,p]))
+       partc = abs(calc_area([c,a,p]))
+       # allow for potential rounding error in area calcs
+       # (not that i've encountered one yet, but just in case...)
+       thresh = 0.0000001
+       # return if the sum of the inner areas = the whole area
+       return ((parta+partb+partc) < (whole+thresh))
+          
+    def _get_ear(self,poly):
+       count = len(poly)
+       # not even a poly
+       if count < 3:
+          return [], []
+       # only a triangle anyway
+       if count == 3:
+          return poly, []
+
+       # start checking points
+       for i in range(count):
+          ia = (i-1) % count
+          ib = i
+          ic = (i+1) % count
+          a = poly[ia]
+          b = poly[ib]
+          c = poly[ic]
+          # is point b an outer corner?
+          if _is_corner(a,b,c):
+             # are there any other points inside triangle abc?
+             valid = True
+             for j in range(count):
+                if not(j in (ia,ib,ic)):
+                   p = poly[j]
+                   if _point_in_triangle(p,a,b,c):
+                      valid = False
+             # if no such point found, abc must be an "ear"
+             if valid:
+                remaining = []
+                for j in range(count):
+                   if j != ib:
+                      remaining.append(poly[j])
+                # return the ear, and what's left of the polygon after the ear is clipped
+                return [a,b,c], remaining
+                
+       # no ear was found, so something is wrong with the given poly (not anticlockwise? self-intersects?)
+       return [], []
+       
+    ### major functions
+       
+    def _triangulate(self,poly):
+       """
+       triangulates poly and returns a list of triangles
+       poly: list of points that form an anticlockwise polygon (self-intersecting polygons won't work, results are... undefined)
+       """
+       triangles = []
+       remaining = poly[:]
+       # while the poly still needs clipping
+       while len(remaining) > 2:
+          # rotate the list:
+          # this stops the starting point from getting stale which sometimes a "fan" of polys, which often leads to poor convexisation
+          remaining = remaining[1:]+remaining[:1]
+          # clip the ear, store it
+          ear, remaining = _get_ear(remaining)
+          if ear != []:
+             triangles.append(ear)
+       # return stored triangles
+       return triangles
+          
+    def triangulate(self,poly,**kw):
+        """
+        Convert quad to triangle the selected face of the given polygon object.
+        
+        * overwrited by children class for each host
+        
         @type  poly: hostObj
         @param poly: the object to triangulate
+        @type  kw: dictionary
+        @param kw: dictionary of arg options        
         """
         pass
+
+    def recalc_normals(self,obj,**kw) :
+        """
+        Recalcul normals mesh outside/inside
         
-    def IndexedPolgonsToTriPoints(self,geom,transform=True):
+        * overwrited by children class for each host
+        
+        @type  poly: hostObj
+        @param poly: the object to change the normal
+        @type  kw: dictionary
+        @param kw: dictionary of arg options        
+        """
+        pass
+       
+       
+    def IndexedPolgonsToTriPoints(self,geom,transform=True,**kw):
+        """
+        Convert DejaVu IndexPolygon vertices data in a python list.
+        
+        * overwrited by children class for each host
+        
+        @type  geom: DejaVu IndexedPolygon
+        @param geom: the object to triangulate
+        @type  transform: Boolean
+        @param transform: apply the object transformation to the vertices        
+        @type  kw: dictionary
+        @param kw: dictionary of arg options 
+
+        @rtype  : list
+        @return : the vertices data as list    
+        """                
         verts = self.getMeshVertices(geom)
         tri = self.getMeshFaces(geom)
         assert tri.shape[1]==3
@@ -1743,6 +3365,77 @@ class Helper:
         for t in tri:
            triv.append( [verts[i].tolist() for i in t] )
         return triv
+#==============================================================================
+# Object Properties function
+#==============================================================================
+    #object or scene property ?
+    def getPropertyObject(self, obj, key=["radius"]):
+        """
+        Return the  property "key" of the object obj
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+
+        @rtype  : int, float, str, dict, list
+        @return : the property value    
+        """          
+        return None
+        
+    def setPropertyObject(self, obj, key, value):
+        """
+        Create a property "key" for the object obj and set his value
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+        @type  value: int, float, str, dict, list
+        @param value: the value of the property
+        """          
+        
+        pass
+    
+#==============================================================================
+# Properties function
+#==============================================================================
+    #object or scene property ?
+    def getProperty(self, obj, key):
+        """
+        Return the  property "key" of the object obj
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+
+        @rtype  : int, float, str, dict, list
+        @return : the property value    
+        """          
+        return None
+        
+    def setProperty(self, obj, key, value):
+        """
+        Create a property "key" for the object obj and set his value
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+        @type  value: int, float, str, dict, list
+        @param value: the value of the property
+        """          
+        
+        pass
     
 #===============================================================================
 # Advanced Function
@@ -1750,22 +3443,57 @@ class Helper:
    
     
     def setRigidBody(self,*args,**kw):
-        pass
+        """
+        Should set the given object as a rigid body according given options.
+        TO DO.
+        
+        * overwrited by children class for each host
+        
+        @type  args: list
+        @param args: list of arguments options
+        @type  kw: dictionary
+        @param kw: dictionary of arguments options  
+        """                
+
 
     def pathDeform(self,*args,**kw):
+        """
+        Should create a modifierfor the given object using the given path/curve/spline
+        TO DO.
+        
+        * overwrited by children class for each host
+        
+        @type  args: list
+        @param args: list of arguments options
+        @type  kw: dictionary
+        @param kw: dictionary of arguments options  
+        """                
         pass
     
     def updatePathDeform(self,*args,**kw):
-        pass
+        """
+        Should update the modifierfor the given object using the given path/curve/spline
 
+        TO DO.
+        
+        * overwrited by children class for each host
+        
+        @type  args: list
+        @param args: list of arguments options
+        @type  kw: dictionary
+        @param kw: dictionary of arguments options  
+        """                
+        pass
 
 #===============================================================================
 # numpy dependant function
 # we should have alternative from the host
+# overwrite if possible by the host math module
 #===============================================================================
 
     def vector_norm(self,data, axis=None, out=None):
-        """Return length, i.e. eucledian norm, of ndarray along axis.
+        """
+        Return length, i.e. eucledian norm, of ndarray along axis.
     
         >>> v = numpy.random.random(3)
         >>> n = vector_norm(v)
@@ -1786,8 +3514,7 @@ class Helper:
         >>> vector_norm([])
         0.0
         >>> vector_norm([1.0])
-        1.0
-    
+        1.0    
         """
         data = numpy.array(data, dtype=numpy.float64, copy=True)
         if out is None:
@@ -1801,9 +3528,11 @@ class Helper:
             data *= data
             numpy.sum(data, axis=axis, out=out)
             numpy.sqrt(out, out)
-
+    
+    @classmethod
     def unit_vector(self,data, axis=None, out=None):
-        """Return ndarray normalized by length, i.e. eucledian norm, along axis.
+        """
+        Return ndarray normalized by length, i.e. eucledian norm, along axis.
     
         >>> v0 = numpy.random.random(3)
         >>> v1 = unit_vector(v0)
@@ -1825,8 +3554,7 @@ class Helper:
         >>> list(unit_vector([]))
         []
         >>> list(unit_vector([1.0]))
-        [1.0]
-    
+        [1.0]  
         """
         if out is None:
             data = numpy.array(data, dtype=numpy.float64, copy=True)
@@ -1846,13 +3574,19 @@ class Helper:
             return data
 
     def getAngleAxis(self,vec1,vec2):
+        """
+        Return angle (radians) and axis of rotation between two given vectors.
+        
+        """        
         angle = self.angle_between_vectors(vec1,vec2)
         cr = numpy.cross(vec1,vec2)
         axis = self.unit_vector(cr) 
         return angle,axis
 
-    def rotation_matrix(self,angle, direction, point=None):
-        """Return matrix to rotate about axis defined by point and direction.
+    @classmethod
+    def rotation_matrix(self,angle, direction, point=None,trans=None):
+        """
+        Return matrix to rotate about axis defined by point and direction.
     
         >>> R = rotation_matrix(math.pi/2.0, [0, 0, 1], [1, 0, 0])
         >>> numpy.allclose(numpy.dot(R, [0, 0, 0, 1]), [ 1., -1.,  0.,  1.])
@@ -1893,27 +3627,39 @@ class Helper:
         M[:3, :3] = R
         if point is not None:
             # rotation not around origin
-            point = numpy.array(point[:3], dtype=numpy.float64, copy=False)
+            point = numpy.array([point[0],point[1],point[2]], dtype=numpy.float64, copy=False)
             M[:3, 3] = point - numpy.dot(R, point)
+        if trans is not None :
+            M[:3, 3] = numpy.array([trans[0],trans[1],trans[2]], dtype=numpy.float64, copy=False)
         return M
 
     def rotate_about_axis(self,B,theta,axis=2):
-        #from http://480.sagenb.org/home/pub/20/ 
-        # Create the rotation matrix. Rotation about the x-axis corresponds 
-        #to axis==0, y-axis to axis==1 and 
-        # z-axis to axis==2 
+        """
+        from http://480.sagenb.org/home/pub/20/ 
+        
+        Create the rotation matrix for a angle theta around the given axis, and apply it to the given point (B). 
+        
+        Rotation about 
+        
+        x-axis corresponds to axis==0, 
+        
+        y-axis corresponds to axis==1,
+        
+        z-axis corresponds to axis==2,
+        """
         M = numpy.array([]) 
         if axis==0: 
-            M = numpy.array([[1,0,0],[0,cos(theta),-sin(theta)],[0,sin(theta),cos(theta)]],dtype='float128') 
+            M = numpy.array([[1,0,0],[0,cos(theta),-sin(theta)],[0,sin(theta),cos(theta)]],dtype=numpy.float64) 
         elif axis==1: 
-            M = numpy.array([[cos(theta),0,-sin(theta)],[0,1,0],[sin(theta),0,cos(theta)]],dtype='float128') 
+            M = numpy.array([[cos(theta),0,-sin(theta)],[0,1,0],[sin(theta),0,cos(theta)]],dtype=numpy.float64 )
         elif axis==2: 
-            M = numpy.array([[cos(theta),-sin(theta),0],[sin(theta),cos(theta),0],[0,0,1]],dtype='float128') 
+            M = numpy.array([[cos(theta),-sin(theta),0],[sin(theta),cos(theta),0],[0,0,1]],dtype=numpy.float64) 
         # Numpy makes large floating point matrix manipulations easy 
         return numpy.dot(M,B)
 
     def angle_between_vectors(self,v0, v1, directed=True, axis=0):
-        """Return angle between vectors.
+        """
+        Return the angle between vectors.
     
         If directed is False, the input vectors are interpreted as undirected axes,
         i.e. the maximum angle is pi/2.
@@ -1942,9 +3688,88 @@ class Helper:
         dot /= self.vector_norm(v0, axis=axis) * self.vector_norm(v1, axis=axis)
         return numpy.arccos(dot if directed else numpy.fabs(dot))
 
+    def rotVectToVect(self,vect1, vect2, i=None):
+        """returns a 4x4 transformation that will align vect1 with vect2
+    vect1 and vect2 can be any vector (non-normalized)
+    """
+        v1x, v1y, v1z = vect1
+        v2x, v2y, v2z = vect2
+        
+        # normalize input vectors
+        norm = 1.0/sqrt(v1x*v1x + v1y*v1y + v1z*v1z )
+        v1x *= norm
+        v1y *= norm
+        v1z *= norm    
+        norm = 1.0/sqrt(v2x*v2x + v2y*v2y + v2z*v2z )
+        v2x *= norm
+        v2y *= norm
+        v2z *= norm
+        
+        # compute cross product and rotation axis
+        cx = v1y*v2z - v1z*v2y
+        cy = v1z*v2x - v1x*v2z
+        cz = v1x*v2y - v1y*v2x
+    
+        # normalize
+        nc = sqrt(cx*cx + cy*cy + cz*cz)
+        if nc==0.0:
+            return [ [1., 0., 0., 0.],
+                     [0., 1., 0., 0.],
+                     [0., 0., 1., 0.],
+                     [0., 0., 0., 1.] ]
+    
+        cx /= nc
+        cy /= nc
+        cz /= nc
+        
+        # compute angle of rotation
+        if nc<0.0:
+            if i is not None:
+                print ('truncating nc on step:', i, nc)
+            nc=0.0
+        elif nc>1.0:
+            if i is not None:
+                print ('truncating nc on step:', i, nc)
+            nc=1.0
+            
+        alpha = asin(nc)
+        if (v1x*v2x + v1y*v2y + v1z*v2z) < 0.0:
+            alpha = pi - alpha
+    
+        # rotate about nc by alpha
+        # Compute 3x3 rotation matrix
+    
+        ct = cos(alpha)
+        ct1 = 1.0 - ct
+        st = sin(alpha)
+        
+        rot = [ [0., 0., 0., 0.],
+                [0., 0., 0., 0.],
+                [0., 0., 0., 0.],
+                [0., 0., 0., 0.] ]
+    
+    
+        rv2x, rv2y, rv2z = cx*cx, cy*cy, cz*cz
+        rv3x, rv3y, rv3z = (1.0-rv2x)*ct, (1.0-rv2y)*ct, (1.0-rv2z)*ct
+        rot[0][0] = rv2x + rv3x
+        rot[1][1] = rv2y + rv3y
+        rot[2][2] = rv2z + rv3z
+        rot[3][3] = 1.0;
+    
+        rv4x, rv4y, rv4z = cx*st, cy*st, cz*st
+        rot[0][1] = cx * cy * ct1 - rv4z
+        rot[1][2] = cy * cz * ct1 - rv4x
+        rot[2][0] = cz * cx * ct1 - rv4y
+        rot[1][0] = cx * cy * ct1 + rv4z
+        rot[2][1] = cy * cz * ct1 + rv4x
+        rot[0][2] = cz * cx * ct1 + rv4y
+    
+        return rot
+    
+
     def ApplyMatrix(self,coords,mat):
         """
-        Apply the 4x4 transformation matrix to the given list of 3d points
+        Apply the 4x4 transformation matrix to the given list of 3d points.
     
         @type  coords: array
         @param coords: the list of point to transform.
@@ -1992,35 +3817,30 @@ class Helper:
         return rot, transl, scale
         
     def getTubePropertiesMatrix(self,coord1,coord2):
+        """
+        From two point return the length, and the orientation from one to another.
+        This function is used to build a cylinder from two points (see oneCylinder function)
+
+        >>> coord1 = [1.0,0.0,0.0]
+        >>> coord2 = [2.0,0.0,0.0]
+        >>> distance,matrix = helper.getTubePropertiesMatrix(coord1,coord2)
+        >>> helper.setObjectMatrix(obj,matrix)
+        
+        @type  coord1: vector
+        @param coord1: first point
+        @type  coord2: vector
+        @param coord2: second point
+    
+        @rtype:   tupple
+        @return:  length, 4*4 matrix of rotation
+        """        
         #need ot overwrite in C4D
-        #print coord1,coord1[0],type(coord1[0])
         x1 = float(coord1[0])
         y1 = float(coord1[1])
         z1 = float(coord1[2])
         x2 = float(coord2[0])
         y2 = float(coord2[1])
         z2 = float(coord2[2])
-#        length = math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)+(z1-z2)*(z1-z2))
-#        wsz = atan2((y1-y2), (z1-z2))
-#        wz = acos((x1-x2)/laenge)
-#        offset=numpy.array([float(x1+x2)/2,float(y1+y2)/2,float(z1+z2)/2])
-#        v_2=numpy.array([float(x1-x2),float(y1-y2),float(z1-z2)])
-#        v_2 = numpy.array(self.normalize(v_2))
-#        v_1=numpy.array([float(0.),float(1.),float(2.)])
-#        v_3=numpy.cross(v_1,v_2)
-#        v_3 = numpy.array(self.normalize(v_3))
-#        v_1=numpy.cross(v_2,v_3)
-#        v_1 = numpy.array(self.normalize(v_1))
-#        M=numpy.identity(4)
-#        M[0,:3] = v_1
-#        M[1,:3] = v_2
-#        M[2,:3] = v_3
-#        M[3,:3] = offset
-#        m = numpy.identity(4)
-#        m[:3,:3] = M[:3,:3]
-#        row_max = m.max(axis=1).reshape((-1, 1))
-#        m = numpy.absolute((m / row_max))
-#        M[:3,:3] = m[:3,:3]
         v,length = self.measure_distance(coord2,coord1,vec=True)
         vx,vy,vz = v
         offset=numpy.array([float(x1+x2)/2,float(y1+y2)/2,float(z1+z2)/2])      
@@ -2035,19 +3855,6 @@ class Helper:
         M[1,:3] = v_2
         M[2,:3] = v_3
         M[3,:3] = offset        
-#        sx = 1
-#        nx = 0
-#        ny = 1
-#        #this is probably dependant on the princpal axis of the cylinder
-#        if (vx != 0 or vy != 0):
-#            alpha = (1. - vz) / (vx*vx + vy*vy)
-#            sx = -vy*vy*alpha - vz
-#            nx = alpha*vx*vy
-#            ny = -vx*vx*alpha - vz
-#        M = [[sx, nx, vx,offset[0]],
-#            [nx, ny, vy,offset[1]],
-#            [vx, vy, vz,offset[2]],
-#            [0.,0.,0.,1.],]
         return length,numpy.array(M).transpose()     
      
      
@@ -2073,11 +3880,159 @@ class Helper:
         return center
 
 #===============================================================================
+# animation features
+#===============================================================================
+    def setKeyFrame(self,obj,**kw):
+        """
+        Set a keyframe for the curret object
+    
+        @type  obj: hostObj
+        @param obj: the object
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass        
+
+    def setFrame(self,value,**kw):
+        """
+        Set the current frame
+    
+        @type  value: int/float
+        @param value: the desired frame
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+
+    def frameAdvanced(self,doc=None,duration=None,display=False,cb=None,**kw):
+        """
+        Play frame for a specifiy duration with/without display and with/without a callbac
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  duration: float
+        @param duration: how long shoud we play
+        @type  display: bool
+        @param display: toggle the update of the viewport
+        @type  cb: function
+        @param cb: the callback function to execute at every frame
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+
+        
+    def animationStart(self,doc= None,forward=True,duration = None,**kw):
+        """
+        Play frame for a specifiy duration 
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  duration: float
+        @param duration: how long shoud we play
+        @type  forward: bool
+        @param forward: toggle the direction of the animation
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        
+    def animationStop(self,doc=None,**kw):
+        """
+        Stop the animation
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+ #==============================================================================
+# Dynamics simulation
+#==============================================================================
+    def setRigidBody(self,obj,shape="auto",child=False,
+                    dynamicsBody="on", dynamicsLinearDamp = 0.0, 
+                    dynamicsAngularDamp=0.0, 
+                    massClamp = 0.0, rotMassClamp=1.0,**kw):
+        """
+        Set the curren objec as a rigid body
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+        return None
+        
+    def setSoftBody(self,obj,**kw):
+        """
+        Set the curren object as a soft body
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+        return None
+
+    def updateSpring(self,spring,targetA=None,tragetB=None,
+                     rlength=0.0,stifness = 1.,damping = 1.0,**kw):
+        """
+        Update the spring control
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+        return None
+
+        
+    def createSpring(self,name,targetA=None,tragetB=None,
+                     rlength=0.0,stifness=1.0,damping = 1.0,parent=None,**kw):
+        """
+        Create a sprin between two physics objects
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+        return None
+
+    def addConstraint(self,obj,type="spring",target=None,**kw):
+        """
+        Add a constraint to the  given object
+    
+        @type  doc: document/scene
+        @param doc: the desired scene
+        @type  kw: dictionary
+        @param kw: dictionary of arg options                       
+        """
+        pass
+        return None
+
+
+#==============================================================================
+# Noise and Fractal 
+#==============================================================================
+    def get_noise(self,point,ntype,nbasis,dimension=1.0,lacunarity=2.0,offset=1.0,octaves=6,gain=1.0,**kw):
+        #multi_fractal(position, H, lacunarity, octaves, noise_basis=noise.types.STDPERLIN)
+        #NotePlease use InitFbm() before you use one of the following noise types: 
+        #NOISE_ZADA, NOISE_DISPL_VORONOI, NOISE_OBER, NOISE_FBM, NOISE_BUYA.
+        return 0.0
+#===============================================================================
 # depends on PIL    
 #===============================================================================
     
     def makeTexture(self,object,filename=None,img=None,colors=None,sizex=0,sizey=0,
                     s=20,draw=True,faces=None,invert=False):
+        """
+        Experiment for baking faces colors using a PIL image
+    
+        """
+
         invert = False
         if img is None and draw:
             if not self._usePIL :
@@ -2149,6 +4104,10 @@ class Helper:
     def makeTextureM(self,object,filename=None,img=None,colors=None,sizex=0,sizey=0,
                     s=20,draw=True,faces=None,
                     invert=False):
+        """
+        Experiment for baking object colors using a PIL image
+    
+        """                        
         if img is None and draw and self._usePIL:
             import Image
             img = Image.new("RGB", (int(sizex), int(sizey)),(0, 0, 0))
@@ -2199,6 +4158,10 @@ class Helper:
                     sizex=0,sizey=0,
                     s=20,draw=True,
                     invert=False):
+        """
+        Experiment for baking object colors using UV coordinate and PIL image
+    
+        """                        
         if not self._usePIL :
             return None
         if img is None and draw:
@@ -2233,6 +4196,12 @@ class Helper:
         self.resetProgressBar(0)     
 
     def fillTriangleColor(self,array,col1,col2,col3,xys):
+        """
+        Draw and color a Triangle according a color per corner. 
+       
+        Interpolate the color as OpenGL will do with per vertex
+    
+        """        
         for i in range(20):
             a=i/20.
             for j in range(20):
@@ -2245,6 +4214,10 @@ class Helper:
         return array
         
     def drawGradientLine(self,imdraw,col1,col2,col3,xys):
+        """
+        Draw and color a gradient using either PIL rectangle or point drawing methods
+    
+        """                
         if not self._usePIL :
             return None
         if col1 is col2 and col2 is col3 :
@@ -2261,6 +4234,11 @@ class Helper:
     
 
     def drawPtCol(self,imdraw,color,uv,debug=0):
+        """
+        Draw  on the given Texture image accordinge en UV coordinates and colors       
+        uv is the 3 vertex coordinate in UV 
+    
+        """                        
         #uv is the 3 vertex coordinate in UV 
         if not self._usenumpy :
             return
@@ -2458,5 +4436,141 @@ class Helper:
         return (a,b)
 
     
+#==============================================================================
+# IO / read/write 3D object, cene file etc
+#==============================================================================
+
+    def read(self,filename,**kw):
+        pass
     
+    def write(self,listObj,**kw):
+        pass
     #DejaVu.indexedPolygon have also this function
+    def writeMeshToFile(self,filename,verts=None,faces=None,vnorms=[],fnorms=[]):
+        """
+        Write the given mesh data (vertices, faces, normal, face normal) in the DejaVu format.
+        Create two files : filename.indpolvert and filename.indpolface 
+        
+        @type  filename: string
+        @param filename: the destinaon filename.      
+        @type  verts: list
+        @param verts: the liste of vertices
+        @type  faces: list
+        @param faces: the liste of faces
+        @type  vnorms: list
+        @param vnorms: the liste of vertices normal      
+        @type  fnorms: list
+        @param fnorms: the liste of faces normal
+        
+        """                
+        file = open(filename+'.indpolvert', 'w')
+        [(file.write("%f %f %f %f %f %f\n"%tuple(tuple(v)+tuple(n))))
+             for v,n in zip(verts, vnorms) ] 
+##        map( lambda v, n, f=file: \
+##                 f.write("%f %f %f %f %f %f\n"%tuple(tuple(v)+tuple(n))),
+##             verts, vnorms)
+        file.close()
+
+        file = open(filename+'.indpolface', 'w')
+        for v, face in zip(fnorms, faces):
+            [file.write("%d "%ind ) for ind in face]
+            #map( lambda ind, f=file: f.write("%d "%ind ), face )
+            file.write("%f %f %f\n"%tuple(v))
+        file.close()        
+    
+    def readMeshFromFile(self,filename):
+        """
+        Given the DejaVu filename return the mesh data (vertices, faces, normal).
+        
+        Parse two files : filename.indpolvert and filename.indpolface 
+        
+        @type  filename: string
+        @param filename: the destinaon filename.
+        
+        @rtype  :list
+        @return : the liste of vertices,faces and normals
+        
+        """                        
+        filename = os.path.splitext(filename)[0]
+        f = open(filename+'.indpolvert')
+        lines = f.readlines()
+        data = [l.split() for l in lines]
+        f.close()
+        
+        verts = [(float(x[0]), float(x[1]), float(x[2])) for x in data]
+        norms = [(float(x[3]), float(x[4]), float(x[5])) for x in data]
+        
+        f = open(filename+'.indpolface')
+        lines = f.readlines()
+        data = [l.split() for l in lines]
+        f.close()
+
+        faces = []
+        fnorms = []
+        for line in data:
+            faces.append( list(map( int, line[:-3])) )
+            fnorms.append( list(map( float, line[-3:])) )
+        return verts,faces,norms
+
+    def writeToFile(self,polygon,filename):
+        """
+        Write the given polygon mesh data (vertices, faces, normal, face normal) in the DejaVu format.
+        
+        Create two files : filename.indpolvert and filename.indpolface. 
+        
+        See writeMeshToFile
+        
+        @type  polygon: hostObj/hostMesh/String
+        @param polygon: the polygon to export in DejaVu format
+        @type  filename: string
+        @param filename: the destinaon filename.      
+        """
+        print(polygon,self.getName(polygon))
+        #get shild ?
+        
+        faces,vertices,vnormals,fnormals = self.DecomposeMesh(self.getMesh(polygon),
+                                                edit=False,copy=False,tri=True,transform=True,fn=True)
+        self.writeMeshToFile(filename,verts=vertices,faces=faces,
+                             vnorms=vnormals,fnorms=fnormals)
+    @classmethod
+    def writeDX(self,filename,gridvalue,gridcenter,gridstep,grisize,commens="")  :     
+        nx,ny,nz= grisize
+        ox,oy,oz = gridcenter
+        sx,sy,sz = gridstep
+        N = nx*ny*nz
+        aStr="#Data frm upy\n"
+        aStr+="#%s\n" % commens
+        aStr+="object 1 class gridpositions counts %i %i %i\n" % (nx,ny,nz)
+        aStr+="origin %f %f %f\n" % (ox,oy,oz)
+        aStr+="delta %f 0.000000e+00 0.000000e+00\n" % sx
+        aStr+="delta 0.000000e+00 %f 0.000000e+00\n" % sy
+        aStr+="delta 0.000000e+00 0.000000e+00 %f\n" % sz
+        aStr+="object 2 class gridconnections counts %i %i %i\n" % (nx,ny,nz)
+        aStr+="object 3 class array type double rank 0 items %i data follows\n" % N
+        #u(*,*,*)
+        #The data values, ordered with the z-index increasing most quickly, followed by the y-index, and then the x-index. 
+        counterLine=0
+        counter=0
+        v=""
+        for x in range(nx):
+            for y in range(ny):
+                for z in range(nz):                    
+                    v+="%f " % gridvalue[counter]
+                    counter+=1
+                    counterLine+=1
+                    if counterLine == 2 :
+                        aStr+=v+"\n"
+                        counterLine = 0
+        f = open(filename,"w")
+        f.write(aStr)
+        f.close()
+#==============================================================================
+# raycasting
+#==============================================================================
+    def raycast(self,obj,point, direction, length, **kw ):
+        if "count" in kw :
+            return False,0
+        return False
+        
+        
+        

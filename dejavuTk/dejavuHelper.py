@@ -33,10 +33,18 @@ import math
 from math import *
 from types import StringType, ListType
 
+#from DejaVu import Viewer
+           
 import numpy
 import Image
 #base helper class
 from upy import hostHelper
+
+try :
+    import collada
+except :
+    collada = None
+    print "can't import pycollada "
 
 #Problem instance doesnt really exist as its. Or its instance of mesh/sphere/cylinder directly.
 #check autofill display
@@ -62,18 +70,38 @@ class dejavuHelper(hostHelper.Helper):
     viewer = None
     host = "dejavu"
     
-    def __init__(self,master=None):
+    def __init__(self,master=None,vi=None):
         hostHelper.Helper.__init__(self)
         #we can define here some function alias
+        self.nogui = False        
         self.updateAppli = self.update
         self.Cube = self.box
-        self.Box = self.box    
-        if type(master) is dict :
-            self.viewer = master["master"]
-        else :
-            self.viewer = master
-        if not isinstance(self.viewer,Viewer) or self.viewer is None :
-            self.viewer = Viewer(master)              
+        self.Box = self.box 
+        print ("INITHELPER")
+        if master is not None :
+            if type(master) is dict :
+                self.viewer = master["master"]
+            else :
+                self.viewer = master
+            if not isinstance(self.viewer,Viewer) or self.viewer is None :
+                self.viewer = Viewer(master)              
+        if vi is not None :
+            self.viewer = vi
+            if not isinstance(self.viewer,Viewer.Viewer) or self.viewer is None :
+                print ("no Viewer pass")
+        if self.viewer is None:
+            print ("no Viewer golboals")
+            dicG = globals()
+            for d in dicG: 
+                try :
+                    if isinstance(dicG[d],Viewer.Viewer):
+                        self.viewer = dicG[d]
+                        break
+                except :
+                    continue
+        if self.viewer is None and vi != "nogui":
+            self.viewer  = Viewer.Viewer(nogui=1)
+        if vi == "nogui" : self.nogui = True    
         #self.getCurrentScene = c4d.documents.GetActiveDocument
         self.Polylines = Polylines
         self.Spheres = Spheres
@@ -82,9 +110,10 @@ class dejavuHelper(hostHelper.Helper):
         self.Geom = Geom
         self.Labels = Labels
         self.IndexedPolygons = IndexedPolygons
-        if self.viewer is not None :
+        if self.viewer is not None and not self.nogui:
             self.AddObject = self.viewer.AddObject
-            
+        self.hext = "dae"
+        
     def setViewer(self,vi):
         self.viewer = vi
         self.AddObject = self.viewer.AddObject
@@ -142,14 +171,19 @@ class dejavuHelper(hostHelper.Helper):
     
     def getObject(self,name):
         obj=None
-        if type(name) != str : return name
+        if type(name) != str and type(name) != unicode: 
+            return name
         try :
             obj=self.getCurrentScene().findGeomsByName(name)
-            if not len(obj) : 
+            if len(obj) == 0 : 
                 obj = None
             else :
-                return obj[0]
+                for o in obj :
+                    if o.name == name :
+                        return o
+                return None
         except : 
+            print ("problem")
             obj=None
         return obj
 
@@ -175,8 +209,14 @@ class dejavuHelper(hostHelper.Helper):
             parent = kw["parent"]
         self.addObjectToScene(self.getCurrentScene(),empty,parent=parent)    
         return empty
+
+    def updateMasterInstance(self,master, newMesh,**kw):
+        #get the instancematrix frommaster
+        #apply them to new newMesh
+        pass
     
-    def newInstance(self,name,object,location=None,c4dmatrice=None,matrice=None):
+    def newInstance(self,name,object,location=None,c4dmatrice=None,matrice=None,
+                    parent = None,material=None):
 #        instance = c4d.BaseObject(c4d.Oinstance)
 #        instance[1001]=iMe[atN[0]]        
 #        instance.SetName(n+"_"+fullname)#.replace(":","_")
@@ -189,7 +229,7 @@ class dejavuHelper(hostHelper.Helper):
 #            mx = self.matrix2c4dMat(matrice)
 #            instance.SetMg(mx)
 #        return instance
-        return None
+        return object
         
     def setObjectMatrix(self,object,matrice,c4dmatrice=None):
             object.SetTransformation(matrice)
@@ -235,11 +275,6 @@ class dejavuHelper(hostHelper.Helper):
             if self.viewer is None :
                 return
             doc = self.viewer
-            
-        #print doc,self.viewer
-        #if object not in scene 
-#        print obj.name
-#        if self.getObject(obj.name) == None:
         if parent != None : 
             if type(parent) == str : parent = self.getObject(parent)
             doc.AddObject(obj,parent=parent)
@@ -265,9 +300,13 @@ class dejavuHelper(hostHelper.Helper):
     
     def reParent(self,obj,parent):
         vi = self.getCurrentScene()
+        parent = self.getObject(parent)
+        if parent is None :
+            return
         if type(obj) == list or type(obj) == tuple:
-            [vi.ReparentObject(o,parent,objectRetainsCurrentPosition=True) for o in obj]
+            [vi.ReparentObject(self.getObject(o),parent,objectRetainsCurrentPosition=True) for o in obj]
         else :
+            obj = self.getObject(obj)            
             vi.ReparentObject(obj,parent,objectRetainsCurrentPosition=True)
     
     def setInstance(self,name,object,location=None,c4dmatrice=None,matrice=None):
@@ -313,13 +352,14 @@ class dejavuHelper(hostHelper.Helper):
 
     def rotateObj(self,obj,rot):
         #take radians, give degrees
-        obj.rotation = rot
+        mat  = self.eulerToMatrix(rot)
+        obj.Set(rotation = numpy.array(mat).flatten()) #obj.rotation 
 
     def getTransformation(self,geom):
         geom = self.getObject(geom)
         return geom.GetMatrix(geom.LastParentBeforeRoot())
 
-    def toggleDisplay(self,obj,display):
+    def toggleDisplay(self,obj,display,**kw):
         obj = self.getObject(obj)
         if obj is None :
             return
@@ -366,8 +406,8 @@ class dejavuHelper(hostHelper.Helper):
             object.Set(materials=[mat,])
 
     def changeObjColorMat(self,obj,color):
-        doc = self.getCurrentScene()
-        obj.Set(materials=[color])
+#        doc = self.getCurrentScene()
+        obj.Set(inheritMaterial = False,materials=[color],redo=1)
     
     def getMaterialObject(self,o):
         pass
@@ -377,7 +417,7 @@ class dejavuHelper(hostHelper.Helper):
         return None
 
     def getAllMaterials(self):
-        return None
+        return []
         
     def getMaterialName(self,mat):
         return None
@@ -431,7 +471,7 @@ class dejavuHelper(hostHelper.Helper):
             instance.Set(redo=1)
         return stick
         
-    def Cylinder(self,name,radius=1.,length=1.,res=0, pos = [0.,0.,0.],parent=None):
+    def Cylinder(self,name,radius=1.,length=1.,res=0, pos = [0.,0.,0.],parent=None,**kw):
 #        QualitySph={"0":16,"1":3,"2":4,"3":8,"4":16,"5":32}
         pos = numpy.array(pos)
         v = numpy.array([pos,pos + numpy.array([0.,length,0.])])
@@ -459,12 +499,12 @@ class dejavuHelper(hostHelper.Helper):
         QualitySph={"0":6,"1":4,"2":5,"3":6,"4":8,"5":16} 
         baseSphere = self.Spheres(name,radii=[radius,],centers=[[0.,0.,0.]],
                                 quality=res,inheritMaterial = False, visible=1)
-     	if mat is not None :
+        if mat is not None :
             mat = self.getMaterial(mat)
             self.assignMaterial(mat, baseSphere)
         else :
             if color != None :
-                color = [1.,1.,0.]
+                #color = [1.,1.,0.]
                 baseSphere.Set(materials=[color,])
 #                mat = self.addMaterial(name,color)
 #                self.assignMaterial(mat, baseSphere)
@@ -1474,7 +1514,7 @@ class dejavuHelper(hostHelper.Helper):
 #          return obj
 #    """
 #    
-    def updateMesh(self,obj,vertices=None,faces = None):
+    def updateMesh(self,obj,vertices=None,faces = None, smooth=False):
         if type(obj) == str:
             obj = self.getObject(obj)
         if obj == None : return        
@@ -1584,7 +1624,7 @@ class dejavuHelper(hostHelper.Helper):
 #    
 #            
     def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,
-                     material=None,proxyCol=False,color=[[1,0,0],],**kw):
+                     material=None,proxyCol=False,color=[[1,1,1],],**kw):
         """
         This is the main function that create a polygonal mesh.
         
@@ -1608,9 +1648,11 @@ class dejavuHelper(hostHelper.Helper):
         @rtype:   hostApp obj
         @return:  the polygon object
         """
-                         
+        shading='flat'
+        if  smooth :
+            shading = 'smooth'                
         PDBgeometry = IndexedPolygons(name, vertices=vertices,
-                          faces=faces, vnormals=vnormals,materials=color,shading='flat',
+                          faces=faces, vnormals=vnormals,materials=color,shading=shading,
                           )
         parent = None
         if "parent" in kw :
@@ -1619,22 +1661,49 @@ class dejavuHelper(hostHelper.Helper):
         return [PDBgeometry,PDBgeometry]
 
     def instancePolygon(self,name, matrices=None, mesh=None,parent=None,
-                        transpose= False,colors=None):
+                        transpose= False,colors=None,**kw):
         if matrices == None : return None
         if mesh == None : return None
         instance = []	  
         geom = None
-        if mesh is None :
-            print("no mesh???")
+        if mesh is None or not isinstance(mesh,IndexedPolygons):
+            print("no mesh???",mesh,isinstance(mesh,Spheres))
+            if isinstance(mesh,Spheres):
+                #need only the tranlation for the matrix 
+                centers = [m[:3,3] for m in matrices ]
+                #mesh.Set(centers=centers)
+                if parent is not None :
+                    self.reParent(mesh, parent)
+                    parent.Set(instanceMatrices=matrices, visible=1)  
+                else :
+                    mesh.Set(centers=centers)
+                return mesh
+            elif isinstance(mesh,Geom):
+                if parent is not None :
+                    print ("instancePolygon",parent,mesh)
+                    if parent != mesh :
+                        self.reParent(mesh, parent)
+                        parent.Set(instanceMatrices=matrices, visible=1)  
+                    else :
+                        mesh.Set(instanceMatrices=matrices, visible=1) 
+                else :
+                    mesh.Set(instanceMatrices=matrices, visible=1) 
+            #justgetthe pass mes
+            geom = self.getObject(mesh)
+            if geom is None :
+                return
+#            return None
         else:
             geom = IndexedPolygons(name, vertices=mesh.getVertices(),
                           faces=mesh.getFaces(), vnormals=mesh.getVNormals()
                           )
+            geom.materials[1028].prop =mesh.materials[1028].prop
+            geom.materials[1029].prop =mesh.materials[1029].prop
             self.addObjectToScene(None,geom,parent=parent)
         print("geom",geom)
         geom.Set(instanceMatrices=matrices, visible=1)
-        if colors is not None :
-            geom.Set(materials=colors, inheritMaterial=0)
+#        if colors is not None :
+#            geom.Set(materials=colors, inheritMaterial=0)
         return geom
     
     def changeColor(self,obj,colors,perVertex=False,
@@ -1666,7 +1735,7 @@ class dejavuHelper(hostHelper.Helper):
     def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
                               mat = None,**kw):
         #import numpy
-        box=Box(name)#, cornerPoints=bb, visible=1
+        box=Box(name,frontPolyMode='fill')#, cornerPoints=bb, visible=1
         if cornerPoints != None :
             for i in range(3):
                 size[i] = cornerPoints[1][i]-cornerPoints[0][i]
@@ -1680,7 +1749,7 @@ class dejavuHelper(hostHelper.Helper):
         if "parent" in kw :
             parent = kw["parent"]
         self.addObjectToScene(self.getCurrentScene(),box,parent=parent)         
-        return box
+        return box,box
 
     def updateBox(self,box,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
                               mat = None):
@@ -1823,6 +1892,15 @@ class dejavuHelper(hostHelper.Helper):
 
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
         #get infos
+        if isinstance(poly,Geom):
+            #getfirst child
+            poly = self.getChilds(poly)
+            if len(poly):
+                poly=poly[0]
+            else :
+                return [],[],[]
+        if not isinstance(poly,IndexedPolygons):
+            return [],[],[]
         faces = poly.getFaces()
         vertices = poly.getVertices()
         vnormals = poly.getVNormals()
@@ -1842,6 +1920,290 @@ class dejavuHelper(hostHelper.Helper):
     
     def updatePathDeform(self,*args,**kw):
         pass
+
+#==============================================================================
+# IO / read/write 3D object, cene file etc  
+#==============================================================================
+    def getColladaMaterial(self,geom,col):
+        #get the bound geometries
+        mat = None        
+        boundg = list(col.scene.objects('geometry'))
+        for bg in boundg:
+#            print bg.original,geom
+            if bg.original == geom :
+               mat = bg.materialnodebysymbol.values()[0].target
+        return mat
+    
+    def TextureFaceCoordintesToVertexCoordinates(self,v,f,t,ti):
+        textureuv_vertex = numpy.zeros((len(v),2))        
+        for i,indice_verex in enumerate(f):
+            for j in range(3):
+                if len(ti) == (len(f)*3) :
+                    indice = ti[i+j]
+                else :
+                    indice = ti[i][j]
+                textureuv_vertex[indice_verex[j]] = t[indice]#(t[ti[i][j]]+1.0)/2.0
+        return textureuv_vertex        
+
+    def getNormals(self,f,v,n,ni):
+        if len(ni.shape) == 1 :
+            if max(ni) == (len(v) -1) :
+                return n[ni]
+            else : 
+                return None
+        normals_vertex = numpy.zeros((len(v),3))   
+        for i,indice_vertex in enumerate(f):
+            if len(f.shape) == 2:
+                for j in range(3):
+                    normals_vertex[indice_vertex[j]] = n[ni[i][j]]#(t[ti[i][j]]+1.0)/2.0
+            else :
+                normals_vertex[indice_vertex] = n[ni[i]]
+        return normals_vertex        
+        
+
+    def nodeToGeom(self,node,i,col,nodexml,parentxml=None,parent=None,dicgeoms=None,uniq=False):
+        name = nodexml.get("name")
+        if name is None :
+            name = nodexml.get("id")
+        pname=""
+        if parentxml is not None :
+            pname = parentxml.get("name")
+            if pname is None or pname == '':
+                pname = parentxml.get("id")        
+#        print "pname",name
+        onode=None      
+#        print "nodeToGeom type", type(node)
+        if dicgeoms is None :
+            dicgeoms = {}
+        if (type(node)==collada.scene.ExtraNode):
+            return
+        elif (type(node)==collada.scene.GeometryNode):
+            #create a mesh under parent
+            g = node.geometry
+            if g.id not in dicgeoms.keys():
+                dicgeoms[g.id]={}
+                dicgeoms[g.id]["id"]=g.id
+                onode,mesh = self.oneColladaGeom(g,col)
+                dicgeoms[g.id]["node"]=onode
+                dicgeoms[g.id]["mesh"]=mesh
+                dicgeoms[g.id]["instances"]=[]
+                dicgeoms[g.id]["parentmesh"]=None
+                if parentxml is not None :
+                    dicgeoms[gname]["parentmesh"]= self.getObject(parentxml.get("id"))                
+        else :
+#            print "else ",len(node.children)
+#            print "instance_geometry",nodexml.get("instance_geometry")
+            #create an empty
+#            print "else ",name ,type(node),parent
+            if len(node.children) == 1 and (type(node.children[0])==collada.scene.GeometryNode):
+                    #no empty just get parent name ?
+#                    print "ok one children geom ",node.children[0]
+                    gname = node.children[0].geometry.id
+                    if parentxml is not None :
+                        if gname in dicgeoms.keys():
+#                            print dicgeoms[gname]["parentmesh"]
+                            if dicgeoms[gname]["parentmesh"] is None :
+                                dicgeoms[gname]["parentmesh"]= self.getObject(pname)
+#                            print dicgeoms[gname]["parentmesh"]
+                    if uniq :
+                        onode = self.newEmpty(name)
+        #                print "ok new empty name",onode, name
+                        rot,trans,scale = self.Decompose4x4(node.matrix.transpose().reshape(16))
+                        if parent is not None and onode is not None:
+                            self.reParent(onode, parent )
+                        onode.Set(translation = trans)
+                        onode.Set(rotation = rot)#.reshape(4,4).transpose())                
+                        dicgeoms[gname]["parentmesh"]=onode
+            else :
+                onode = self.newEmpty(name)
+#                print "ok new empty name",onode, name
+                rot,trans,scale = self.Decompose4x4(node.matrix.transpose().reshape(16))
+                if parent is not None and onode is not None:
+                    self.reParent(onode, parent )
+                onode.Set(translation = trans)
+                onode.Set(rotation = rot)#.reshape(4,4).transpose())                
+            if hasattr(node, 'children') and len(node.children) :
+                for j,ch in enumerate(node.children) :
+    #                print "children ",ch.xmlnode.get("name")
+                    ##node,i,col,nodexml,parentxml=None,parent=None,dicgeoms=None
+                    dicgeoms=self.nodeToGeom(ch,j,col,ch.xmlnode,parentxml=nodexml,parent=onode,dicgeoms=dicgeoms)
+        return dicgeoms
+
+    def transformNode(self,node,i,col,parentxmlnode,parent=None) :
+        name = parentxmlnode.get("name")
+#        print "pname",name
+        if name is None :
+            name = parentxmlnode.get("id")
+        print "transformNode parent",name
+        print "transformNode type", type(node)
+        if (type(node)==collada.scene.GeometryNode):
+            pass
+        elif (type(node)==collada.scene.ExtraNode):
+            pass
+        else :
+                #create an empty
+                onode = self.getObject(name)
+                rot,trans,scale = self.Decompose4x4(node.matrix.transpose().reshape(16))
+#                trans = [node.transforms[0].x,node.transforms[0].y,node.transforms[0].z]
+#                rot = []
+#                for i in range(1,4):
+#                    rot.extend([node.transforms[i].x,node.transforms[i].y,node.transforms[i].z,0.0])
+#                rot.extend([0.,0.,0.,1.0])
+#                print "rotation ",rot
+#                print "trans ", trans/1000.0
+#                scale = [node.transforms[4].x,node.transforms[4].y,node.transforms[4].z]
+#                onode.Set(translation = trans)#, rotation=rot*0,scale=scale)
+                onode.Set(translation = trans)
+                onode.Set(rotation = rot)#.reshape(4,4).transpose())
+#                onode.ConcatRotation(rot)
+#                onode.ConcatTranslation(trans)
+#                onode.Set(matrix)
+                self.update()
+#                print onode.translation
+        if hasattr(node, 'children') and len(node.children) : 
+            for j,ch in enumerate(node.children) :
+#                print "children ",ch.xmlnode.get("name")
+                self.transformNode(ch,j,col,ch.xmlnode,parent=onode)                
+
+    def decomposeColladaGeom(self,g,col):
+        name = g.name
+        if name == '' :
+            name = g.id
+        v=g.primitives[0].vertex#multiple primitive ?
+        nf = len(g.primitives[0].vertex_index)
+        sh = g.primitives[0].vertex_index.shape
+        if len(sh) == 2 and sh[1] == 3 :
+            f= g.primitives[0].vertex_index
+        else :
+            f=g.primitives[0].vertex_index.reshape((nf/3,3))
+        n=g.primitives[0].normal
+        ni = g.primitives[0].normal_index
+        vn = self.getNormals(f,v,n,ni)            
+        return v,vn,f.tolist()
+
+    def oneColladaGeom(self,g,col):
+        name = g.name
+        if name == '' :
+            name = g.id
+        v=g.primitives[0].vertex#multiple primitive ?
+        nf = len(g.primitives[0].vertex_index)
+        sh = g.primitives[0].vertex_index.shape
+        if len(sh) == 2 and sh[1] == 3 :
+            f= g.primitives[0].vertex_index
+        else :
+            f=g.primitives[0].vertex_index.reshape((nf/3,3))
+        n=g.primitives[0].normal
+        ni = g.primitives[0].normal_index
+        vn = self.getNormals(f,v,n,ni)            
+        onode,mesh = self.createsNmesh(name,v,vn,f.tolist(),smooth=True)
+        mesh.inheritMaterial = False
+        color = [1.,1.,1.]                
+        mat = self.getColladaMaterial(g,col)
+        if mat is not None :
+            if type(mat.effect.diffuse) == collada.material.Map:
+                color = [1,1,1]
+                #get he uvset
+#                        uvset = (1.0+node.geometry.primitives[0].texcoordset[0])/2.0 #-1.0 -> 1.0 to 0.0 -> 1.0
+                uvset = g.primitives[0].texcoordset[0]
+                uvseti = g.primitives[0].texcoord_indexset[0]
+                uv = self.TextureFaceCoordintesToVertexCoordinates(v,f,uvset,uvseti)
+#                        mesh.Set(textureCoords = uv)
+                impath  = mat.effect.diffuse.sampler.surface.image.path
+                #clean the path
+                impath=impath.replace("file:////","")
+#                        texture = self.createTexturedMaterial(mat.effect.diffuse.sampler.surface.image.id,impath)
+#                        self.assignMaterial(mesh,texture,texture=True)
+#                        self.changeObjColorMat(mesh,color)
+#                        mesh.Set(textureCoords = uv)
+            else :
+                color = mat.effect.diffuse[0:3]
+                self.changeObjColorMat(mesh,color)
+            matd = mesh.materials[1028]
+            if mat.effect.ambient != None and type(mat.effect.ambient) != collada.material.Map:
+                matd.prop[matd.AMBI] = mat.effect.ambient[0:3]            
+        return onode,mesh
+        
+    def buildGeometries(self,col):
+        dicgeoms={}
+        geoms=col.geometries
+        for g in geoms:
+            dicgeoms[g.id]={}
+            dicgeoms[g.id]["id"]=g.id
+            if self.nogui:
+                v,vn,f = self.decomposeColladaGeom(g,col)
+                dicgeoms[g.id]["node"]=None
+                dicgeoms[g.id]["mesh"]=v,vn,f
+            else :
+                onode,mesh = self.oneColladaGeom(g,col)
+                dicgeoms[g.id]["node"]=onode
+                dicgeoms[g.id]["mesh"]=mesh
+            dicgeoms[g.id]["instances"]=[]
+            dicgeoms[g.id]["parentmesh"]=None
+        return dicgeoms 
+                
+    def read(self,filename,**kw):
+        fileName, fileExtension = os.path.splitext(filename)
+#        import collada
+        print "load ",filename
+        if fileExtension == ".dae" :
+            col = collada.Collada(filename)#, ignore=[collada.DaeUnsupportedError,
+                                            #collada.DaeBrokenRefError])
+            dicgeoms =  self.buildGeometries(col)
+            if self.nogui : 
+                return dicgeoms
+            boundgeoms = list(col.scene.objects('geometry'))
+            for bg in boundgeoms:
+                if bg.original.id in dicgeoms:
+                    node = dicgeoms[bg.original.id]["node"]
+                    dicgeoms[bg.original.id]["instances"].append(bg.matrix)
+            #for each nodein the scene creae an empty 
+            #for each primtive in the scene create an indeedPolygins-
+            uniq = False
+            if len(col.scene.nodes) == 1 :
+                uniq = True
+            for i,node in enumerate(col.scene.nodes) : 
+                #node,i,col,nodexml,parentxml=None,parent=None,dicgeoms=None
+                dicgeoms=self.nodeToGeom(node,i,col,col.scene.xmlnode[i],parentxml=None,dicgeoms=dicgeoms,uniq =uniq)
+            for g in dicgeoms :
+                node = dicgeoms[g]["node"]
+                i = dicgeoms[g]["instances"]
+#                print node,g,i
+                if len(i) :
+                    if dicgeoms[g]["parentmesh"]  is not None :
+                        self.reParent(node, dicgeoms[g]["parentmesh"] )
+                        node.Set(instanceMatrices = i)
+            return boundgeoms,dicgeoms,col
+#            for i,node in enumerate(col.scene.nodes) : 
+#                self.transformNode(node,i,col,col.scene.xmlnode[i])
+        else :
+            from DejaVu.IndexedPolygons import IndexedPolygonsFromFile
+            geomS = IndexedPolygonsFromFile(filename, fileName)
+            self.AddObject(geoms)             
+#        raw_input()
+        
+    def write(self,listObj,**kw):
+        pass
+    #DejaVu.indexedPolygon have also this function
+
+    def writeToFile(self,polygon,filename):
+        """
+        Write the given polygon mesh data (vertices, faces, normal, face normal) in the DejaVu format.
+        
+        Create two files : filename.indpolvert and filename.indpolface. 
+        
+        See writeMeshToFile
+        
+        @type  polygon: hostObj/hostMesh/String
+        @param polygon: the polygon to export in DejaVu format
+        @type  filename: string
+        @param filename: the destinaon filename.      
+        """
+        print(polygon,self.getName(polygon))
+        #get shild ?
+        if isinstance(polygon,IndexedPolygons):
+            polygon.writeToFile(filename)
+
+
 #        
 #    ##############################AR METHODS#######################################
 #    def ARstep(mv):

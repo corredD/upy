@@ -945,7 +945,7 @@ class blenderUI:
         """  
         Blender.Draw.PupMenu("ERROR: "+errormsg)
         
-    def drawQuestion(self,title,question=""):
+    def drawQuestion(self,title="",question=""):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -1138,7 +1138,7 @@ class blenderUI:
         size=0
         for i,blc in enumerate(bloc):
             for item in blc:
-                print item,item["height"]
+                print item, item["height"]
                 size+=item["height"]*self.scale
 #        print (size,self.limit_scrollbar)
         if size > self.limit_scrollbar:
@@ -1740,7 +1740,7 @@ class blenderUI:
         """  
         if elem["type"] == "sliders":
             #check if float or int !
-            print type(elem["variable"].val)
+            #print type(elem["variable"].val)
             if type(elem["variable"].val) is int :
                 return int(elem["variable"].val)
             else :
@@ -1827,6 +1827,7 @@ class blenderUI:
         Blender.Window.QRedrawAll()  
         Blender.Redraw()
 
+    @classmethod
     def _restore(self,rkey,dkey=None):
         """
         Function used to restore the windows data, usefull for plugin
@@ -1843,7 +1844,8 @@ class blenderUI:
                 return rdict
         else:
             return None
-
+    
+    @classmethod
     def _store(self,rkey,dict):
         """
         Function used to store the windows data, usefull for plugin
@@ -1950,7 +1952,7 @@ class blenderUI:
         
 class blenderUIDialog(blenderUI,uiAdaptor):
     def __init__(self,**kw):
-        print "init",kw
+        #print "init", kw
         if kw.has_key("title"):
             self.title= kw["title"]
             self.SetTitle(self.title)

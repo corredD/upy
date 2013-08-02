@@ -45,6 +45,11 @@ class c4dUI(gui.GeDialog):
     tab=False
     notebook = None
     ystep = 0
+    scrolling = False
+    
+    def addVariablePropToSc (self, *args):
+        #ghost function 
+        pass
     
     def CoreMessage(self, id, msg):
         """ Hanlde the system event such as key or mouse position """
@@ -135,6 +140,18 @@ class c4dUI(gui.GeDialog):
         #elem["id"] = gui.LinkBoxGui()
         
 
+    def getFlagAlignement(self,options):
+        alignement = {"hleft_scale":c4d.BFH_LEFT|c4d.BFH_SCALE| c4d.BFV_MASK,
+                  "hcenter_scale":c4d.BFH_CENTER|c4d.BFH_SCALE| c4d.BFV_MASK,
+                  "hleft":c4d.BFH_LEFT| c4d.BFV_MASK,
+                  "hfit":c4d.BFH_FIT| c4d.BFV_MASK,
+                  "hfit_scale":c4d.BFH_SCALEFIT| c4d.BFV_MASK,
+                  "hcenter":c4d.BFH_CENTER| c4d.BFV_MASK,
+                  }
+        if type(options) is int or options not in alignement :
+            return options
+        return alignement[options]
+
     def drawButton(self,elem,x,y,w=None,h=None):
         """ Draw a Button 
         @type  elem: dictionary
@@ -148,10 +165,15 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """        
-        self.AddButton(id=elem["id"], flags=c4d.BFH_CENTER | c4d.BFV_MASK,
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+        self.AddButton(id=elem["id"], flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale,
-                            name=elem["name"])
+                            name=name)
 
     def drawCheckBox(self,elem,x,y,w=None,h=None):
         """ Draw a checkBox 
@@ -165,11 +187,19 @@ class c4dUI(gui.GeDialog):
         @param w: force the width of the item
         @type  h: int
         @param h: force the height of the item
-        """        
-        self.AddCheckbox(id=elem["id"],flags=c4d.BFH_SCALEFIT,
-                                name=elem["name"],
+        """ 
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK    
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+        self.AddCheckbox(id=elem["id"],flags=elem["alignement"],#BFH_SCALEFIT,
+                                name=name,
                                 initw=elem["width"]*self.scale,
                                 inith=elem["height"]*self.scale)
+        if elem["value"] is not None :
+            self.SetBool(elem["id"],elem["value"])
+        
                                 
     def resetPMenu(self,elem):
         """ Add an entry to the given pulldown menu 
@@ -203,7 +233,10 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """            
-        self.AddComboBox(id=elem["id"],flags=c4d.BFH_LEFT,                            
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_LEFT|c4d.BFH_SCALEFIT
+
+        self.AddComboBox(id=elem["id"],flags=elem["alignement"],                            
                          initw=elem["width"]*self.scale)
 #                         inith=elem["height"]*self.scale)
         [self.AddChild(elem["id"],x[0],x[1]) for x in enumerate(elem["value"])]
@@ -239,7 +272,9 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """            
-        self.AddStaticText(label["id"],flags=c4d.BFH_LEFT)
+        if label["alignement"] is None :
+            label["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
+        self.AddStaticText(label["id"],flags=label["alignement"])#BFH_SCALEFIT)#|c4d.BFV_SCALEFIT)#c4d.BFH_LEFT)c4d.BFH_LEFT|
         self.SetString(label["id"],label["label"])
 
     def drawStringArea(self,elem,x,y,w=None,h=None):
@@ -255,8 +290,10 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """          
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
         self.AddMultiLineEditText(id=elem["id"],
-                            flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
+                            flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale,                              
                             style=c4d.DR_MULTILINE_SYNTAXCOLOR)
@@ -275,8 +312,10 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """         
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
         self.AddEditText(id=elem["id"], 
-                            flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,
+                            flags=elem["alignement"],#| c4d.BFV_MASK,#BFH_CENTER
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale)
         self.SetString(elem["id"],elem["value"])
@@ -294,8 +333,10 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """                
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
         self.AddEditSlider(id=elem["id"], 
-                            flags=c4d.BFH_SCALEFIT,
+                            flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale)
         self.SetReal(elem["id"],float(elem["variable"]),float(elem["mini"]),  
@@ -314,10 +355,12 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """     
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
         if elem["value"] is None :
             elem["value"] = elem["variable"]
         self.AddEditNumberArrows(id=elem["id"], 
-                            flags=c4d.BFH_SCALEFIT,
+                            flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale)
         self.SetLong(elem["id"],int(elem["value"]),int(elem["mini"]),
@@ -336,10 +379,19 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """      
+        if elem["alignement"] is None :
+            elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
         if elem["value"] is None :
             elem["value"] = elem["variable"]
+        if elem["value"] is None :
+            elem["value"] =0.0
+        if elem["maxi"] is None :
+            elem["maxi"] =0.0
+        if elem["mini"] is None :
+            elem["mini"] =0.0            
+        #print (elem["name"],elem["value"],elem["variable"],type(elem["variable"]),type(elem["value"]))
         self.AddEditNumberArrows(id=elem["id"], 
-                            flags=c4d.BFH_SCALEFIT,
+                            flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale)
         #print float(elem["value"]),float(elem["mini"]),float(elem["maxi"])
@@ -385,8 +437,10 @@ class c4dUI(gui.GeDialog):
         @type  h: int
         @param h: force the height of the item
         """         
+        if elem["alignement"] is None :
+            elem["alignement"] = elem["alignement"]
 #        print elem
-        self.AddColorField(id=elem["id"],flags=c4d.BFH_LEFT,
+        self.AddColorField(id=elem["id"],flags=elem["alignement"],
                             initw=elem["width"]*self.scale,
                             inith=elem["height"]*self.scale)
         if elem["value"]is not None:
@@ -401,7 +455,7 @@ class c4dUI(gui.GeDialog):
         """          
         c4d.gui.MessageDialog("ERROR: "+errormsg)
  
-    def drawQuestion(self,title="",question=""):
+    def drawQuestion(self,title="",question="",callback=None):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -410,9 +464,13 @@ class c4dUI(gui.GeDialog):
         
         @rtype:   bool
         @return:  the answer     
-        """            
-        return c4d.gui.QuestionDialog(question)
-
+        """
+        res = c4d.gui.QuestionDialog(question)
+        if  callback is not None :           
+            callback(res)
+        else :
+            return res
+            
     def drawMessage(self,title="",message=""):
         """ Draw a message dialog
         @type  title: string
@@ -452,23 +510,36 @@ class c4dUI(gui.GeDialog):
         
         @rtype:   int
         @return:  the new horizontal position, used for blender
-        """            
+        """          
+        grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_MASK
+        if bloc["scrolling"]:
+            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
+                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT,)
+#                             inith=100,initw=1000)              
+            grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT
+#            self.GroupBegin(id=50001,cols=1,flags=grFlag)    
         if bloc["collapse"] :
-            collapse = c4d.BFV_BORDERGROUP_FOLD
+            collapse = c4d.BFV_BORDERGROUP_FOLD#|c4d.BFV_GRIDGROUP_EQUALCOLS
         else :
-            collapse = c4d.BFV_BORDERGROUP_FOLD|c4d.BFV_BORDERGROUP_FOLD_OPEN
+            collapse = c4d.BFV_BORDERGROUP_FOLD|c4d.BFV_BORDERGROUP_FOLD_OPEN#|c4d.BFV_GRIDGROUP_EQUALCOLS
         self.GroupBegin(id=bloc["id"],title=bloc["name"],cols=1,
-                                flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,
+                                flags=grFlag,#c4d.BFV_MASK,
                                 groupflags=collapse)
         self.GroupBorder(c4d.BORDER_THIN_IN|c4d.BORDER_WITH_TITLE|c4d.BORDER_MASK)
+#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
         for k,blck in enumerate(bloc["elems"]):
-            self.GroupBegin(id=int(k*25),title=str(k),cols=len(blck),
-                                                   flags=c4d.BFH_SCALEFIT)
-            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
+            self.startBlock(m=len(blck))
+#            self.GroupBegin(id=int(k*25),title=str(k),cols=len(blck),
+#                                                   flags=c4d.BFH_SCALEFIT)
+#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
             for index, item in enumerate(blck):
                 self._drawElem(item,x,y)
             self.endBlock()
+#        self.endBlock()
         self.endBlock()
+        if bloc["scrolling"]:
+            self.endBlock()#scroll
+#            self.endBlock()#main
         return y
 
     def drawTab(self,bloc,x,y):
@@ -484,39 +555,59 @@ class c4dUI(gui.GeDialog):
         
         @rtype:   int
         @return:  the new horizontal position, used for blender
-        """            
+        """      
+        #TODO the Group system is confusin and nee to be improved inuPy
         #can we change color?
-#        self.LayoutFlushGroup(bloc["id"])
-#        self.TabGroupBegin(id=bloc["id"],
-#            flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,tabtype=0)
         if not self.tab :
             self.notebook = self.TabGroupBegin(id=bloc["id"]*1000,#title=bloc["name"],cols=1,
-                                flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,
+                                flags=c4d.BFH_SCALEFIT | c4d.BFV_SCALEFIT,
                                 tabtype=c4d.TAB_TABS)
-            #self.GroupBorder(c4d.BORDER_THIN_IN|c4d.BORDER_MASK)#c4d.BORDER_BLACK|BORDER_WITH_TITLE
+            self.GroupBorder(c4d.BORDER_THIN_IN|c4d.BORDER_MASK)#c4d.BORDER_BLACK|BORDER_WITH_TITLE
             self.tab = True
+#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
+        grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_MASK
+        if bloc["scrolling"]:
+            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
+                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
+#                             inith=100,initw=1000)              
+            grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT
+#            self.GroupBorderNoTitle(c4d.BORDER_NONE|c4d.BORDER_WITH_TITLE)
         #should use max number of column?
         #get max nb elem:
         max = 0
         for k,blck in enumerate(bloc["elems"]):
             if len(blck) > max :
-                max = len(blck)
-        self.GroupBegin(id=bloc["id"],title=bloc["name"],cols=1,
-                                flags=c4d.BFH_SCALEFIT|c4d.BFH_MASK|c4d.BFV_SCALEFIT|c4d.BFV_MASK)
-#        self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
+                maxi = len(blck)
+        self.GroupBegin(id=bloc["id"],title=bloc["name"],cols=1,#initw=self.w,inith=self.h,
+                            flags=grFlag)#c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT)#BFH_CENTER)
+        if bloc["scrolling"]:
+            self.GroupBorder(c4d.BORDER_THIN_IN|c4d.BORDER_WITH_TITLE|c4d.BORDER_WITH_TITLE_BOLD| c4d.BORDER_MASK)
+        else :
+            self.GroupBorderNoTitle(c4d.BORDER_THIN_IN|c4d.BORDER_MASK)
+#        if self.scrolling:
+#            self.ScrollGroupBegin(id=bloc["id"]*5000, flags=c4d.BFH_CENTER | c4d.BFV_MASK,#initw=self.w,inith=self.h,
+#    scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT|c4d.SCROLLGROUP_BORDERIN|c4d.SCROLLGROUP_STATUSBAR |  c4d.SCROLLGROUP_NOBLIT)  
+#        BFV_SCALEFIT | BFH_SCALEFIT,
+#                       SCROLLGROUP_STATUSBAR | SCROLLGROUP_BORDERIN |
+#                       SCROLLGROUP_NOBLIT
+        
         for k,blck in enumerate(bloc["elems"]):
-#            cmds.rowLayout(numberOfColumns=len(blck))
-#            self.startBlock(m=len(blck))
-            #print len(blck)
-            self.GroupBegin(id=int(k*25),cols=len(blck),#title=str(k),
-                                                   flags=c4d.BFH_SCALEFIT| c4d.BFH_MASK|c4d.BFV_SCALEFIT|c4d.BFV_MASK)
-#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
-##            self.GroupBorder(c4d.BORDER_ACTIVE_1|c4d.BORDER_WITH_TITLE)
-            for index, item in enumerate(blck):
-                self._drawElem(item,x,y)
-            self.endBlock()
-        self.endBlock()        
-#        self.endBlock()
+            if type(blck) is list :
+                self.GroupBegin(id=int(k*25),cols=len(blck),title=str(k),
+                        flags=c4d.BFH_SCALEFIT)#c4d.BFH_CENTER)
+                for index, item in enumerate(blck):
+                    self._drawElem(item,x,y)
+                self.endBlock()
+            else : #dictionary: multiple line / format dict?
+                if "0" in blck:
+                    y = self._drawGroup(blck,x,y)
+                else :
+                    y = self._drawFrame(blck,x,y)
+#        if self.scrolling:
+#            self.endBlock()        
+        if bloc["scrolling"]:
+           self.endBlock()
+        self.endBlock()
 #        self.LayoutChanged(bloc["id"])
         return y
 
@@ -566,7 +657,7 @@ class c4dUI(gui.GeDialog):
  
     def startBlock(self,m=1,n=1):
         if m == 0:
-            m = 1
+            m = 1  
         self.GroupBegin(id=1,flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,
                            cols=m, rows=n)
         self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
@@ -574,25 +665,41 @@ class c4dUI(gui.GeDialog):
         
     def endBlock(self):
         self.GroupEnd()
+        #self.GroupEnd()
 
-#    def startLayout(self):
-#        SCROLLGROUP_VERT 	Allow the group to scroll vertically.
-#        SCROLLGROUP_HORIZ 	Allow the group to scroll horizontally.
-#        SCROLLGROUP_NOBLIT 	Always redraw the whole group, not just new areas, when scrolling.
-#        SCROLLGROUP_LEFT 	Create the vertical slider to the left.
-#        SCROLLGROUP_BORDERIN 	Display a small border around the scroll group.
-#        SCROLLGROUP_STATUSBAR 	Create a status bar for the scroll group.
-#        SCROLLGROUP_AUTOHORIZ 	Only show horizontal slider if needed.
-#        SCROLLGROUP_AUTOVERT 	Only show vertical slider if needed.
-#        SCROLLGROUP_NOSCROLLER 	No scroller.
-#        SCROLLGROUP_NOVGAP 	No vertical gap.
-#        SCROLLGROUP_STATUSBAR_EXT_GROUP 	Creates an extern group within the statusbar.
-##        self.ScrollGroupBegin(id=1, flags=c4d.BFH_SCALEFIT | c4d.BFV_MASK,
-#                              scrollflags=c4d.SCROLLGROUP_VERT)
-        #self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
-#        
+    def startLayout(self):
+        grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_MASK
+        if self.scrolling:
+            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
+                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT,
+                             inith=self.h,initw=self.w)  
+            grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT
+        
+#        self.GroupBegin(id=1,flags=grFlag ,
+#                   cols=1)
     def endLayout(self):
-        self.GroupEnd()#self.Activate(1)#GroupEnd()
+#        self.GroupEnd()
+        if self.scrolling:
+            self.GroupEnd()
+
+##        SCROLLGROUP_VERT 	Allow the group to scroll vertically.
+##        SCROLLGROUP_HORIZ 	Allow the group to scroll horizontally.
+##        SCROLLGROUP_NOBLIT 	Always redraw the whole group, not just new areas, when scrolling.
+##        SCROLLGROUP_LEFT 	Create the vertical slider to the left.
+##        SCROLLGROUP_BORDERIN 	Display a small border around the scroll group.
+##        SCROLLGROUP_STATUSBAR 	Create a status bar for the scroll group.
+##        SCROLLGROUP_AUTOHORIZ 	Only show horizontal slider if needed.
+##        SCROLLGROUP_AUTOVERT 	Only show vertical slider if needed.
+##        SCROLLGROUP_NOSCROLLER 	No scroller.
+##        SCROLLGROUP_NOVGAP 	No vertical gap.
+##        SCROLLGROUP_STATUSBAR_EXT_GROUP 	Creates an extern group within the statusbar.
+#        if self.scrolling:
+#            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT | c4d.BFV_SCALEFIT,
+#                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)  
+#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
+##        
+#        if self.tab:
+#            self.GroupEnd()#self.Activate(1)#GroupEnd()
 #        
     def getString(self,elem):
         """ Return the current string value of the String Input elem
@@ -651,8 +758,8 @@ class c4dUI(gui.GeDialog):
         @param elem: the elem input dictionary       
         @type  val: Float
         @param val: the new Float value
-        """                                
-        return self.SetReal(elem["id"],val)
+        """
+        return self.SetReal(elem["id"],float(val))
 
     def getBool(self,elem):
         """ Return the current Bool value of the Input elem
@@ -692,7 +799,7 @@ class c4dUI(gui.GeDialog):
         @type  val: Int
         @param val: the new Int value
         """ 
-        return self.SetLong(elem["id"],val)
+        return self.SetLong(elem["id"],int(val))
         
     def getColor(self,elem):
         """ Return the current Color value of the Input elem
@@ -719,7 +826,10 @@ class c4dUI(gui.GeDialog):
         c4dcol['color'].y=val[1]
         c4dcol['color'].z=val[2]
         self.SetColorField(elem["id"],c4dcol['color'],1.0,1.0,0)
-        
+
+    def setAction(self,elem,callback):
+        elem["action"] = callback
+                
     def updateSlider(self,elem,mini,maxi,default,step):
         """ Update the state of the given slider, ie format, min, maxi, step
         @type  elem: dictionary
@@ -738,7 +848,8 @@ class c4dUI(gui.GeDialog):
         else :
             doit = self.SetReal
         doit(elem["id"],default,mini,maxi,step)  
-        
+     
+    @classmethod 
     def _restore(self,rkey,dkey=None):
         """
         Function used to restore the windows data, usefull for plugin
@@ -757,7 +868,8 @@ class c4dUI(gui.GeDialog):
             return obj
         else :
             return None
-
+            
+    @classmethod
     def _store(self,rkey,dict):
         """
         Function used to store the windows data, usefull for plugin
@@ -778,11 +890,12 @@ class c4dUI(gui.GeDialog):
         @param id: the id of the dialog
         @type  callback: function
         @param callback: the associate callback
-        """        
+        """     
+        print (dial,id,asynchro)
         if asynchro :
-            dial.Open(c4d.DLG_TYPE_ASYNC, pluginid=id, defaultw=250, defaulth=200)
+            dial.Open(c4d.DLG_TYPE_ASYNC, pluginid=id, defaultw=dial.w, defaulth=dial.h)
         else :
-            dial.Open(c4d.DLG_TYPE_MODAL, pluginid=id, defaultw=250, defaulth=200)
+            dial.Open(c4d.DLG_TYPE_MODAL, pluginid=id, defaultw=dial.w, defaulth=dial.h)
     
     def close(self,*args):
         """ Close the windows"""

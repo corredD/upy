@@ -9,21 +9,18 @@ Created on Wed Dec 29 13:09:18 2010
 
 import sys,os
 #pyubic have to be in the pythonpath, if not add it
-pathtopyubic = "/Users/ludo/DEV/"
-sys.path.insert(0,pathtopyubic)
+#pathtopyubic = "/Users/ludo/DEV/upy/trunk/"
+#sys.path.insert(0,pathtopyubic)
 
 import upy
-#upy.setUIClass("qt")
 upy.setUIClass()
-#from pyubic.qtUI import qtUIDialog as uiadaptor
-
 from upy import uiadaptor
-#from pyubic.qtUI import qtUIDialog as uiadaptor
-#from pyubic.tkUI import tkUIDialog as uiadaptor
+
+#weonly import the adaptor as thsi examl will only show widget features.
 
 class LayoutUI(uiadaptor):
     def setup(self):
-        self.w = 200
+        self.w = 400
         self.initWidget(id=10)
         self.setupLayout()
         
@@ -31,50 +28,33 @@ class LayoutUI(uiadaptor):
     def CreateLayout(self):
         self._createLayout()
         return 1
-
     def Command(self,*args):
 #        print args
         self._command(args)
         return 1
-
-    def checkbox1_cb(self,*args):
-        #get the stat
-        isCheck=self.getBool(self.CHECKBOXS["button1"])
-        print("button1 ", isCheck)
-#        self.drawMessage("button1 "+str(isCheck))
-                
-    def checkbox2_cb(self,*args):
-        #get the stat
-        isCheck=self.getBool(self.CHECKBOXS["button2"])
-        print("button2 ", isCheck)
-        
-    def checkbox3_cb(self,*args):
-        #get the stat
-        isCheck=self.getBool(self.CHECKBOXS["button3"])
-        print("button3 ", isCheck)
         
     def initWidget(self,id=None):
         #this where we define the buttons
-        self.menuorder = ["File","Edit","Help"]
-        self.submenu = {}
-        for i in range(10):
-            self.submenu[str(self.id-1)]=self._addElemt(name="file"+str(i),
-                                                        action=self.recentfile_cb)
+        #self.menuorder = ["File","Edit","Help"]
+        #self.submenu = {}
+        #for i in range(10):
+        #    self.submenu[str(self.id-1)]=self._addElemt(name="file"+str(i),
+        #                                                action=self.recentfile_cb)
         #menu are always define by the MENU_ID dictionary and the self.menuorder
-        self.MENU_ID={"File":
-                      [self._addElemt(name="Recent Files",action=None,sub=self.submenu),
-                      self._addElemt(name="Open",action=self.open_cb),
-                      self._addElemt(name="Save",action=self.save_cb),
-                      self._addElemt(name="Exit",action=self.close)],
-                       "Edit" :
-                      [self._addElemt(name="Options",action=self.options_cb)],
-                       "Help" : 
-                      [self._addElemt(name="About",action=self.drawAbout),#self.drawAbout},
-                       self._addElemt(name="Help",action=self.drawHelp),#self.launchBrowser},
-                      ],
-                       }
-        if self.host == "blender25":
-            self.setupMenu()
+        #self.MENU_ID={"File":
+        #              [self._addElemt(name="Recent Files",action=None,sub=self.submenu),
+        #              self._addElemt(name="Open",action=self.open_cb),
+        #              self._addElemt(name="Save",action=self.save_cb),
+        #              self._addElemt(name="Exit",action=self.close)],
+        #               "Edit" :
+        #              [self._addElemt(name="Options",action=self.options_cb)],
+        #               "Help" : 
+        #              [self._addElemt(name="About",action=self.drawAbout),#self.drawAbout},
+        #               self._addElemt(name="Help",action=self.drawHelp),#self.launchBrowser},
+        #              ],
+        #               }
+        #if self.host == "blender25":
+        #    self.setupMenu()
         self.CHECKBOXS ={
             "checkbox1":self._addElemt(name="checkbox1",width=80,height=10,
                                       action=self.checkbox1_cb,type="checkbox",icon=None,
@@ -91,6 +71,8 @@ class LayoutUI(uiadaptor):
                                       action=self.button1_cb,type="button",icon=None),
             "button2":self._addElemt(name="button2",width=80,height=10,
                                      action=self.button2_cb,type="button",icon=None),
+            "close" : self._addElemt(name="close",width=80,height=10,
+                                     action=self._close,type="button",icon=None),
                     }
         self.INPUT={
             "string":self._addElemt(name="string input",action=self.input_string_cb,
@@ -139,11 +121,13 @@ class LayoutUI(uiadaptor):
                                     variable=self._vliste2,
                                     type="pullMenu",),}
         #And the pop-up
-        
+    def _close(self,*args):
+        self.close()
+
     def setupLayout(self):
         #this where we define the Layout
         #this wil make three button on a row
-        typeLayout = "frame"
+        typeLayout = "tab"
         self._layout = []
         #checkbox frame
         elemFrame1=[]
@@ -184,10 +168,25 @@ class LayoutUI(uiadaptor):
         elemFrame1.append([self.COMB_BOX["menu1"],self.COMB_BOX["menu2"]])
         frame1 = self._addLayout(id=160,name="PullDown Menu",elems=elemFrame1,type=typeLayout)
         self._layout.append(frame1)
-
+        self._layout.append([self.BTN["close"]])
 #===============================================================================
 #     Callback function
-#===============================================================================
+#===============================================================================   
+    def checkbox1_cb(self,*args):
+        #get the stat
+        isCheck=self.getBool(self.CHECKBOXS["button1"])
+        print("button1 ", isCheck)
+                
+    def checkbox2_cb(self,*args):
+        #get the stat
+        isCheck=self.getBool(self.CHECKBOXS["button2"])
+        print("button2 ", isCheck)
+        
+    def checkbox3_cb(self,*args):
+        #get the stat
+        isCheck=self.getBool(self.CHECKBOXS["button3"])
+        print("button3 ", isCheck)
+
     def recentfile_cb(self,*args):
         print("recent_file ",args, " args")
         print(args,self.submenu[str(args[0]-1)])
@@ -268,7 +267,7 @@ if uiadaptor.host == "tk":
     #vi = Viewer()    
     #require a master
     try :
-        import tkinter
+        import tkinter #python3
     except :
         import Tkinter as tkinter
  
@@ -294,4 +293,4 @@ mygui.setup()
 mygui.display()
 if uiadaptor.host == "qt": app.exec_()#work without it ?
 
-##execfile("/Users/ludo/DEV/pyubic/examples/layout.py")
+##execfile("/Users/ludo/DEV/upy/trunk/upy/examples/layout.py")

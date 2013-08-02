@@ -7,13 +7,12 @@ Created on Thu Feb 17 10:02:01 2011
 #example for a script not a plugin ....
 import sys,os
 #pyubic have to be in the pythonpath, if not add it
-upypath = "/Users/ludo/DEV/"
-sys.path.append(upypath)
+#upypath = "/Users/ludo/pathtoupy/"
+#sys.path.append(upypath)
 
 import upy
 upy.setUIClass()
 
-#should have a template ?
 from upy import uiadaptor
 helperClass = upy.getHelperClass()
 
@@ -22,7 +21,7 @@ import math
 
 import os
 import types
-import Tkinter
+#import Tkinter
 import Pmw
 from weakref import ref 
 from copy import deepcopy
@@ -656,11 +655,19 @@ class Tetra:
         #self.meshs= None
         self.faces = None
         self.helper = helper
+        self.mode ='gmv'
+        self.current_mesh= ""
         if helper is None :
             self.helper = helperClass(**kw)
         if self.filename is not None:
-            self.nodes, self.cells, self.nvars, self.cvars = self.parse()
-            self.getColors()
+            fileName, fileExtension = os.path.splitext(self.filename)
+            if fileExtension == ".gmv":
+                self.nodes, self.cells, self.nvars, self.cvars = self.parse()
+                self.getColors()
+            elif fileExtension == "" :
+                self.mode ='c'
+                self.nodes, self.cells, self.nvars, self.cvars = self.parseTxt() 
+                self.getColors()
             if self.name is None:
                 self.name = os.path.splitext(os.path.basename(filename))[0]
 
@@ -695,9 +702,46 @@ class Tetra:
             self.filename = kw["filename"]
         if kw.has_key("parse"):
             if kw["parse"] :
-                self.nodes, self.cells, self.nvars, self.cvars = self.parse()
-                self.getColors()
+                if self.filename is not None:
+                    fileName, fileExtension = os.path.splitext(self.filename)
+                    if fileExtension == ".gmv":
+                        self.nodes, self.cells, self.nvars, self.cvars = self.parse()
+                        self.getColors()
+                    elif fileExtension == "" :
+                        self.mode ='c'
+                        self.nodes, self.cells, self.nvars, self.cvars = self.parseTxt() 
+                        self.getColors()
+                    if self.name is None:
+                        self.name = os.path.splitext(os.path.basename(filename))[0]
     
+    def parseTxt(self,filename=None):
+        if filename is None :
+            filename = self.filename
+        if filename is None :
+            return None,None,None,None
+        #parse the vertices
+        f = open(filename+"_vertices.txt")
+        lines = f.readlines()
+        f.close()
+        nodes =[]
+        for i in range(1,len(lines)) :
+            l = lines[i].split()
+            nodes.append([float(l[0]),float(l[1]),float(l[2])])
+        #parse the quad
+        f = open(filename+"_elements.txt")
+        lines = f.readlines()
+        f.close()
+        quads=[]
+        for i in range(1,len(lines)) :
+            l = lines[i].split()
+            quads.append([int(l[3])-1,int(l[1])-1,int(l[0])-1,int(l[2])-1])
+        nvars = {}
+        data = numpy.load(filename+"_wave.npy")
+        dt = data.transpose()#invert ?
+        for i in range(len(dt)):
+            nvars[str(i)] = dt[i]
+        return nodes,quads,nvars,None
+        
     def parse(self,filename=None):
         if filename is None :
             filename = self.filename
@@ -755,8 +799,9 @@ class Tetra:
         return nodes, cells, nvars, cvars
 
     def getColors(self):
-        from DejaVu.colorTool import Map, RGBRamp,RedWhiteBlueRamp
+        from DejaVu.colorTool import Map, RGBRamp#,RedWhiteBlueRamp
         from DejaVu.colorMap import ColorMap
+        from upy.colors import RedWhiteBlueRamp
         #from DejaVu.colorMapLegend import ColorMapLegend
         ramp = RedWhiteBlueRamp()#RGBRamp()
         self.cmap = ColorMap(name="tetra", ramp=ramp)
@@ -777,18 +822,19 @@ class Tetra:
                 for c in colors:
                     cols.extend( (c,)*4 )
                 self.ccolors[k] = cols
-
-    
+   
     def makeFaces(self,cells=None):
         if cells is None :
             cells = self.cells
             if self.cells is None :
                 return None
+        if self.mode =='c' : 
+            return cells
         # faces are counter clockwise in the file
         faces = {} # dict used to avoid duplicates
         allFaceList = [] # list of triangular faces
         allTetFaces = [] # list of face indices for faces of each tet
-                      # negative index means reverse indices to make clockwise
+                         # negative index means reverse indices to make clockwise
         nbf = 0
         nbt = 0
         n = 0
@@ -802,7 +848,7 @@ class Tetra:
             return  
         if name is None:
             name = self.name
-        if not self.mesh.has_key(name):
+        if name not in self.mesh:
             if cells is None:
                 f = self.faces
                 if f is None :
@@ -844,36 +890,40 @@ class Tetra:
         if self.helper is None :
             return
         var = self.retrieveColorFromName(key)
-        if self.mesh.has_key(name):
+        if name in self.mesh:
             self.helper.changeColor(self.mesh[name][1],var)#front Line, back fill??
+            self.current_colors=var
 
     def loopOverColor(self,meshname,listeColors=None,nb=None,interpolate=False,interpolateR=10):
         if listeColors is None:
-            listeColors = self.ncolors.values()
+            listeColors = list(self.ncolors.values())
         N = len(listeColors)
         if nb is not None:
             N =nb
         #loop over?
         i=0
         icolor = 0
-        curentcol = self.mesh[meshname][1].materials[1028].GetProperty(1)[1][:,:3]
+        curentcol = self.current_colors#self.mesh[meshname][1].materials[1028].GetProperty(1)[1][:,:3]#current vcolor ?
         while  i < N:
             col1 = listeColors[icolor]
             if interpolate :
                 for j in range(interpolateR):
                     rcol = curentcol + float(j)/float(interpolateR)*(col1-curentcol) 
                     self.helper.changeColor(self.mesh[meshname][1],rcol)
-                    vi.OneRedraw()
-                    vi.update()
+                    self.updateViewer()
+#                    vi.OneRedraw()
+#                    vi.update()
             else :
                 self.helper.changeColor(self.mesh[meshname][1],col1)
-                vi.OneRedraw()
-                vi.update()
+                self.updateViewer()
+#                vi.OneRedraw()
+#                vi.update()
             i+=1
             icolor += 1
             if icolor >= len(listeColors):
                 icolor=0
             curentcol = col1
+            
     def selectCells(self,var,cutoff,cells=None):
         #ex:cellsOn, cellsOff = selectCells(cells, nvars['node_0'], 0.2)
         if cells is None:
@@ -887,7 +937,13 @@ class Tetra:
             else:
                 notSelected.append(cell)
         return selectedCells, notSelected
-                
+
+    def setColorPropertyInt(self,i):
+        if self.mode == 'c':
+            c=self.ncolors[str(i)]
+        else :
+            c=list(self.ncolors.values())[i]        
+        self.helper.changeColor(self.mesh[self.current_mesh][1],c)                
 
 class TetraTools:
     def __init__(self):
@@ -941,6 +997,9 @@ class TetraToolsGui(uiadaptor):
         #we need a File load 
         self.LOADFILE = self._addElemt(name="Browse",width=40,height=10,
                          action=self.browseGMV,type="button")
+        #we need a File load 
+        self.CLOSEBTN = self._addElemt(name="Close",width=40,height=10,
+                         action=self.close,type="button")
                          
         self.PMENU={}
         #current Tetra menu
@@ -1004,12 +1063,14 @@ class TetraToolsGui(uiadaptor):
         self.IN["interpolate"] = self._addElemt(name="Interpolate",width=80,height=10,
                                               action=None,type="checkbox",icon=None,
                                               variable=self.addVariable("int",0))
-        
+        self.IN["timeline"]= self._addElemt(name="Timeline",width=80,height=10,
+                                              action=self.toggleSynchroTimeLine,type="checkbox",icon=None,
+                                              variable=self.addVariable("int",0))
     def setupLayout(self):
         #this where we define the Layout
         #this wil make three button on a row
         self._layout = []
-        self._layout.append([self.LOADFILE,self.LABELS["load"]])
+        self._layout.append([self.LOADFILE,self.LABELS["load"],self.CLOSEBTN])
         #Mesh options layout
         elemFrame1=[]
         elemFrame1.append([self.LABELS["curT"],self.PMENU["tetra"],])
@@ -1019,16 +1080,16 @@ class TetraToolsGui(uiadaptor):
         elemFrame1.append([self.LABELS["makeOff"],self.BTN["buildC"],self.IN["makeOff"]])
         elemFrame1.append([self.PMENU["comp"],self.BTN["color"]])
         elemFrame1.append([self.IN["interpolate"],self.LABELS["lengthInter"],self.IN["lengthInter"],])
-        elemFrame1.append([self.BTN["loopcolor"],self.LABELS["nLoop"],self.IN["nLoop"]])
+        elemFrame1.append([self.BTN["loopcolor"],self.LABELS["nLoop"],self.IN["nLoop"],self.IN["timeline"]])
         frame1 = self._addLayout(name="Mesh options",elems=elemFrame1)
         self._layout.append(frame1)
         
     def loadGMV(self,filename):
         if not filename : return
         gmvname,ext=os.path.splitext(os.path.basename(filename))
-        if ext != ".gmv":
-            self.drawError("Sorry, the plugin required a file withj gmv extension\n")
-            return
+#        if ext != ".gmv":
+#            self.drawError("Sorry, the plugin required a file withj gmv extension\n")
+#            return
         tetra = Tetra(name = gmvname,filename = filename,helper=self.helper)
         self.listeTetra[gmvname] = tetra
         self.listeTetraName.append(gmvname)
@@ -1036,6 +1097,7 @@ class TetraToolsGui(uiadaptor):
         self.addItemToPMenu(self.PMENU["tetra"],str(gmvname))
         #need to update the color PMENU
         self.listeColors=[]
+        key=None
         for key in tetra.ccolors :
             self.listeColors.append(key)
             self.addItemToPMenu(self.PMENU["properties"],str(key))
@@ -1067,13 +1129,13 @@ class TetraToolsGui(uiadaptor):
         cellsOn, cellsOff = self.currentTetra.selectCells(var,cutoff)
         doCellOff = self.getBool(self.IN["makeOff"])
         #make selected cells
-        print len(cellsOn),len(self.currentTetra.cells)
+#        print len(cellsOn),len(self.currentTetra.cells)
         name = key+"_"+str(cutoff)+"_On"
         self.currentTetra.createMesh(name=name,cells=cellsOn)
         self.addItemToPMenu(self.PMENU["comp"],str(name))
         self.listeMesh.append(name)
         if doCellOff:
-            print doCellOff
+#            print doCellOff
             name = key+"_"+str(cutoff)+"_Off"
             self.currentTetra.createMesh(name=name,cells=cellsOff)
             self.addItemToPMenu(self.PMENU["comp"],str(name))
@@ -1083,6 +1145,7 @@ class TetraToolsGui(uiadaptor):
     def setCurTetra(self,*args):
         name = self.listeTetraName[self.getLong(self.PMENU["tetra"])]
         self.currentTetra = self.listeTetra[name]
+        self.currentTetra.current_mesh = self.getVal(self.PMENU["comp"])
         #what else to do , update slider ? and other pulldown menu
         return True
 
@@ -1101,20 +1164,37 @@ class TetraToolsGui(uiadaptor):
         
     def setCurTetraColors(self,*args):
         tetra = self.currentTetra
-        key = self.listeColors[self.getLong(self.PMENU["properties"])]
-        name = self.listeMesh[self.getLong(self.PMENU["comp"])]
+        key = self.getVal(self.PMENU["properties"])#self.listeColors[self.getLong(self.PMENU["properties"])]
+        name = self.getVal(self.PMENU["comp"])#self.listeMesh[self.getLong(self.PMENU["comp"])]
+        self.current_mesh = self.getVal(self.PMENU["comp"])
         tetra.setMeshColor(name,key)
         self.updateViewer()
 
     def loopOverPropertiesColor(self,*args):
         #whats the list
         tetra = self.currentTetra
-        name = self.listeMesh[self.getLong(self.PMENU["comp"])]
+        name = self.getVal(self.PMENU["comp"])#self.listeMesh[self.getLong(self.PMENU["comp"])]
+        self.current_mesh = self.getVal(self.PMENU["comp"])
         interpolate = self.getBool(self.IN["interpolate"])
         nbLoop = self.getLong(self.IN["nLoop"])
         nbInter = self.getLong(self.IN["lengthInter"])
         tetra.loopOverColor(name,nb=nbLoop,interpolate=interpolate,interpolateR=nbInter)
 
+    def toggleSynchroTimeLine(self,*args):
+        tetra = self.currentTetra
+        name = self.getVal(self.PMENU["comp"])#self.listeMesh[self.getLong(self.PMENU["comp"])]
+        tetra.current_mesh = self.getVal(self.PMENU["comp"])
+        interpolate = self.getBool(self.IN["interpolate"])
+        nbLoop = self.getLong(self.IN["nLoop"])
+        nbInter = self.getLong(self.IN["lengthInter"])
+        toggle = self.getBool(self.IN["timeline"])     
+        cb = tetra.setColorPropertyInt
+        if toggle :
+            self.helper.synchronize(cb)
+        else :
+            self.helper.unsynchronize(cb)
+            
+        
 if uiadaptor.host == "tk":
     import DejaVu
     DejaVu.enableVBO = True    
@@ -1129,11 +1209,14 @@ else :
     tetraui.setup()
 #call it
 tetraui.display()
-tetraui.loadGMV("/Users/ludo/out_010.gmv")
+#tetraui.loadGMV("/Users/ludo/DEV/upy/trunk/upy/examples/out_010.gmv")
+tetraui.loadGMV("/Users/ludo/DEV/continuity/quads800")
 tetraui.buildMesh()
-lcolors=tetraui.currentTetra.ncolors.values()
-tetra = tetraui.currentTetrams=tetraui.currentTetra.mesh.values()[0][0]
+lcolors=list(tetraui.currentTetra.ncolors.values())
+#tetra = tetraui.currentTetrams=tetraui.currentTetra.mesh.values()[0][0]
+#T=tetraui.currentTetra
 
+#execfile("/Users/ludo/testTetraPanda.py")
 #this is the command to loop over the different colors properties
 #if the colors is not provide the script will loop over all properties associate to the mesh.
 #tetra.loopOverColor("out_010",listeColors=lcolors,nb=10,interpolate=True,interpolateR=10)

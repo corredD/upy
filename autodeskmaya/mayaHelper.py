@@ -6,7 +6,7 @@ Created on Sun Dec  5 23:30:44 2010
 """
 import sys, os, os.path, struct, math, string
 from math import *
-import numpy    
+#import numpy    
 from types import StringType, ListType
 
 import maya
@@ -16,7 +16,41 @@ import maya.OpenMayaAnim as oma
 import maya.OpenMayaFX as omfx
 
 #base helper class
+from upy import hostHelper
+if hostHelper.usenumpy:
+    import numpy
+    from numpy import matrix
+
 from upy.hostHelper import Helper
+
+lefthand =[[ 1, 0, 0, 0],
+[0, 1, 0, 0],
+[0, 0, -1, 0],
+[0, 0, 0, 1]]
+
+class MayaSynchro:
+    #period problem
+    def __init__(self,cb=None, period=0.1):
+        self.period = period
+        self.callback = None
+        self.timeControl = oma.MAnimControl()
+        if cb is not None :
+            self.doit = cb
+
+    def change_period(self,newP):
+        self.period = newP
+        self.remove_callback()
+        self.set_callback()
+        
+    def set_callback(self):
+        self.callback = om.MTimerMessage.addTimerCallback(self.period,self.doit)
+
+    def remove_callback(self):
+        om.MMessage.removeCallback(self.callback)
+        
+    def doit(self,*args,**kw):#period,time,userData=None):
+        pass
+
 
 class mayaHelper(Helper):
     """
@@ -29,18 +63,22 @@ class mayaHelper(Helper):
     SPLINE = "kNurbsCurve"
     INSTANCE = "kTransform"
     MESH = "kTransform"
-    POLYGON = "kTransform"
-    MESH = "kMesh"
+    POLYGON = "kMesh"#"kTransform"
+#    MESH = "kMesh"
     EMPTY = "kTransform"
     BONES="kJoint"
     PARTICULE = "kParticle"
+    SPHERE = "sphere"
+    CYLINDER = "cylinder"
+    CUBE = "cube"
     IK="kIkHandle"
     msutil = om.MScriptUtil()
     pb = False
     pbinited = False
     host = "maya"
+    LIGHT_OPTIONS = {"Area" : cmds.ambientLight,"Sun" : cmds.directionalLight,"Spot":cmds.spotLight}
     
-    def __init__(self,master=None):
+    def __init__(self,master=None,**kw):
         Helper.__init__(self)
         self.updateAppli = self.update
         self.Cube = self.box
@@ -49,6 +87,9 @@ class mayaHelper(Helper):
         #self.getCurrentScene = c4d.documents.GetActiveDocument
         self.IndexedPolygons = self.polygons
         self.Points = self.PointCloudObject
+        self.pb = True
+        self.hext = "ma"
+        self.timeline_cb={}
         
     def fit_view3D(self):
         pass#
@@ -79,21 +120,30 @@ class mayaHelper(Helper):
                                 isInterruptable=False,
                                 status=label,
                                 maxValue=100)
-            if progress == 1 :
-                prev = cmds.progressBar(gMainProgressBar,q=1,progress=1)
-                progress = prev/100. + 0.1
+#            if progress == 1 :
+#                prev = cmds.progressBar(gMainProgressBar,q=1,progress=1)
+#                progress = prev/100. + 0.1
+#            progress*=100.
             if label is not None and progress is None :
                 cmds.progressBar(gMainProgressBar, edit=True, status = label)
             elif label is not None and progress is not None:
-                cmds.progressBar(gMainProgressBar, edit=True, progress=int(progress*100),status = label)
+                cmds.progressBar(gMainProgressBar, edit=True, progress=progress*100.,status = label)
             elif label is None and progress is not None:
-                cmds.progressBar(gMainProgressBar, edit=True, progress=int(progress*100))
-            
+                cmds.progressBar(gMainProgressBar, edit=True, progress=progress*100.)
+            if progress == 1 or progress == 100.:
+                self.resetProgressBar()
         #maxValue = 100    
         #did not work    
         #maya.cmds.progressBar(maya.pb, edit=True, progress=progress*100)
 #            cmds.progressBar(maya.pb, edit=True, step=1)
         #maya.cmds.progressBar(maya.pb, edit=True, step=1)
+
+    def synchronize(self,cb):
+        self.timeline_cb[cb] = MayaSynchro(cb=cb,period=0.05)
+        self.timeline_cb[cb].set_callback()
+
+    def unsynchronize(self,cb):
+        self.timeline_cb[cb].remove_callback()
 
     def update(self,):
         #how do I update the redraw
@@ -105,18 +155,43 @@ class mayaHelper(Helper):
         
     def checkName(self,name):
         invalid=[] 
+        if type(name) is None :
+            print ("None name or not a string",name)
+            return ""
+        #sometime the name is a list ie [u'name']
+        if type(name) is list or type(name) is tuple :
+            if len(name) == 1 :
+                name = name[0]
+            elif len(name) == 2 :
+                name = name[1]#transform node
+            else :
+                name = name[0] #?        
+        if  (type(name) is not str and type(name) is not unicode) :
+            print ("not a string",name,type(name))
+            return ""
+        if not len(name):
+            print ("empty name",name)
         for i in range(9):
             invalid.append(str(i))       
         if type(name) is list or type(name) is tuple:
             name = name[0]
         if type(name) is not str and type(name) is not unicode:
             name = name.name()
-        if name[0] in invalid:
+        if len(name) and name[0] in invalid:
             name= name[1:]
         #also remove some character and replace it by _
-        name=name.replace(":","_").replace(" ","_").replace("'","")
+        name=name.replace(":","_").replace(" ","_").replace("'","").replace("-","_")
         return name    
 
+    def setCurrentSelection(self,obj):
+        if obj is None :
+            return
+        if type (obj) is list or type (obj) is tuple :
+            for o in obj :
+                cmds.select(self.getObject(o))
+        else :
+            cmds.select(self.getObject(obj))
+    
     def getCurrentSelection(self):
         slist = om.MSelectionList()
         if not slist : 
@@ -126,7 +201,34 @@ class mayaHelper(Helper):
         slist.getSelectionStrings(selection)
         return selection
 
+    def checkPrimitive(self,object):
+        try :
+            cmds.polySphere(object,q=1,r=1)
+            return "sphere"
+        except :
+            pass
+        try :
+            cmds.sphere(object,q=1,r=1)
+            return "sphere"
+        except :
+            pass
+        try :
+            cmds.polyCube(object,q=1,w=1)
+            return "cube"
+        except :
+            pass
+        try :
+            cmds.polyCylinder(object,q=1,r=1)
+            return "cylinder"
+        except :
+            pass
+        return None
+            
     def getType(self,object):
+        #first tryto see if  isa primitive
+        prim = self.checkPrimitive(object)
+        if prim is not None :
+            return prim
         object = self.getNode(object)
         if hasattr(object,"apiTypeStr"):
 #            print (object.apiTypeStr())
@@ -139,13 +241,25 @@ class mayaHelper(Helper):
     def getMName(self,o):
         return o.name()
 
+    def setName(self,o,name):
+        if o is None :
+            return
+        cmds.rename( self.checkName(o), name, ignoreShape=False) 
+
     def getName(self,o):
-        if type(o) == str : 
-            name = o.replace(":","_").replace(" ","_").replace("'","")
+        if o is None: return ""
+        if type(o) == str or type(o) == unicode : 
+            name = o.replace(":","_").replace(" ","_").replace("'","").replace("-","_")
         elif type(o) == unicode : name = o
         elif type(o) is om.MFnMesh:
             return o
-        else : name=o[0]
+        elif hasattr(o,"name") :
+            if type(o.name) == str :
+                return o.name
+            else : return o.name()
+        elif type(o) is list or type(o) is tuple:
+            name=o[0]
+        else : name=o
         return name
 
     def getMObject(self,name):
@@ -170,7 +284,7 @@ class mayaHelper(Helper):
                 name = name[0] #?
         name=self.checkName(name)
         if name.find(":") != -1 :
-            name=name.replace(":","_").replace(" ","_").replace("'","")
+            name=name.replace(":","_").replace(" ","_").replace("'","").replace("-","_")
         if doit :
                 name=cmds.ls(name)
                 if len(name)==0:
@@ -205,25 +319,62 @@ class mayaHelper(Helper):
         return mesh
     
     def getMeshFrom(self,obj):
-        if type(obj) != str :
+        if type(obj) is not str and type(obj) is not unicode:
             obj = self.getMName(obj)
         return self.getMShape(obj)
 
-    def getMShape(self,name):
-        name = self.checkName(name)
-        node = self.getNode(name)
+    def getTransformNode(self,name):
+        if type(name) is list :
+            name = name[0]
+        if type(name) is str or type(name) is unicode :        
+            name = self.checkName(name)
+            node = self.getNode(name)
+        else :
+            node = name        
         dag = om.MFnDagNode(node)
         path = om.MDagPath()
         dag.getPath(path)
-        path.extendToShape()
-        return path
+        return path.transform(),path
+        
+    def getMShape(self,name,):
+#        print name,type(name)
+        if type(name) is list :
+            name = name[0]
+        if type(name) is str or type(name) is unicode :        
+            name = self.checkName(name)
+            node = self.getNode(name)
+        else :
+            node = name        
+        dag = om.MFnDagNode(node)
+        path = om.MDagPath()
+        dag.getPath(path)
+#        self.msutil.createFromInt(0) 
+#        pInt = self.msutil.asUintPtr() 
+#        path.numberOfShapesDirectlyBelow(pInt)
+        try :
+            path.extendToShape()
+            return path
+        except :
+#            if self.msutil.getUint(pInt)  == 0 :
+                node = path.child(0)
+                return self.getMShape(node)
+        #problem with primitive
+#        try :
+#            path.extendToShape()
+#        except :
+#            path = None
+#        return path
 
     def deleteObject(self,obj):
         sc = self.getCurrentScene()
         if type(obj) is str or type(obj) is unicode:
             obj=self.checkName(obj)
         else :
-            obj = obj.name()
+            if type(obj) is list or type(obj) is tuple :
+                for o in obj :
+                    self.deleteObject(o)
+            else :
+                obj = obj.name()
         try :
             #print "del",obj
             cmds.delete(obj)
@@ -254,8 +405,19 @@ class mayaHelper(Helper):
         plug = om.MPlug( nodeObject, attrObject )
         return plug
     ################################################
+
+    def newLocator(self,name,location=None,**kw):
+        name = self.checkName(name)
+        if name.find(":") != -1 : name=name.replace(":","_")                
+        empty=cmds.spaceLocator( n=name, a=True)
+        parent = None
+        if "parent" in kw :
+            parent = kw["parent"]
+            self.reParent(empty,parent)
+        return str(empty) 
     
     def newEmpty(self,name,location=None,**kw):
+        #return self.newLocator(name,location=location, **kw)
         name = self.checkName(name)
         if name.find(":") != -1 : name=name.replace(":","_")
         empty=cmds.group( em=True, n=name)
@@ -265,9 +427,53 @@ class mayaHelper(Helper):
             self.reParent(empty,parent)
         return str(empty)
 
+    def updateMasterInstance(self,master, newobjects,instance=True, **kw):
+        """
+        Update the reference of the passed instance by adding/removing-hiding objects
+        
+        * overwrited by children class for each host
+        
+        >>> sph = helper.Sphere("sph1")
+        >>> instance_sph = helper.newInstance("isph1",sph,location = [10.0,0.0,0.0])
+        
+    
+        @type  instance: string/hostObj
+        @param instance: name of the instance
+        @type  objects: list hostObject/string
+        @param objects: the list of object to remove/add to the instance reference   
+        @type  add: bool
+        @param add: if True add the objec else remove
+        @type  hide: bool 
+        @param hide: hide instead of remove
+        @type kw: dictionary
+        @param kw: you can add your own keyword, but it should be interpreted by all host
+        """
+        #the instance shoud point to an empy that have shape as child
+        #what we should do is eitherduplicae or reParent the the new object under this master parent
+        #or usethe replace command ? use particule ?
+        #replace the mesh node of the master by the given ones....
+        #hide and remove every previous children....
+        chs = self.getChilds(master)
+        for o in chs :
+            r=cmds.duplicate(o, renameChildren=True)
+            print r
+        cmds.delete(chs)#or move or uninstance ?
+        if instance :
+            n=[]
+            for o in newobjects :
+                name = self.getName(master)+"Instance"
+                i1=self.getObject(name+"1")
+                if i1 is not None :
+                   cmds.delete(i1) 
+                i=self.newInstance(name,o,parent=master)                
+        else :
+            self.reParent(newobjects,master)
+        
+
     def newMInstance(self,name,object,location=None,
                      hostmatrice=None,matrice=None,parent=None,**kw):
         #first create a MObject?
+        #only work on Mes
         name = self.checkName(name)
         fnTrans = om.MFnTransform()
         minstance = fnTrans.create()
@@ -275,9 +481,15 @@ class mayaHelper(Helper):
         #now add the child as an instance.
         #print fnTrans.name()
         #is this will work withany object ?
-        object=self.getNode(object)
+        object=self.getNode(object)#or the shape ?
         fnTrans.addChild(object,fnTrans.kNextPos,True)
         #print name, object , fnTrans
+        if matrice is not None  and isinstance(matrice,om.MTransformationMatrix):
+            hostmatrice=matrice
+            matrice = None
+        if hostmatrice is not None  and not isinstance(hostmatrice,om.MTransformationMatrix):
+            matrice = hostmatrice
+            hostmatrice = None 
         if location is not None :
             fnTrans.setTranslation(self.vec2m(location),om.MSpace.kPostTransform)
         elif hostmatrice is not None :
@@ -295,28 +507,48 @@ class mayaHelper(Helper):
         return fnTrans.name()
 
     def newInstance(self,name,object,location=None,hostmatrice=None,matrice=None,
-                    parent=None,**kw):
+                    parent=None,material=None,**kw):
         #instance = None#
         #instance parent = object  
         #instance name = name
+#        return  self.newMInstance(name,object,location=location,
+#                     hostmatrice=hostmatrice,matrice=matrice,parent=parent,**kw)      
+#        
         name = self.checkName(name)
-        
-        instance = cmds.instance(object,name=name)
+        instance = cmds.instance(object,name=name)  
         if location != None :
             #set the position of instance with location
             cmds.move(float(location[0]),float(location[1]),float(location[2]), name,
                                                absolute=True )
         if matrice is not None :
-            hm = matrice.transpose().reshape(16,).tolist()
-            cmds.xform(name, a=True, m=hm)
+            if self._usenumpy :
+                #matrice = numpy.array(matrice)#matrix(matrice)*matrix(lefthand)#numpy.array(matrice)
+                #transpose only rotation
+                matrice = numpy.array(matrice).transpose()#we do transpoe hee
+                #m = matrice.copy()              
+#                m[0,:3]=matrice[0,:3]#thi work with numpy
+#                m[1,:3]=matrice[1,:3]
+#                m[2,:3]=matrice[2,:3]
+                #matrice[:3,:3] = matrice[:3,:3].transpose()
+                hm = matrice.reshape(16,).tolist()
+                #shoudl I apply some transformatio first ?
+                cmds.xform(name, a=True, m=hm,roo="xyz")#a for absolute
+            else :
+                self.setTransformation(instance[0],mat=matrice)
         #set the instance matrice
         #self.setObjectMatrix(self,object,matrice=matrice,hostmatrice=hostmatrice)
         if parent is not None:
             self.reParent(instance,parent)
+        if material is not None:
+            self.assignMaterial(instance,material)
         return instance
     #alias
     setInstance = newInstance
 
+    #particleInstancer  -addObject 
+    #-object locator1 -cycle None -cycleStep 1 -cycleStepUnits Frames 
+    #-levelOfDetail Geometry -rotationUnits Degrees 
+    #-rotationOrder XYZ -position worldPosition -age age crn_A_clouddsShape;
     def instancePolygon(self,name, matrices=None,hmatrices=None, mesh=None,parent=None,
                         transpose=False,globalT=True,**kw):
         hm = False
@@ -330,11 +562,12 @@ class mayaHelper(Helper):
         for i,mat in enumerate(matrices):
             inst = self.getObject(name+str(i))
             if inst is None :
+                #Minstance?
                 if hm : 
-                    self.newInstance(name+str(i),mesh,hostmatrice=mat,
+                    inst=self.newInstance(name+str(i),mesh,hostmatrice=mat,
                                       parent=parent,globalT=globalT)
                 else :
-                    self.newInstance(name+str(i),mesh,matrice=mat,
+                    inst=self.newInstance(name+str(i),mesh,matrice=mat,
                                       parent=parent,globalT=globalT)
             instance.append(inst)
         return instance
@@ -346,7 +579,7 @@ class mayaHelper(Helper):
             0.,0.,0.,0.]
         cmds.xform(name, a=True, m=m)
 
-    def setObjectMatrix(self,object,matrice,hostmatrice=None):
+    def setObjectMatrix(self,object,matrice,hostmatrice=None,**kw):
         """
         set a matrix to an hostObject
         
@@ -360,13 +593,34 @@ class mayaHelper(Helper):
         #have to manipulate the DAG/upper transform node...
         #let just take the owner Transofrm node of the shape
         #we should be able to setAttr either 'matrix' or 'worldMatrix'
+        object    = self.getObject(object)     
         if hostmatrice !=None :
             #set the instance matrice
-            pass
+            matrice=hostmatrice
         if matrice != None:
             #convert the matrice in host format
             #set the instance matrice
             pass
+        transpose = True
+        if "transpose" in kw :
+            transpose = kw["transpose"]
+        if matrice is not None :
+            if self._usenumpy :
+                #matrice = numpy.array(matrice)#matrix(matrice)*matrix(lefthand)#numpy.array(matrice)
+                #transpose only rotation
+                matrice = numpy.array(matrice)
+                if transpose :
+                    matrice=matrice.transpose()#we do transpoe hee
+                #m = matrice.copy()              
+    #                m[0,:3]=matrice[0,:3]#thi work with numpy
+    #                m[1,:3]=matrice[1,:3]
+    #                m[2,:3]=matrice[2,:3]
+                #matrice[:3,:3] = matrice[:3,:3].transpose()
+                hm = matrice.reshape(16,).tolist()
+                #shoudl I apply some transformatio first ?
+                cmds.xform(object, a=True, m=hm,roo="xyz")#a for absolute
+            else :
+                self.setTransformation(object,mat=matrice)
     
     def concatObjectMatrix(self,object,matrice,hostmatrice=None):
         """
@@ -409,24 +663,39 @@ class mayaHelper(Helper):
             self.parent(obj, parent)
 
     def parent(self,obj,parent,instance=False):
+        if type(parent) == unicode :
+            parent = str(parent)
+        if type(parent) != str :
+            print ("parent is not String ",type(parent)) 
+            return
+#        print ("parenting ", obj,parent, instance )
         mobj = self.getNode(obj)
         mparent = self.getNode(parent)
 #        onode = om.MFnDagNode(mobj)
         oparent = om.MFnDagNode(mparent)
+#        print ("parenting dag node", obj,parent, mobj,oparent.kNextPos,instance )
         oparent.addChild(mobj,oparent.kNextPos,instance)      
 
     def reParent(self,obj,parent,instance=False):
-        if parent == None : return
+        if parent == None : 
+            print ("parent is None")
+            return  
         if type(obj) is not list and type(obj) is not tuple :
             obj = [obj,]
-        [self.parent(o,parent,instance=instance) for o in obj]
-
+        try :
+            [self.parent(o,parent,instance=instance) for o in obj]
+        except :
+            print ("failure")
     def getChilds(self,obj):
         if type(obj) is str or type(obj) is unicode:
             o = self.checkName(obj)
         else :
             o = self.getName(obj)
-        return cmds.listRelatives(o, c=True)
+        childs= cmds.listRelatives(o, c=True)
+        if childs is None :
+            return []
+        else :
+            return childs
 
     def addCameraToScene(self,name,Type='persp',focal=30.0,center=[0.,0.,0.],sc=None):
         # Create a camera and get the shape name.
@@ -445,18 +714,21 @@ class mayaHelper(Helper):
         return cameraName
 
     def addLampToScene(self,name,Type='Area',rgb=[1.,1.,1.],dist=25.0,energy=1.0,
-                       soft=1.0,shadow=False,center=[0.,0.,0.],sc=None):
+                       soft=1.0,shadow=False,center=[0.,0.,0.],sc=None,**kw):
         #print Type
-        light = cmds.pointLight(n=name)
+        #each type have a different cmds
+        lcmd = self.LIGHT_OPTIONS[Type]
+        light = lcmd(n=name)
+#        light = cmds.pointLight(n=name)
         #cmds.pointLight(light,e=1,i=energy,rgb=rgb,ss=soft,drs=dist)
-        cmds.pointLight(light,e=1,i=energy)
-        cmds.pointLight(light,e=1,ss=soft)
+        lcmd(light,e=1,i=energy)
+        lcmd(light,e=1,ss=soft)
     #    cmds.pointLight(light,e=1,drs=dist)
-        cmds.pointLight(light,e=1,rgb=rgb)    
+        lcmd(light,e=1,rgb=rgb)    
         cmds.move(float(center[0]),float(center[1]),float(center[2]), light, absolute=True )
         return light
         
-    def toggleDisplay(self,ob,display):
+    def toggleDisplay(self,ob,display,**kw):
 #        ob = self.getObject(ob)
 #        if ob is None :
 #            return
@@ -472,6 +744,11 @@ class mayaHelper(Helper):
             return        
         attrDis = self.getNodePlug("visibility",node)
         attrDis.setBool(bool(display))
+
+#    def toggleXray(self,object,xray):
+#        o = self.getObject(object)
+#        cmds.select(o)
+#        cmds.displySurface(xRay = True)
 
     def getVisibility(self,obj,editor=True, render=False, active=False):
         #0 off, 1#on, 2 undef
@@ -520,7 +797,39 @@ class mayaHelper(Helper):
         if type(sc) is float :
             sc = [sc,sc,sc]
         cmds.scale(float(sc[0]),float(sc[1]),float(sc[2]), obj,absolute=True )
-    
+
+    def getScale(self,name,absolue=True,**kw):
+        node = self.getNode(name)
+        fnTrans = om.MFnTransform(node,)
+        # First create an array and a pointer to it
+        scaleDoubleArray = om.MScriptUtil()
+        scaleDoubleArray.createFromList( [0.0, 0.0, 0.0], 3 )
+        scaleDoubleArrayPtr = scaleDoubleArray.asDoublePtr()
+        
+        # Now get the scale
+        fnTrans.getScale( scaleDoubleArrayPtr )
+        
+        # Each of these is a decimal number reading from the pointer's reference
+        x_scale = om.MScriptUtil().getDoubleArrayItem( scaleDoubleArrayPtr, 0 )
+        y_scale = om.MScriptUtil().getDoubleArrayItem( scaleDoubleArrayPtr, 1 )
+        z_scale = om.MScriptUtil().getDoubleArrayItem( scaleDoubleArrayPtr, 2 )
+
+        return [x_scale,y_scale,z_scale]#kPostTransform) or om.MVector(v[0], v[1], v[2])?
+
+    def getSize(self,obj):
+        #take degree
+        obj = self.checkName(obj)
+        meshnode = self.getMShape(obj)
+        try :
+            mesh = om.MFnMesh(meshnode)
+        except :
+            return [1,1,1]
+        obj = self.getMName(mesh)
+        x=cmds.getAttr(obj+'.width')
+        y=cmds.getAttr(obj+'.height')
+        z=cmds.getAttr(obj+'.depth') 
+        return [x,y,z]
+       
     def rotateObj(self,obj,rot):
         #take degree
         obj = self.checkName(obj)  
@@ -528,11 +837,21 @@ class mayaHelper(Helper):
         cmds.setAttr(obj+'.ry',degrees(float(rot[1])))
         cmds.setAttr(obj+'.rz',degrees(float(rot[2]))) 
 
-    def setTransformation(self,name,mat=None,rot=None,scale=None,trans=None,order="str"):
+    def getTransformation(self,name):
         node = self.getNode(name)
         fnTrans = om.MFnTransform(node)
-        if mat is not None :
-            fnTrans.set(self.matrixp2m(mat))
+        mmat = fnTrans.transformation()
+        #maya matrix
+        return mmat
+
+    def setTransformation(self,name,mat=None,rot=None,scale=None,trans=None,order="str",**kw):
+        node = self.getNode(name)
+        fnTrans = om.MFnTransform(node)
+        if mat is not None  :
+            if isinstance(mat,om.MTransformationMatrix):
+                fnTrans.set(mat)
+            else :
+                fnTrans.set(self.matrixp2m(mat))    
         if trans is not None :
             fnTrans.setTranslation(self.vec2m(trans),om.MSpace.kPostTransform)
         if rot is not None :
@@ -582,8 +901,9 @@ class mayaHelper(Helper):
                              facesSelection=None,faceMaterial=False):
         if colors[0] is not list and len(colors) == 3 :
            colors = [colors,] 
-        if self.getType(mesh) != self.POLYGON and self.getType(mesh) != self.MESH:
-            return False
+        if not isinstance(mesh,maya.OpenMaya.MFnMesh):                  
+            if self.getType(mesh) != self.POLYGON and self.getType(mesh) != self.MESH:
+                return False
         mcolors=om.MColorArray()
         iv=om.MIntArray()
         meshnode = mesh
@@ -768,6 +1088,8 @@ class mayaHelper(Helper):
             mel.eval('error "a mMaya default shader has been deleted"')
         
     def addMaterial(self, name, color ):
+        if color is None :
+            color = (1.,0.,0.)
         name = self.checkName(name)
         mat=cmds.ls(name, mat=True)
         if len(mat)==0: #create only if mat didnt exist already
@@ -781,7 +1103,7 @@ class mayaHelper(Helper):
             mat = cmds.ls(name, mat=True)
         return mat
     
-    def assignMaterial(self,object,matname,texture = True):
+    def assignMaterial(self,object,matname,texture = True,**kw):
         object = self.getObject(object,doit=True)
         #print "assign " , matname
         #print matname
@@ -817,10 +1139,14 @@ class mayaHelper(Helper):
         self.assignMaterial (object,matname)
     
     def colorMaterial(self,matname, color):
-        self.getMaterial(matname)
-        cmds.setAttr( matname+".color", color[0], color[1], color[2], type="double3")
+        matname=self.getMaterial(matname)
+        if len(matname)==1:
+            matname=matname[0]
+        cmds.setAttr( str(matname)+".color", color[0], color[1], color[2], type="double3")
 
     def getMaterial(self,matname):
+        if type(matname) != str :
+            return matname
         matname = self.checkName(matname)
         mat=cmds.ls(matname, mat=True)
         if len(mat)==0:
@@ -866,9 +1192,9 @@ class mayaHelper(Helper):
         if not res or len(colors) == 1:
             #simply apply the color/material to mesh
             #get object material, if none create one
-            print "material assign"
+#            print "material assign"
             mats = self.getMaterialObject(mesh)
-            print mats
+#            print mats
             if not mats :
                 self.assignNewMaterial("mat"+self.getName(mesh), colors[0],
                                        'lambert', mesh)
@@ -920,7 +1246,7 @@ class mayaHelper(Helper):
 
     def updateSphereObj(self,obj,coords=None):
         if obj is None or coords is None: return
-#        obj = self.getObject(obj)
+        obj = self.getObject(obj)
         #would it be faster we transform action
         self.setTranslation(obj,coords)
 #        cmds.move(float(coords[0]),float(coords[1]),float(coords[2]), obj, absolute=True )
@@ -954,7 +1280,7 @@ class mayaHelper(Helper):
         return cyls
     
     def updateInstancesCylinder(self,name,cyls,points,faces,radii,
-                          mesh,colors,scene,parent=None):
+                          mesh,colors,scene,parent=None,delete = True):
         mat = None
         if len(colors) == 1:
             mat = self.retrieveColorMat(colors[0])
@@ -980,7 +1306,6 @@ class mayaHelper(Helper):
             for i in range(len(faces),len(cyls)):
                 if delete : 
                     obj = cyls.pop(i)
-                    print "delete",obj
                     self.deleteObject(obj)
                 else :
                     self.toggleDisplay(cyls[i],False)
@@ -993,6 +1318,7 @@ class mayaHelper(Helper):
         sphs=[]
         mat = None
         if len(colors) == 1:
+            print (colors)
             mat = self.retrieveColorMat(colors[0])
             if mat == None:        
                 mat = self.addMaterial('mat_'+name,colors[0])
@@ -1072,6 +1398,36 @@ class mayaHelper(Helper):
 #        if pos is not None : self.setTranslation(text,pos)
 #        if parent is not None : self.reParent(text,parent)
 
+    def extrudeText(self,text,**kw):
+        tr,parent = self.getTransformNode(text)
+        nChild = parent.childCount()
+        print nChild
+        #dag = om.MFnDagNode(node)
+        dnode = om.MFnDependencyNode(parent.transform())
+        child_path = om.MDagPath()
+        cmd ="constructionHistory=True,normalsOutwards=True,range=False,polygon=1,\
+                        tolerance=0.01,numberOfSides=4 ,js=True,width=0 ,depth=0 ,extrudeDepth=0.5,\
+                            capSides=4 ,bevelInside=0 ,outerStyle=0 ,innerStyle=0 ,\
+                            polyOutMethod=0,polyOutCount=200,polyOutExtrusionType=2 ,\
+                            polyOutExtrusionSamples=3,polyOutCurveType=2 ,\
+                            polyOutCurveSamples=3,polyOutUseChordHeightRatio=0)"
+        for i in range(nChild):
+            #get all curve
+            node_child = parent.child(i)
+            child_tr,child_path = self.getTransformNode(node_child)
+            dnode = om.MFnDependencyNode(node_child)               
+            nChildChild = child_path.childCount()
+            for j in range(nChildChild):
+                cmdchilds="cmds.bevelPlus("
+                node_child_child = child_path.child(j)
+                dnode = om.MFnDependencyNode(node_child_child)
+                cmdchilds+='"'+dnode.name()+'",'
+                cmdchilds+="n='bevel_"+dnode.name()+str(j)+"',"+cmd
+                cmdbis = 'cmds.bevel("'+dnode.name()+'",n="bevel_'+dnode.name()+str(j)+'", ed=0.5)'
+                eval(cmdbis)  
+                cmds.bevel(e=1,w=0,d=0)
+
+
     def Text(self,name="",string="",parent=None,size=5.,pos=None,font='Courier',
              lookAt=False,**kw):
         return_extruder = False
@@ -1083,32 +1439,63 @@ class mayaHelper(Helper):
         text = cmds.textCurves( n= name, f=font, t=string )
         ## Result: [u'testShape', u'makeTextCurves2'] # 
         if pos is not None :
+            #should add -14
+            pos[0] = pos[0]-14.0#not center
             self.setTranslation(name+'Shape',pos)
 #        if parent is not None:
             self.addObjectToScene(self.getCurrentScene(),name+'Shape',parent=parent)
         if lookAt:
             self.constraintLookAt(name)
-        self.scaleObj(text[0],[size*0.1,size*0.1,size*0.1])        
+        self.scaleObj(text[0],[size,size,size])        
+        if "extrude" in kw :
+            extruder = None
             #create an extruder
-#            if type(kw["extrude"]) is bool and kw["extrude"]:
+            if type(kw["extrude"]) is bool and kw["extrude"]:
+                self.extrudeText(text)
+#                extruder = cmds.bevelPlus( text[1], ed=0.5)
+#                extruder = cmds.bevel( text, ed=0.5,w=0.0,d=0.0)
+                #reparent the extruder ?
+#                self.reParent(extruder,parent)
+                #po=1, cap=4,
 #                extruded=cmds.extrude( extrude_obj,self.checkName(name)+"_spline", 
-#                                  et = 2, ucp = 1,n=name, fpt=1,upn=1)            
+#                                  et = 2, ucp = 1,n=name, fpt=1,upn=1)    
+                return_extruder = True
+            else :
+                self.extrudeText(text)
+#                extruder = cmds.bevel( text, ed=0.5,w=0.0,d=0.0)
+                self.reParent(extruder,parent)
+#            if extruder is not None :
+#                pass
         self.addObjectToScene(self.getCurrentScene(),name+'Shape',parent=parent)
+        if return_extruder :
+            return text,None        
         return text
 
+    def getBoxSize(self,name):
+        #kPolyCube
+#        cmds.select(name)
+#        print(name)
+        sx = cmds.polyCube(name, q=True,w=True)
+        sy = cmds.polyCube(name, q=True,h=True)
+        sz = cmds.polyCube(name, q=True,d=True)
+        return [sx,sy,sz]
+        
     def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
                               mat=None,**kw):
+        if cornerPoints != None :
+            for i in range(3):
+                size[i] = cornerPoints[1][i]-cornerPoints[0][i]
+            for i in range(3):
+                center[i]=(cornerPoints[0][i]+cornerPoints[1][i])/2.
         res = 15.
         name = self.checkName(name)
         box,shape = cmds.polyCube(name=name,w=float(size[0]),h=float(size[1]),
                                     d=float(size[2]), sx=res, sy=res, sz=res )
         mat = self.addMaterial("mat"+name,[1.,1.,0.])
         self.assignMaterial(box,mat)
-        if cornerPoints != None :
-            for i in range(3):
-                size[i] = cornerPoints[1][i]-cornerPoints[0][i]
-            center=(numpy.array(cornerPoints[0])+numpy.array(cornerPoints[1]))/2.
+
         cmds.move(float(center[0]),float(center[1]),float(center[2]),box) 
+
         parent = None
         if "parent" in kw :
             parent = kw["parent"]
@@ -1130,7 +1517,7 @@ class mayaHelper(Helper):
     def Cone(self,name,radius=1.0,length=1.,res=16,pos = None,parent=None):
         name = self.checkName(name)
         diameter = 2*radius
-        cone,mesh=cmds.cone(name=name,axis=[0.0,0.0,1.0],hr=length,
+        cone,mesh=cmds.cone(name=name,axis=[0.0,1.0,0.0],hr=length,
                                         r=radius,s=res,nsp=res)
         if pos != None : cmds.move(float(pos[0]),float(pos[1]),float(pos[2]),cone)
         if parent is not None:
@@ -1138,11 +1525,19 @@ class mayaHelper(Helper):
 #        self.addObjectToScene(self.getCurrentScene(),instance)  
         return str(cone),mesh
     
-    def Cylinder(self,name,radius=1.,length=1.,res=16,pos = None,parent=None):
+    def Cylinder(self,name,radius=1.,length=1.,res=16,pos = None,parent=None,**kw):
         #import numpy
         name = self.checkName(name)
         diameter = 2*radius
-        cyl,mesh=cmds.polyCylinder(name=name,axis=[0.0,0.0,1.0],
+        axis = [0.0,0.0,1.0]
+        if "axis" in kw : #orientation
+            dic = {"+X":[1.,0.,0.],"-X":[-1.,0.,0.],"+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
+                    "+Z":[0.,0.,1.],"-Z":[0.,0.,-1.]}
+            if type(kw["axis"]) is str :
+                axis = dic[kw["axis"]]
+            else : 
+                axis = kw["axis"]        
+        cyl,mesh=cmds.polyCylinder(name=name,axis=axis,
                                         r=radius, sx=res, sy=res, sz=5, h=length)
         if pos != None : cmds.move(float(pos[0]),float(pos[1]),float(pos[2]),cyl)
         if parent is not None:
@@ -1303,19 +1698,32 @@ class mayaHelper(Helper):
 #        ncurve.getCVs(cvs,om.MSpace.kPostTransform)
 #        return cvs
 
-    def armature(self,basename,coords,scn=None,root=None):
+    def updateArmature(self,basename,coords,listeName=None,scn=None,root=None,**kw):
+        for j in range(len(coords)):
+            atC=coords[j]
+            name = basename+'bone'+str(j)
+            if listeName is not None:
+                name = listeName[j]
+            relativePos=[atC[0],atC[1],atC[2]]
+            cmds.joint(self.checkName(name),e=1, p=relativePos)        
+
+    def armature(self,basename,coords,listeName=None,scn=None,root=None,**kw):
         #bones are called joint in maya
         #they can be position relatively or globally
         basename = self.checkName(basename)
         bones=[]
-        center = self.getCenter(coords)
+#        center = self.getCenter(coords)
         parent = self.newEmpty(basename)
         self.addObjectToScene(scn,parent,parent=root)
         for j in range(len(coords)):    
             atC=coords[j]
             #bones.append(c4d.BaseObject(BONE))
             relativePos=[atC[0],atC[1],atC[2]]
-            joint=cmds.joint(n=basename+"bone"+str(j), p=relativePos) #named "joint1"
+            name = basename+'bone'+str(j)
+            if listeName is not None:
+                name = listeName[j]
+                
+            joint=cmds.joint(n=self.checkName(name), p=relativePos) #named "joint1"
             bones.append(joint)
             if scn != None :
                  if j==0 : self.addObjectToScene(scn,bones[j],parent=parent)
@@ -1354,7 +1762,58 @@ class mayaHelper(Helper):
         else:
             fnP.position(pos);
         return pos
+
+    def setParticulesPosition(self,newPos,PS=None):
+        if PS == None :
+            return
+        obj = self.checkName(PS)
+        partO=self.getMShape(obj) #shape..
+        fnP = omfx.MFnParticleSystem(partO)
+        oriPsType = fnP.renderType()
+        pos=om.MVectorArray(fnP.count())
+        #pts = om.MPointArray(fnP.count())
+        for v in newPos:
+            p = om.MVector( float(v[0]),float(v[1]),float(v[2]) )
+            pos.append(p)
+        #    pts.append(p)
+        #fnP.emit(pts)    
+        fnP.setPerParticleAttribute("position",pos)
+
+    def getParticles(self,name,**kw):
+        PS = self.getObject(name)
+        return PS
+
+    def updateParticles(self,newPos,PS=None,**kw): 
+        if PS == None :
+            return
+        obj = self.checkName(PS)
+        partO=self.getMShape(obj) #shape..
+        fnP = omfx.MFnParticleSystem(partO)
+        oriPsType = fnP.renderType()
+        currentN = fnP.count()
+        N = len(newPos)
+        fnP.setCount(N)
+        pos=om.MVectorArray(fnP.count())
+        #pts = om.MPointArray(fnP.count())
+        for v in newPos:
+            p = om.MVector( float(v[0]),float(v[1]),float(v[2]) )
+            pos.append(p)
+        fnP.setPerParticleAttribute("position",pos)
+
+    #this update the particle position not the particle number   
+    def updateParticleRotation(self,obj,rotation):
+        obj = self.checkName(obj)
+        partO=self.getMShape(obj) #shape..
+        fnP = omfx.MFnParticleSystem(partO)
+        oriPsType = fnP.renderType()
+        rot=om.MVectorArray(fnP.count())
+        #euler angle?
+        for v in rotation:
+            p = om.MVector( float(v[0]),float(v[1]),float(v[2]) )
+            pos.append(p)
+        fnP.setPerParticleAttribute("rotationPP",rot)
         
+    #this update the particle position not the particle number   
     def updateParticle(self,obj,vertices,faces):
         obj = self.checkName(obj)
         partO=self.getMShape(obj) #shape..
@@ -1389,22 +1848,14 @@ class mayaHelper(Helper):
         #fnP.setPerParticleAttribute? position
         #stat = resultPs.emit(finalPos);
 
-    def particle(self,name,coord,group_name=None,radius=None,color=None,hostmatrice=None,**kw):
+    def particule(self,name, coord,**kw):
         name = self.checkName(name)
         if coord is not None :
-            part,partShape=cmds.particle(n=name,p=coord)
-        else :
-            part,partShape=cmds.particle(n=name)
-#        instant = cmds.particleInstancer(part, a = 1, object = cyl[0], 
-#                position = 'bondPos', aimDirection = 'velocity', 
-#                scale = 'bondScaler', 
-#                name = (chainName+ '_geoBondsInstances'))
-        return partShape,part
-        
-    def particule(self,name, coord):
-        name = self.checkName(name)
-        if coord is not None :
-            part,partShape=cmds.particle(n=name,p=coord)
+            try :
+                coord = numpy.array(coord).tolist()
+            except :
+                pass
+            part,partShape=cmds.particle(n=name,p=list(coord))
         else :
             part,partShape=cmds.particle(n=name)
 #        instant = cmds.particleInstancer(part, a = 1, object = cyl[0], 
@@ -1413,6 +1864,11 @@ class mayaHelper(Helper):
 #                name = (chainName+ '_geoBondsInstances'))
         return partShape,part
 
+    def updateMetaball(self,name,vertices=None):
+        if vertices is None :
+            return
+        self.updateParticle(name,vertices=vertices,faces=None)
+        
     def metaballs(self,name,coords,radius,scn=None,root=None,**kw):
 #        atoms=selection.findType(Atom)
         #no metaball native in mauya, need to use particle set to blobby surface
@@ -1645,20 +2101,23 @@ class mayaHelper(Helper):
     def mayaVec(self,v):
         return om.MFloatPoint( float(v[0]),float(v[1]),float(v[2]) )
     
-    def getFaces(self,obj):
-        import numpy
+    def getFaces(self,obj,**kw):
+#        import numpy
         node = self.getNode('mesh_'+obj)
         meshnode = om.MFnMesh(node) 
         triangleCounts  =om.MIntArray()
         triangleVertices= om.MIntArray()     
         meshnode.getTriangles(triangleCounts,triangleVertices)        
-        return numpy.array(triangleVertices).reshape((len(triangleVertices)/3,3))
+        if self._usenumpy :
+            return numpy.array(triangleVertices).reshape((len(triangleVertices)/3,3))
+        else :
+            return triangleVertices
 
     def polygons(self,name,proxyCol=False,smooth=False,color=[[1,0,0],], material=None, **kw):
         normals = kw["normals"]
-        p = self.createsNmesh(name,kw['vertices'],normals,kw['faces'],color=color,
+        name,meshFS = self.createsNmesh(name,kw['vertices'],normals,kw['faces'],color=color,
                     smooth=smooth,material=material)
-        return p
+        return name
 
     def createsNmesh(self,name,vertices,normal,faces,color=[[1,0,0],],smooth=False,
                      material=None,proxyCol=False,**kw):
@@ -1746,7 +2205,7 @@ class mayaHelper(Helper):
                 self.assignMaterial("mesh_"+name,material)    
         if "parent" in kw :
             parent = kw["parent"]
-            print "reparent ", name,parent
+#            print "reparent ", name,parent
             self.reParent(name,parent)
         return name,meshFS#,outputMesh
 
@@ -1760,7 +2219,7 @@ class mayaHelper(Helper):
             elif node.hasFn(om.MFn.kParticle):
                 self.updateParticle(obj,vertices=vertices,faces=faces)
                 
-    def updateMesh(self,meshnode,vertices=None,faces=None):#chains.residues.atoms.coords,indices
+    def updateMesh(self,meshnode,vertices=None,faces=None, smooth=False,**kw):#chains.residues.atoms.coords,indices
 #        print meshnode,type(meshnode)
         if type(meshnode) is str or type(meshnode) is unicode:            
             node = self.getMShape(self.checkName(meshnode))#self.getNode(self.checkName(meshnode))
@@ -1797,8 +2256,10 @@ class mayaHelper(Helper):
         meshnode.updateSurface()
 
     def ToVec(self,v):
-        return [v.x,v.y,v.z]
-
+        if hasattr(v,"x") :
+            return [v.x,v.y,v.z]
+        else :
+            return v
 
     def arr2marr(self,v):
         #from http://www.rtrowbridge.com/blog/2009/02/maya-api-docs-demystified-for-python-users/
@@ -1813,15 +2274,31 @@ class mayaHelper(Helper):
 #        return vec
 
     def FromVec(self,v):
-         return om.MVector(v[0], v[1], v[2])
+        if isinstance(v,om.MVector):
+            return v
+        else :
+            return om.MVector(v[0], v[1], v[2])
    
     def vec2m(self,v):
-         return om.MVector(v[0], v[1], v[2])
+        if isinstance(v,om.MVector):
+            return v
+        else :
+            return om.MVector(float(v[0]), float(v[1]), float(v[2]))
+
+    def ToMat(self,mat,**kw):
+        #maya - > python
+        return self.m2matrix(mat)
+
+    def FromMat(self,mat,**kw):
+        #pythn->maya
+        return self.matrixp2m(mat)
         
     def matrixp2m(self,mat):
         #from http://www.rtrowbridge.com/blog/2009/02/python-api-mtransformationmatrixgetrotation-bug/
+        if isinstance(mat,om.MTransformationMatrix)  :
+            return mat
         getMatrix = om.MMatrix()
-        matrixList = mat.transpose().reshape(16,)
+        matrixList = mat#mat.transpose().reshape(16,)
         om.MScriptUtil().createMatrixFromList(matrixList, getMatrix)
         mTM = om.MTransformationMatrix( getMatrix )
         rotOrder = om.MTransformationMatrix().kXYZ
@@ -1830,7 +2307,12 @@ class mayaHelper(Helper):
     def m2matrix(self,mMat):
         #return mMat
         #do we use numpy
-        matrix = mMat.asMatrix()
+        if isinstance(mMat,om.MTransformationMatrix)  :
+            matrix = mMat.asMatrix()
+        elif isinstance(mMat,om.MMatrix):
+            matrix = mMat
+        else :
+            return mMat
         us=om.MScriptUtil()
         out_mat = [0.0, 0.0, 0.0,0.0,
            0.0, 0.0, 0.0,0.0,
@@ -1875,7 +2357,7 @@ class mayaHelper(Helper):
             om.MGlobal.getActiveSelectionList(activeList)
             selIter = om.MItSelectionList(activeList,om.MFn.kMeshVertComponent)
             while selIter.isDone():
-                selIter.getDagPath(meshDagPath, vertsComponent);
+                selIter.getDagPath(meshDagPath, vertsComponent)
                 if not vertsComponent.isNull():
                     # ITERATE THROUGH EACH "FACE" IN THE CURRENT FACE COMPONENT:
                     vertIter = om.MItMeshVertex(meshDagPath,vertsComponent) 
@@ -1949,11 +2431,13 @@ class mayaHelper(Helper):
                 selIter.next()
                 if selIter.isDone() : break
             return faces,mfaces_indice
-        faces = numpy.array(faceConnects).reshape((len(faceConnects)/3,3))
-        return faces
+        if self._usenumpy : 
+            return numpy.array(faceConnects).reshape((len(faceConnects)/3,3))
+        else :
+            return faceConnects
         
-    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
-        import numpy
+    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,**kw):
+#        import numpy
         if tri:
             self.triangulate(poly)
         if type(poly) is str or type(poly) is unicode or type(poly) is list:
@@ -1961,16 +2445,22 @@ class mayaHelper(Helper):
         else :
             #have to a object shape node or dagpath
             mesh = poly
-        if self.getType(mesh.partialPathName()) != self.MESH :
+        print ("mesh ", mesh)
+        if self.getType(mesh.partialPathName()) != self.POLYGON :
             if self.getType(mesh.partialPathName()) == self.PARTICULE:
                 v = self.getParticulesPosition(mesh.partialPathName())
                 return None,v,None
             return None,None,None
+        #again problem with instance.....
         meshnode = om.MFnMesh(mesh)
-        fnTrans = om.MFnTransform(mesh.transform())
+        print ("meshnode",meshnode)
+        fnTrans = om.MFnTransform(self.getTransformNode(poly)[0])
+        print ("fnTrans",fnTrans)
+#        fnTrans = om.MFnTransform(mesh.transform())
        #get infos
         nv = meshnode.numVertices()
         nf = meshnode.numPolygons()
+#        m = om.MFloatMatrix()
         points = om.MFloatPointArray()
         normals = om.MFloatVectorArray()
         faceConnects = om.MIntArray()
@@ -1978,8 +2468,12 @@ class mayaHelper(Helper):
         meshnode.getPoints(points)
         #meshnode.getNormals(normals)
         meshnode.getVertexNormals(False,normals)
-        meshnode.getTriangles(faceCounts,faceConnects)      
-        faces = numpy.array(faceConnects).reshape((len(faceConnects)/3,3))
+        meshnode.getTriangles(faceCounts,faceConnects)  
+        fnormals=[]
+        if self._usenumpy :
+            faces = numpy.array(faceConnects).reshape((len(faceConnects)/3,3))
+        else :
+            faces = faceConnects
         vertices = [self.ToVec(points[i]) for i in range(nv)]
         vnormals = [self.ToVec(normals[i]) for i in range(nv)]
         #remove the copy if its exist? or keep it ?
@@ -1988,12 +2482,37 @@ class mayaHelper(Helper):
             #node = self.getNode(mesh)
             #fnTrans = om.MFnTransform(mesh)
             mmat = fnTrans.transformation()           
-            mat = self.m2matrix(mmat)
-            vertices = self.ApplyMatrix(vertices,numpy.array(mat).transpose())
+            if self._usenumpy :            
+                mat = self.m2matrix(mmat)
+                vertices = self.ApplyMatrix(vertices,numpy.array(mat).transpose())
+                vnormals = self.ApplyMatrix(vnormals,numpy.array(mat).transpose())#??
+            else :
+                out_mat = [0.0, 0.0, 0.0,0.0,
+                   0.0, 0.0, 0.0,0.0,
+                   0.0, 0.0, 0.0,0.0,
+                   0.0, 0.0, 0.0,0.0]
+                self.msutil.createFromList( out_mat, len(out_mat) )   
+                ptr1 = self.msutil.asFloat4Ptr()                    
+                mmat.asMatrix().get(ptr1)
+                m = om.MFloatMatrix(ptr1)
+                vertices = []                
+                for i in range(nv) :
+                    v = points[i]*m
+                    vertices.append(self.ToVec(v))
+#                vertices = [self.ToVec(p*m) for p in points]
 #        if edit and copy :
 #            self.getCurrentScene().SetActiveObject(poly)
 #            c4d.CallCommand(100004787) #delete the obj       
-        return faces,numpy.array(vertices),numpy.array(vnormals)
+        print ("ok",len(faces),len(vertices),len(vnormals))        
+        if "fn" in kw and kw["fn"] :
+            fnormals = []
+            p = om.MVector( 0.,0.,0. )
+            for i in range(len(faces)) :
+                meshnode.getPolygonNormal(i,p,om.MSpace.kWorld)#kPostTransform
+                fnormals.append(self.ToVec(p))
+            return faces,vertices,vnormals,fnormals
+        else :
+            return faces,vertices,vnormals
 
     def connectAttr(self,shape,i=0,mat=None):
         if mat is not None :
@@ -2002,7 +2521,87 @@ class mayaHelper(Helper):
             cmds.isConnected( shape+'.instObjGroups['+i+']', mat+'SG.dagSetMembers')
             #need to get the shape : name+"Shape"
             
-            
+    def rotation_matrix(self,angle, direction, point=None,trans=None):
+        """
+        Return matrix to rotate about axis defined by point and direction.
+    
+        """
+        if self._usenumpy:
+            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
+        else :            
+            direction = self.FromVec(direction)
+            direction.normalize()
+            out_mat = [1.0, 0.0, 0.0,0.0,
+                   0.0, 1.0, 0.0,0.0,
+                   0.0, 0.0, 1.0,0.0,
+                   0.0, 0.0, 0.0,1.0]            
+            m = self.matrixp2m(out_mat)
+#            m = om.MTransformationMatrix()
+            m.setToRotationAxis (direction,angle) 	
+            if point is not None:
+               point = self.FromVec(point) 
+               m.setTranslation(point,om.MSpace.kPostTransform)# = point - (point * m)self.vec2m(trans),om.MSpace.kPostTransform
+            if trans is not None :
+               trans = self.FromVec(trans) 
+               m.setTranslation(trans,om.MSpace.kPostTransform)
+#            M = m2matrix(m)               
+            return m        
+                   
+#==============================================================================
+# properties objec
+#==============================================================================
+    def getPropertyObject(self, obj, key=["radius"]):
+        """
+        Return the  property "key" of the object obj
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+
+        @rtype  : int, float, str, dict, list
+        @return : the property value    
+        """       
+        res = []
+        if "pos" in key :
+            res.append(self.ToVec(self.getTranslation(obj)))
+        if "scale" in key :
+            res.append(self.ToVec(self.getScale(obj)))
+
+        if "rotation" in key :
+            mo = self.getTransformation(obj)
+            m = self.ToMat(mo)#.transpose()
+            mws = m.transpose()
+            rotMatj = mws[:]
+            rotMatj[3][:3]*=0.0
+            res.append(rotMatj)
+        if self.getType(obj) == self.SPHERE :
+            for k in key :
+                if k == "radius" :
+                    try :
+                        r=cmds.polySphere(obj,q=1,r=1)
+                    except :
+                        r=cmds.sphere(obj,q=1,r=1) 
+                    res.append(r)
+        if self.getType(obj) == self.CYLINDER :
+            for k in key :
+                if k == "radius" :
+                    r=cmds.polyCylinder(obj,q=1,r=1)
+                    res.append(r)
+                elif k == "length" :
+                    h=cmds.polyCylinder(obj,q=1,h=1)
+                    res.append(h)
+                elif k == "axis" :
+                    ax = cmds.polyCylinder(obj,q=1,axis=1)
+                    res.append(ax)
+        if self.getType(obj) == self.CUBE :
+            for k in key :
+                if k == "length" :
+                    l = self.getBoxSize(obj)#cmds.polyCube(obj, q=True,h=True)
+                    res.append(l)
+        return res
 
 #===============================================================================
 #     Texture Mapping / UV
@@ -2091,4 +2690,99 @@ class mayaHelper(Helper):
 #        // Result: Connected mesh_MSMS_MOL1crn.colorSet.colorName to mentalrayVertexColors1.cpvSets. // 
 #        // Result: connectWindow|tl|cwForm|connectWindowPane|rightSideCW // 
         pass
+
+#==============================================================================
+# import / expor / read load / save
+#==============================================================================
+
+    def readFile(self,filename,**kw):
+        fileName, fileExtension = os.path.splitext(filename)
+        fileExtension=fileExtension.replace(".","")
+        fileExtension=fileExtension.upper()
+        if fileExtension  == "MA":
+            fileExtension = "mayaAscii"
+        elif fileExtension == "DAE":
+            fileExtension = "DAE_FBX"
+        elif fileExtension == "FBX":
+            pass
+        else :
+            print ("not supported by uPy, contact us!")
+            return
+#        doc = self.getCurrentScene()
+        cmds.file(filename ,type=fileExtension,loadReferenceDepth="all", i=True ) #merge the documets
+#        c4d.documents.MergeDocument(doc,filename,c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
+
+    def read(self,filename,**kw):
+        fileName, fileExtension = os.path.splitext(filename)
+        fileExtension=fileExtension.replace(".","")
+        fileExtension=fileExtension.upper()
+        if fileExtension  == "MA":
+            fileExtension = "mayaAscii"
+            cmds.file(filename ,type=fileExtension,loadReferenceDepth="all", i=True )
+        elif fileExtension == "DAE" or fileExtension == "FBX":
+            import maya.mel as mel
+            #mel.eval('FBXImportMode -v exmerge;')
+            filename = filename.replace("\\","\\\\")
+            mel.eval('FBXImport -f "%s";' % filename)#FBXGetTakeName ?
+        else :
+            print ("not supported by uPy, contact us!")
+            return
+    
+    def write(self,listObj,**kw):
+        pass
                 
+#==============================================================================
+# raycasting
+#==============================================================================
+    def raycast(self,obj,start, end, length, **kw ):
+        #posted on cgtalk.com
+        #part of http://code.google.com/p/dynamica/               
+        mo = self.getTransformation(obj)
+        mi = mo.asMatrixInverse()
+        mat = self.ToMat(mi)#.transpose()
+        point = self.ApplyMatrix([start],numpy.array(mat).transpose())[0]
+        direction = self.ApplyMatrix([end],numpy.array(mat).transpose())[0]
+        
+        #om.MGlobal.clearSelectionList()       
+        om.MGlobal.selectByName(obj)
+        sList = om.MSelectionList()
+        #Assign current selection to the selection list object
+        om.MGlobal.getActiveSelectionList(sList)
+       
+        item = om.MDagPath()
+        sList.getDagPath(0, item)
+        item.extendToShape()
+       
+        fnMesh = om.MFnMesh(item)
+        
+        raySource = om.MFloatPoint(float(point[0]), float(point[1]), float(point[2]), 1.0)
+        rayDir = om.MFloatVector(float(direction[0]-point[0]), float(direction[1]-point[1]), float(direction[2]-point[2]))
+
+        faceIds = None
+        triIds = None
+        idsSorted = False
+        testBothDirections = False
+        worldSpace = om.MSpace.kWorld
+        maxParam = length#999999
+        accelParams = None
+        sortHits = True
+        hitPoints = om.MFloatPointArray()
+        #hitRayParams = om.MScriptUtil().asFloatPtr()
+        hitRayParams = om.MFloatArray()
+        hitFaces = om.MIntArray()
+        hitTris = None
+        hitBarys1 = None
+        hitBarys2 = None
+        tolerance = 0.0001
+        #http://download.autodesk.com/us/maya/2010help/API/class_m_fn_mesh.html#114943af4e75410b0172c58b2818398f
+        hit = fnMesh.allIntersections(raySource, rayDir, faceIds, triIds, idsSorted, worldSpace, 
+                                      maxParam, testBothDirections, accelParams, sortHits, 
+                                      hitPoints, hitRayParams, hitFaces, hitTris, hitBarys1, 
+                                      hitBarys2, tolerance)       
+        om.MGlobal.clearSelectionList()
+        #print hit, len(hitFaces)
+        if "count" in kw :
+            #result = int(fmod(len(hitFaces), 2))
+            return hit, len(hitFaces)
+        #clear selection as may cause problem if the function is called multiple times in succession        
+        return result

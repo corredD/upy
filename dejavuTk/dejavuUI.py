@@ -2,13 +2,13 @@
 """
 Created on Wed Feb  9 11:19:17 2011
 
-@author: -
+@author: Ludovic Autin
 """
 try :
     import tkinter
     from tkinter import *
     import filedialog
-    import tkinter.messagebox
+    import tkinter.message    
     import tkinter.simpledialog
     from tkinter.colorchooser import askcolor
 except :
@@ -19,6 +19,10 @@ except :
     import tkFileDialog as filedialog
     import tkColorChooser
     from tkColorChooser import askcolor#import tkinter.simpledialog
+#try :
+#    from ttk import *
+#except :
+#    print ("no ttk")
 #import tkinter.messagebox
 #import tkinter.messagebox
 #import tkinter.filedialog
@@ -92,12 +96,13 @@ class questionDialog(simpledialog.Dialog):
         # standard buttons
         box = Frame(self)
         w = Button(box, text="Yes", width=10, command=self.ok, default=ACTIVE)
-        w.pack(side=LEFT, padx=5, pady=5)
+        w.grid(sticky=W)#N+S+E+W)
+        #w.pack(side=LEFT, padx=5, pady=5)
         w = Button(box, text="No", width=10, command=self.cancel)
-        w.pack(side=LEFT, padx=5, pady=5)
+        w.grid(sticky=W)#w.pack(side=LEFT, padx=5, pady=5)
         self.bind("&lt;Return>", self.ok)
         self.bind("&lt;Escape>", self.cancel)
-        box.pack()
+        box.grid(sticky=N+S+E+W)#()
 
     #
     # standard button semantics
@@ -144,9 +149,10 @@ class notebook:
             self.side = TOP
         # creates notebook's frames structure
         self.rb_fr = Frame(master, borderwidth=2, relief=RIDGE)
-        self.rb_fr.pack(side=side, fill=BOTH)
+        self.rb_fr.grid(sticky=E+W)#sticky=N+E+W
+        #self.rb_fr.pack(side=side, fill=BOTH)
         self.screen_fr = Frame(master, borderwidth=2, relief=RIDGE)
-        self.screen_fr.pack(fill=BOTH)
+        self.screen_fr.grid(sticky=E+W)#pack(fill=BOTH)sticky=N+E+W
         
 
     # return a master frame reference for the external frames (screens)
@@ -157,16 +163,17 @@ class notebook:
         
     # add a new frame (screen) to the (bottom/left of the) notebook
     def add_screen(self, fr, title):
-        
-        b = Radiobutton(self.rb_fr, text=title, indicatoron=0, \
-            variable=self.choice, value=self.count, \
+        #indicatoron=0,
+        b = Radiobutton(self.rb_fr, text=title,   
+            variable=self.choice, value=self.count, 
             command=lambda: self.display(fr))
-        b.pack(fill=BOTH, side=self.side)
-        
+        #b.pack(fill=BOTH, side=self.side)
+        b.grid(sticky=E+W,row=0,column=self.count)
         # ensures the first frame will be
         # the first selected/enabled
         if not self.active_fr:
-            fr.pack(fill=BOTH, expand=1)
+            fr.grid(sticky=E+W)
+            #fr.pack(fill=BOTH, expand=1)
             self.active_fr = fr
 
         self.count += 1
@@ -178,10 +185,10 @@ class notebook:
 
     # hides the former active frame and shows 
     # another one, keeping its reference
-    def display(self, fr):
-        
+    def display(self, fr):        
         self.active_fr.forget()
-        fr.pack(fill=BOTH, expand=1)
+        self.active_fr.grid_forget()
+        fr.grid(sticky=E+W)#.pack(fill=BOTH, expand=1)
         self.active_fr = fr
 
 
@@ -208,8 +215,8 @@ class dejavuUI:
     subdialog = False
     drawUIblock = False
     block = False
-    w=300
-    h=1
+    w=120
+    h=120
     #need a root
     master = None
     root=None
@@ -217,6 +224,7 @@ class dejavuUI:
     col=0#column
     row=0#row
     ncol=0#column
+    maxcol=0
     nrow=0#row
     #need to store the form layout position
     nlayout=0
@@ -225,9 +233,11 @@ class dejavuUI:
     ystep = -30
     
     def withdraw(self):
+        print "withdraw",self.root
         self.root.withdraw()
 
     def deiconify(self):
+        print "deiconify",self.root
         self.root.deiconify()
 
     def close(self):
@@ -247,12 +257,15 @@ class dejavuUI:
         @type  title: string
         @param title: the window title
         """
+        print "title ",self.root
         if not title :
             title  = self.title
         self.root.title(title)
         self.root_frame = Frame(self.root)
-        self.root_frame.grid(sticky='news')
+        self.root_frame.grid(sticky=S+E+W)
+        #self.root_frame.grid(sticky='news')
         self.root.protocol("WM_DELETE_WINDOW", self.withdraw)
+        self.root.geometry("%ix%i" % (self.w*2,self.h*2))
         #self.geometry('+'+w+'+'+h)
         
     def createMenu(self,menuDic,menuOrder=None):
@@ -303,6 +316,9 @@ class dejavuUI:
         """  
         pass
 
+    def getFlagAlignement(self,alignement):
+        pass
+
     def addVariable(self,type,value):
         """ Create a container for storing a widget states """
         if type == "int":
@@ -350,7 +366,11 @@ class dejavuUI:
         print(w,st)
         if st > w :
             w = st
-        button = Button(self.root_frame, text=elem["name"], 
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+            
+        button = Button(self.root_frame, text=name, 
                                 command=elem["action"],
                                 #height = int(elem["height"]*self.scale),
                                 width = int(w))
@@ -422,8 +442,11 @@ class dejavuUI:
         
     def drawCheckBox(self,elem,x,y,w=None,h=None):
 #        print x,y
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
         chkbox = Checkbutton(self.root_frame,
-                                              text = elem["name"],
+                                              text = name,
                                               command = elem["action"],
                                               variable = elem["variable"],
                                               #height = int(elem["height"]*self.scale),
@@ -432,7 +455,16 @@ class dejavuUI:
             elem["variable"].set(elem["value"])
         else :
             elem["variable"].set(0)
-        chkbox.grid(row=self.row,column=self.col,sticky='w')
+#        if self.ncol < self.maxcol :
+#            X X X X X X            
+#            X  X  X  X
+#            X   X
+#            0   2
+#            cs = (self.maxcol - self.ncol)
+#            col = self.col 
+#            chkbox.grid(row=self.row,column=self.col,sticky=E,columnspan= )
+#        else :
+        chkbox.grid(row=self.row,column=self.col,sticky=W+E)#S+E+'w')
         self.col = self.col +1
         if self.col == self.ncol:
             self.row = self.row +1 
@@ -445,6 +477,7 @@ class dejavuUI:
         @param elem: the pulldown dictionary
         """
         elem["id"]['menu'].delete(0, 'end')
+        elem["value"]=[]
         #elem["variable"].val = len(elem["value"])
 
     def addItemToPMenu(self,elem,item):
@@ -541,7 +574,9 @@ class dejavuUI:
             label = elem
         else :
             label =elem["label"]
-        elem["id"] = Label(self.root_frame, text=label)
+        elem["variable"] = StringVar(self.root)
+        elem["id"] = Label(self.root_frame, textvariable=elem["variable"])
+        elem["variable"].set(label)
         elem["id"].grid(row=self.row,column=self.col,sticky='w')
         self.col = self.col +1
         if self.col == self.ncol:
@@ -578,7 +613,8 @@ class dejavuUI:
         if self.col == self.ncol:
             self.row = self.row +1 
             self.col = 0
-        return e
+        elem["id"] = e
+        return elem["id"]
 
     def drawStringArea(self,elem,x,y,w=None,h=None):
         """ Draw a String Area input elem, ie multiline
@@ -682,7 +718,7 @@ class dejavuUI:
         return
 
     @classmethod
-    def drawQuestion(self,title,question=""):
+    def drawQuestion(self,title,question="",callback=None):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -693,7 +729,11 @@ class dejavuUI:
         @return:  the answer     
         """
         #questionDialog(self.root,title=title,question=question)
-        return messagebox.askyesno(title, question)
+        res = messagebox.askyesno(title, question)
+        if callback is not None :
+            callback(res)
+        else :
+            return res
 
     @classmethod        
     def drawMessage(self,title="",message=""):
@@ -835,6 +875,10 @@ class dejavuUI:
             self.notebook = notebook(self.root, TOP)
         self.root_frame = Frame(self.notebook())
         #add elem to the Frame
+        self.maxcol=0
+        for k,blck in enumerate(bloc["elems"]):
+            if len(blck) >  self.maxcol:
+                 self.maxcol = len(blck)         
         for k,blck in enumerate(bloc["elems"]):
             self.ncol=len(blck)
             for index, item in enumerate(blck):
@@ -881,8 +925,9 @@ class dejavuUI:
 
     def Frame(self,bloc,x,y):
         self.root_store = self.root_frame
+        #padx=5, pady=5,
         bloc["id"] = self.root_frame = LabelFrame(self.root_frame, text=bloc["name"], 
-                                             padx=5, pady=5,labelwidget=bloc["labelwidget"],
+                                             labelwidget=bloc["labelwidget"],
                                             height = int(bloc["height"]*self.scale),
                                             width = int(bloc["width"]*self.scale))
 
@@ -893,9 +938,13 @@ class dejavuUI:
             col = 1
         if self.rowFrame is None :
            self.rowFrame = self.row
-        self.root_frame.grid(sticky='w',row=self.rowFrame+bloc["nlayout"],columnspan=3) 
+        self.root_frame.grid(sticky=N+S+E+W,row=self.rowFrame+bloc["nlayout"],columnspan=3) 
         if bloc["collapse"] :
             self.startBlock(n=len(bloc["elems"]))#,m=len(blck))
+            self.maxcol=0
+            for k,blck in enumerate(bloc["elems"]):
+                if len(blck) >  self.maxcol:
+                     self.maxcol = len(blck)         
             for k,blck in enumerate(bloc["elems"]):
                 self.ncol=len(blck)
 #                print "grid ",self.nrow,self.ncol
@@ -986,8 +1035,9 @@ class dejavuUI:
         @type  val: string
         @param val: the new string value    
         """            
-        elem["id"].configure(text=  str(val))  
-#        elem["variable"].set(str(val))
+        elem["variable"].set(str(val))         #for input
+#        elem["id"].configure(text= str(val))  #for label
+
 
     def getStringArea(self,elem):
         """ Return the current string area value of the String area Input elem
@@ -1019,7 +1069,7 @@ class dejavuUI:
         """
         if elem["type"] == "pullMenu":
             choice = elem["variable"].get()
-            return elem["value"].index(choice)-1
+            return elem["value"].index(choice)
         else:
             return int(elem["variable"].get())#verify  #for menu...as its start at 1
 
@@ -1030,7 +1080,11 @@ class dejavuUI:
         @type  val: Int
         @param val: the new Int value
         """                        
-        elem["variable"].set(val)#+1?
+        if elem["type"] == "pullMenu":
+            choice = elem["value"][int(val)]
+            return elem["variable"].set(choice)
+        else:
+            elem["variable"].set(int(val))#+1?
 
     def getReal(self,elem):
         """ Return the current Float value of the Input elem
@@ -1121,37 +1175,27 @@ class dejavuUI:
         """
         pass
         
-#
-#    def _restore(self,rkey,dkey=None):
-#        """
-#        Function used to restore the windows data, usefull for plugin
-#        @type  rkey: string
-#        @param rkey: the key to access the data in the registry/storage       
-#        @type  dkey: string
-#        @param dkey: wiether we want a particular data from the stored dic
-#        """
-#        rdict = Blender.Registry.GetKey(rkey, False)
-#        if rdict:
-#            if dkey is not None and rdict[dkey] is not None:
-#                return rdict[dkey]
-#            else :
-#                return rdict
-#        else:
-#            return None
-#
-#    def _store(self,rkey,dict):
-#        """
-#        Function used to store the windows data, usefull for plugin
-#        @type  rkey: string
-#        @param rkey: the key to access the data in the registry/storage       
-#        @type  dict: dictionary
-#        @param dict: the storage is done throught a dictionary
-#        """         
-#        rdict={}
-#        for dkey in dict:
-#            rdict[dkey] = dict[dkey]
-#        Blender.Registry.SetKey(rkey, rdict, False)
-#
+
+    def _restore(self,rkey,dkey=None):
+        """
+        Function used to restore the windows data, usefull for plugin
+        @type  rkey: string
+        @param rkey: the key to access the data in the registry/storage       
+        @type  dkey: string
+        @param dkey: wiether we want a particular data from the stored dic
+        """
+        pass
+
+    def _store(self,rkey,dict):
+        """
+        Function used to store the windows data, usefull for plugin
+        @type  rkey: string
+        @param rkey: the key to access the data in the registry/storage       
+        @type  dict: dictionary
+        @param dict: the storage is done throught a dictionary
+        """         
+        pass
+
     def close(self):
         """ Close the windows"""
         if not self.subdialog :
@@ -1176,6 +1220,7 @@ class dejavuUI:
 #
     def display(self):
         """ Create and Open the current gui windows """
+        print "self.created",self.created
         if not self.created:
             self.CreateLayout()
             self.created = True
@@ -1184,23 +1229,35 @@ class dejavuUI:
 class dejavuUIDialog(dejavuUI,uiAdaptor):
     def __init__(self,**kw):
         if kw.has_key("master"):
+            print "ok master pass",type(kw["master"])
             master = kw["master"]
-        if type(master) is dict :
-            self.master = master["master"].master
-        elif master is None :
-            self.master = None
-        else :
-            self.master = master.master
+            if type(master) is dict :
+                self.master = master["master"].master
+            elif master is None :
+                self.master = None
+            else :
+                self.master = master.master
+            print "ok master pass",self.master
         if self.master is not None :
-            self.root = Toplevel(self.master)
+            self.root = Toplevel(self.master)#self.master
+            print "ok Toplevel",self.root
         else :
             self.root =self.master = Tk()
+            print "ok tk", self.root
 #            self.root =  Toplevel()
+
+#        self.root.rowconfigure(0, weight=1)            
+#        self.root.columnconfigure(0, weight=1)         
+#        self.master.rowconfigure(0, weight=1)           
+#        self.master.columnconfigure(0, weight=1)        
+        
         if kw.has_key("title"):
             self.title= kw["title"]
             self.SetTitle(self.title)
         self.withdraw()
+#        self.root.geometry("%ix%i" % (self.w,self.h))
         self.created = False
+        print "ok master and root",self.master, self.root
 #
 #class blenderUISubDialog(blenderUIDialog):
 #    def __init__(self,name):

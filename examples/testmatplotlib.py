@@ -8,6 +8,10 @@ Created on Mon Sep 19 13:32:59 2011
 '''
 Make a colorbar as a separate figure.=> JPEG
 '''
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 from matplotlib.figure import Figure
 from matplotlib.patches import Polygon
 from matplotlib.backends.backend_agg import FigureCanvasAgg

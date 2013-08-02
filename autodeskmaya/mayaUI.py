@@ -37,6 +37,10 @@ class mayaUI:
     notebook = None
     colorcmd = cmds.colorSliderGrp
     ystep = 1
+    created = False
+    inNotebook= False
+    afterNoteBook = None
+    mainlayout = None
     
     def CoreMessage(self, id, msg):
         """ Hanlde the system event such as key or mouse position """
@@ -51,17 +55,25 @@ class mayaUI:
 
         """        
         self.title=title
-        self.winName= title.replace(" ","_")+"_gui"
+        self.winName= title.replace(" ","_").replace(".","_")+"_gui"
 #        print winName
 #        print cmds.window(winName, q=1, exists=1)
         res = cmds.window(self.winName, q=1, exists=1)
 #        print res
         if bool(res):
-#            print winName, " exist"
+#            print self.winName, " exist"
             cmds.deleteUI(self.winName, window=True)
-#            print winName, " deleted"
+#            print self.winName, " deleted"
+        #chec for the dock one
+        res = cmds.dockControl(self.winName, q=1, exists=1)
+#        print res
+        if bool(res):
+#            print self.winName+"dock", " exist"
+            cmds.deleteUI(self.winName, control=True)
+#            print self.winName, " deleted"
         winName = cmds.window(self.winName, menuBar=True,title=title,
                     w=self.w*self.scale,h=self.h*self.scale)
+        print ("settitle ",winName, self.winName, winName==self.winName)
         self.winName = winName
 #        cmds.window(self.winName,e=1,vis=True)
         print self.winName, " created"
@@ -104,6 +116,16 @@ class mayaUI:
     def addVariable(self,type,value):
         """ Create a container for storing a widget states """
         return value
+
+    def getFlagAlignement(self,options):
+        alignement = {"hleft_scale":"",
+                  "hcenter_scale":"",
+                  "hleft":"",
+                  "hfit":"",
+                  "hfit_scale":"",
+                  "hcenter":"",
+                  }
+        return ""#alignement[options]
     
     def drawButton(self,elem,x,y,w=None,h=None):
         """ Draw a Button 
@@ -118,15 +140,19 @@ class mayaUI:
         @type  h: int
         @param h: force the height of the item
         """        
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
         if elem["action"] is not None :
-            elem["id"] = cmds.button( label=elem["name"], 
+            elem["id"] = cmds.button( label=name, 
                         w=elem["width"]*self.scale,
                         h=elem["height"]*self.scale,
-                        c=partial(elem["action"],))
+                        c=partial(elem["action"],),
+                        recomputeSize=False)
         else :
-            elem["id"] = cmds.button( label=elem["name"],
+            elem["id"] = cmds.button( label=name,
                         w=elem["width"]*self.scale,
-                        h=elem["height"]*self.scale)
+                        h=elem["height"]*self.scale,recomputeSize=False)
 
 
     def drawCheckBox(self,elem,x,y,w=None,h=None):
@@ -144,10 +170,20 @@ class mayaUI:
         """             
 #        cmds.iconTextCheckBox( label='Sticks',style='iconAndTextHorizontal', 
 #                                       image1=ICONSDIR+'bs.xpm', cc=self._displayBS )
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+        if elem["value"] is None :  
+            elem["value"] = False
+        print (name,elem["value"],bool(elem["value"]),elem["width"]*self.scale,elem["height"]*self.scale,self.scale) 
         if elem["action"] is not None :
-            elem["id"] = cmds.checkBox(label=elem["name"],cc=elem["action"])
+            elem["id"] = cmds.checkBox(label=name,cc=elem["action"],
+                            v=bool(elem["value"]),w=elem["width"]*self.scale,
+                            h=elem["height"]*self.scale,recomputeSize=False)
         else  :
-            elem["id"] = cmds.checkBox(label=elem["name"])
+            elem["id"] = cmds.checkBox(label=name,v=bool(elem["value"]), 
+                        w=elem["width"]*self.scale,
+                        h=elem["height"]*self.scale,recomputeSize=False)
 
     def resetPMenu(self,elem):
         """ Add an entry to the given pulldown menu 
@@ -194,9 +230,15 @@ class mayaUI:
                    val = elem["value"][0]
         else :
             val= ""
-        elem["variable"] = cmds.text( label=val )
+        print ("pMenu",val)
+        elem["variable"] = cmds.text( label=val, bgc=[0.38,0.38,0.38],
+                    w=elem["width"]*self.scale,#*2,
+                    h=elem["height"]*self.scale,
+                    align="left",
+                    recomputeSize=False)#bgc=97,97,97?
         elem["id"]=cmds.popupMenu( button=1 )
         for item in elem["value"] :
+            print ("menu",item)
             cmds.menuItem(item,c=partial(self.c_updatePMenu,
                                     elem["variable"],item,elem["action"]))
 
@@ -263,7 +305,7 @@ class mayaUI:
                     w=label["width"]*self.scale,#*2,
                     h=label["height"]*self.scale,
                     align="left",
-                    recomputeSize=True)
+                    recomputeSize=False)#True work ?
 
     def drawString(self,elem,x,y,w=None,h=None):
         """ Draw a String input elem
@@ -458,7 +500,8 @@ class mayaUI:
                                 step=float(elem["step"]),
                                 dc=elem["action"],
                                 cc=elem["action"],
-                                ec=elem["action"],)
+                                ec=elem["action"],
+                                precision = int(elem["precision"]))#precision=2
         else :                        
             elem["id"] = cmds.floatField(w=elem["width"]*self.scale,
                                 h=elem["height"]*self.scale,            
@@ -466,7 +509,7 @@ class mayaUI:
                                 maxValue=float(elem["maxi"]),
                                 value=float(elem["value"]) , 
                                 step=float(elem["step"]),
-                                )
+                                precision = int(elem["precision"]))#precision=2
 
     def drawImage(self,elem,x,y,w=None,h=None):
         """ Draw an Image, if the host supported it
@@ -524,7 +567,7 @@ class mayaUI:
                 elem["id"] = self.colorcmd(elem["name"],#symbolButtonDisplay=False,bl = 'color',
                 rgb=(1, 0, 0),w=50,)
         if elem["value"] is not None:
-            self.setColor(elem,elem["value"])
+            self.setColor(elem,elem["value"][0:3])
 
     def drawInputQuestion(self,title="",question="",callback=None):
         """ Draw an Input Question message dialog, requiring a string answer
@@ -557,7 +600,7 @@ class mayaUI:
         cmds.confirmDialog(title='ERROR:', message=errormsg, button=['OK'], 
                            defaultButton='OK')
  
-    def drawQuestion(self,title="",question=""):
+    def drawQuestion(self,title="",question="",callback=None):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -572,9 +615,13 @@ class mayaUI:
                                 defaultButton='Yes',
                                 cancelButton='No', dismissString='No')
         if res == 'Yes': 
-            return True
+            res = True
         else :
-            return False
+            res = False
+        if  callback is not None   :         
+            callback(res)
+        else :
+            return res
 
     def drawMessage(self,title="",message=""):
         """ Draw a message dialog
@@ -601,31 +648,70 @@ class mayaUI:
         @rtype:   int
         @return:  the new horizontal position, used for blender
         """
-        print "drawTab",bloc["name"]
-        print "nb",self.notebook
+#        print "drawTab",bloc["name"]
+#        print "nb",self.notebook
+#        form = cmds.formLayout()
+        oriscale= self.scale
+        self.scale = 3
+        TabH=self.getHeightElems(bloc)
+        wh = cmds.window(self.winName, q=1,h=1)
+        ww = cmds.window(self.winName, q=1,w=1)
+        if TabH == 0 :
+            TabH = wh
+        self.scale = oriscale
+        print ("tab heigh",TabH)
+        if self.mainscroll is not None:
+            cmds.deleteUI(self.mainscroll)
+            self.mainscroll = None
         if self.notebook is None :
             self.notebook = {}
-            self.notebook["id"] = cmds.tabLayout(w=self.w*self.scale*2)#borderStyle='in' ,
-            print "ok", self.notebook["id"]
+            self.notebook["id"] = cmds.tabLayout(p=self.form,h=TabH+30,w=ww)#,w=self.w*self.scale*2.5,h=TabH+30,scrollable=True)#borderStyle='in' ,
+            print "ok notebook", self.notebook["id"]
             self.notebook["tab"]={}#.append(bloc["name"])
+            cmds.formLayout( self.form, edit=True, attachForm=((self.notebook["id"], 'top', 0), 
+                            (self.notebook["id"], 'left', 0), #(self.notebook["id"], 'bottom', 0), 
+                                (self.notebook["id"], 'right', 0)) )
+        else :
+            th = cmds.tabLayout(self.notebook["id"],q=1,h=1)
+            wh = cmds.window(self.winName, q=1,h=1)#or dockcontrol ?
+            if th < TabH :
+                print ("tab heigh resize ",TabH,wh)
+                if TabH > wh : TabH = wh
+                cmds.tabLayout(self.notebook["id"],e=1,h=TabH)
         self.notebook["tab"][bloc["name"]] =  bloc["id"]
+        bloc["id"] = cmds.scrollLayout(bloc["name"])
 #        bloc["id"] = cmds.shelfLayout(bloc["name"],w=self.w*self.scale)
-        bloc["id"] = cmds.scrollLayout(bloc["name"],w=self.w*self.scale,h=200)
 #        bloc["id"] = cmds.frameLayout(bloc["name"],w=self.w*self.scale,
 #                        labelVisible=False,borderVisible=False)
+        self.inNotebook = True
         for k,blck in enumerate(bloc["elems"]):
-            #print bloc["name"],len(blck)
-            cmds.rowLayout(numberOfColumns=len(blck),w=self.w*self.scale)
-            for index, item in enumerate(blck):
-                self._drawElem(item,x,y)
-            self.endBlock()
+            if type(blck) is list :
+                if len(blck) == 0 :
+                    continue
+                cmds.rowLayout(numberOfColumns=len(blck),w=self.w*self.scale*2.5)
+                for index, item in enumerate(blck):
+                    self._drawElem(item,x,y)
+                self.endBlock()
+                #formLayout??    
+            else : #dictionary: multiple line / format dict?
+                if "0" in blck:
+                    y = self._drawGroup(blck,x,y)
+                else :
+                    y = self._drawFrame(blck,x,y)
         #if bloc["name"] not in self.notebook["tab"].values():
         self.notebook["tab"][bloc["name"]] =  bloc["id"]
         self.endBlock()
 #        self.endBlock()
-        cmds.tabLayout( self.notebook["id"], edit=True, tabLabel=(bloc["id"], bloc["name"]) )
+        cmds.tabLayout( self.notebook["id"], edit=True, tabLabel=(bloc["id"], bloc["name"]) ,scrollable=True)
+        self.inNotebook = False
         return y
 
+    def getColAlign(self,N):
+        kw = {}
+        kw ["columnAlign"+str(N)] = "left" if N == 1 else ["left",]*N
+        #kw ["adjustableColumn"+str(N)] =
+        return kw
+        
     def drawFrame(self,bloc,x,y):
         """
         Function to draw a block as a collapsable frame layout of the gui. 
@@ -639,17 +725,26 @@ class mayaUI:
         
         @rtype:   int
         @return:  the new horizontal position, used for blender
-        """            
+        """    
+        
+#        cmds.scrollLayout(bloc["name"]+"_scrol",w=self.w*self.scale)
         cmds.frameLayout( label=bloc["name"], collapsable=True,
                              cl=bloc["collapse"],borderVisible=False,
-                             w=self.w*self.scale)#borderStyle='in' ,
+                             w=self.w*self.scale*2.5)#borderStyle='in' ,
         for k,blck in enumerate(bloc["elems"]):
-            #print bloc["name"],len(blck)
-            cmds.rowLayout(numberOfColumns=len(blck),w=self.w*self.scale)
+#            print bloc["name"],len(blck),blck
+            if len(blck) == 0 :
+                continue
+            kw = {}
+            N = len(blck)
+            if N < 6 :
+                kw ["columnAlign"+str(N)] = "left" if N == 1 else ["left",]*N
+            cmds.rowLayout(numberOfColumns=N,w=self.w*self.scale*2.5,**kw)
             for index, item in enumerate(blck):
                 self._drawElem(item,x,y)
             self.endBlock()
         self.endBlock()
+#        self.endBlock()
         return y
 
     def saveDialog(self,label="",callback=None):
@@ -692,10 +787,26 @@ class mayaUI:
 #            columnWidth.append([i,80])#[(1, 60), (2, 80), (3, 100)]
 #        cmds.rowColumnLayout(numberOfColumns=m,columnWidth=columnWidth)
 #        cmds.flowLayout(wr=True)
-        if m==0:
-            cmds.flowLayout(wr=True,w=self.w*self.scale)
-        else :
-            cmds.rowLayout(numberOfColumns=m,w=self.w*self.scale)
+        if not self.inNotebook and self.notebook is not None:    
+            if self.afterNoteBook is None:
+                c=self.afterNoteBook = cmds.flowLayout(wr=True,p=self.form)
+                cmds.formLayout( self.form, edit=True, attachForm=((c, 'left', 0),(c, 'bottom', 0),
+                                              (c, 'right', 0)),attachControl = ((c,'top',5,self.notebook["id"])) )
+            if m==0:
+                c=cmds.flowLayout(wr=True,w=self.w*self.scale,p=self.afterNoteBook)
+            else :
+                c=cmds.rowLayout(numberOfColumns=m,w=self.w*self.scale,p=self.afterNoteBook)            
+        else : 
+#            if self.mainlayout is None:
+#                c=self.mainlayout = cmds.scrollLayout('scrollLayout',p=self.form)#cmds.flowLayout(wr=True,p=self.form)
+#                cmds.formLayout( self.form, edit=True, attachForm=((c, 'left', 0),(c, 'bottom', 0),
+#                                              (c, 'right', 0),(c, 'top', 0),) )
+                
+            if m==0:
+                cmds.flowLayout(wr=True,w=self.w*self.scale)#,p=self.mainlayout)
+            else :
+                cmds.rowLayout(numberOfColumns=m,w=self.w*self.scale)#,p=self.mainlayout)
+
 #            cmds.gridLayout(numberOfColumns=m,autoGrow=True,columnsResizable=True)
 #        if m==2 :
 #            cmds.rowLayout(numberOfColumns=2)
@@ -709,7 +820,11 @@ class mayaUI:
 
     def startLayout(self,m=1,n=1):
 #        cmds.frameLayout( cll=True,label='ePMV')
-        cmds.scrollLayout( 'scrollLayout',w=self.w*self.scale)
+        self.form = cmds.formLayout(numberOfDivisions=100)#the main form ?
+        self.mainscroll = cmds.scrollLayout('scrollLayout')#,w=self.w*self.scale)#,p=self.winName)
+        cmds.formLayout( self.form, edit=True, attachForm=((self.mainscroll, 'top', 0), 
+                                                           (self.mainscroll, 'left', 0),
+                                             (self.mainscroll, 'bottom', 0), (self.mainscroll, 'right', 0)) )
 #        cmds.columnLayout( adjustableColumn=True )
         
     def endLayout(self):
@@ -722,6 +837,8 @@ class mayaUI:
                          allowedArea=allowedAreas )
         else :
             cmds.showWindow(self.winName)
+        #toggle the visibiliy of it ..?
+        #cmds.window(self.winName,e=1,vis=True)
 
 
     def setReal(self,elem,val):
@@ -730,7 +847,7 @@ class mayaUI:
         @param elem: the elem input dictionary       
         @type  val: Float
         @param val: the new Float value
-        """                                
+        """    
         #to do interpret the elem["type"] to call the correct function
         if elem["type"] == 'sliders':
             cmds.floatSliderGrp(elem["id"],e=1,v=val)
@@ -749,13 +866,14 @@ class mayaUI:
         """                                
         #to do interpret the elem["type"] to call the correct function
         #have to look at the type too
+
         if elem["type"] == 'sliders':
             return cmds.floatSliderGrp(elem["id"],q=1,v=1)
         elif elem["type"] == "inputInt":
             return float(cmds.intField(elem["id"],q=1,v=1))
         elif elem["type"] == "inputFloat":
             return float(cmds.floatField(elem["id"],q=1,v=1))
-        
+            
     def getBool(self,elem):
         """ Return the current Bool value of the Input elem
         @type  elem: dictionary
@@ -765,8 +883,11 @@ class mayaUI:
         @return:  the current Bool value input for this specific elem
         """ 
         if elem["type"] == 'checkbox':
-            return cmds.checkBox(elem["id"],q=1,v=1)
-
+            if cmds.checkBox(elem["id"],q=1,ex=1):
+                return cmds.checkBox(elem["id"],q=1,v=1)#width and height ? 
+            else :
+                return elem["value"]
+                
     def setBool(self,elem,val):
         """ Set the current Bool value of the Bool input elem
         @type  elem: dictionary
@@ -774,7 +895,8 @@ class mayaUI:
         @type  val: Bool
         @param val: the new Bool value
         """                      
-        cmds.checkBox(elem["id"],e=1,v=val)
+        if cmds.checkBox(elem["id"],q=1,ex=1):
+            cmds.checkBox(elem["id"],e=1,v=val)
 
     def getString(self,elem):
         """ Return the current string value of the String Input elem
@@ -785,9 +907,16 @@ class mayaUI:
         @return:  the current string input value for this specific elem
         """  
         if elem["type"] =="label":
-            return str(cmds.text(elem["id"],q=1,label=1))
+            if cmds.text(elem["id"],q=1,ex=1):
+                return str(cmds.text(elem["id"],q=1,label=1))
+            else :
+                return elem["value"]
         else :
-            return str(cmds.textField(elem["id"],q=1,tx=1))
+            if cmds.textField(elem["id"],q=1,ex=1):            
+                return str(cmds.textField(elem["id"],q=1,tx=1))
+            else :
+                return elem["value"]
+            
 
     def setString(self,elem,val):
         """ Set the current String value of the string input elem
@@ -838,7 +967,10 @@ class mayaUI:
         else:
             #specific command for menulike
             str = cmds.text(elem["variable"],q=1,l=1)
-            return elem["value"].index(str) #maya combo menu is a txt + pulldown menu
+            if str in elem["value"] :
+                return elem["value"].index(str) #maya combo menu is a txt + pulldown menu
+            else :
+                return 0
 
     def setLong(self,elem,val):
         """ Set the current Int value of the Int input elem
@@ -873,7 +1005,7 @@ class mayaUI:
         @type  val: Color
         @param val: the new Color value
         """                        
-        self.colorcmd(elem["id"],e=1,rgb=val)
+        self.colorcmd(elem["id"],e=1,rgb=val[0:3])
 
     def updateSlider(self,elem,mini,maxi,default,step):
         """ Update the state of the given slider, ie format, min, maxi, step
@@ -894,6 +1026,43 @@ class mayaUI:
                                                value=float(default),
                                                step=float(step))
                                                
+
+    def setAction(self,elem,callback):
+        """
+        Set the value of the given widget
+        
+        @type  elem: dictionary widget
+        @param elem: the widget    
+        @type  val: X
+        @param val: the new value for the widget
+        """        
+        elem["action"] = callback
+        #if elem["type"] == "pullMenu":
+            #if type(val) is str or type(val) is unicode:
+                #val = list(elem["value"]).index(str(val))#or values?
+            #elif type(val) is list :
+                #val = 0
+            #return self.setLong(elem,val)
+        #elif elem["type"] == "inputStr" or elem["type"] == "label":
+            #return self.setString(elem,str(val))
+##        elif elem["type"] == "inputStrArea":
+##            self.drawStringArea(elem,x,y,w=w,h=h)
+        if elem["type"] == "checkbox":
+            cmds.checkBox(elem["id"],e=1,cc=callback)
+        #elif elem["type"] == "sliders":
+            #return self.setReal(elem,val)        
+        #elif elem["type"] == "slidersInt":
+            #return self.setLong(elem,val)        
+        #elif elem["type"] == "inputInt":
+            #return self.setLong(elem,val)       
+        #elif elem["type"] == "inputFloat":
+            #return self.setReal(elem,val)       
+##        elif elem["type"] == "image":
+##            return self.getBool(elem)             
+        #elif elem["type"] == "color":
+            #return self.setColor(elem,val)        
+                                               
+    @classmethod                                          
     def _restore(self,rkey,dkey=None):
         """
         Function used to restore the windows data, usefull for plugin
@@ -912,7 +1081,8 @@ class mayaUI:
             return obj
         else :
             return None
-
+    
+    @classmethod
     def _store(self,rkey,dict):
         """
         Function used to store the windows data, usefull for plugin
@@ -933,9 +1103,22 @@ class mayaUI:
         @param id: the id of the dialog
         @type  callback: function
         @param callback: the associate callback
-        """        
-        dial.CreateLayout()
-
+        """  
+        res = cmds.window(dial.winName, exists=True)
+        print ("will draw ",dial.winName, res," created ?",dial.created) 
+        if res and dial.created:
+            if dial.subdialog:
+                cmds.window(dial.winName,e=1,vis=True)
+            elif dial.dock  :
+                cmds.dockControl(dial.winName, e=1,vis=True)
+            else :
+                cmds.window(dial.winName,e=1,vis=True)
+        else :    
+            dial.CreateLayout()
+            dial.created = True
+            print ("dialog created",dial.winName)
+#            self.drawSubDialog(dial,id,callback=callback,asynchro=asynchro)
+            
     def close(self,*args):
         """ Close the windows"""
 #        res = cmds.window(self.winName, q=1, exists=1)
@@ -953,7 +1136,18 @@ class mayaUI:
 
     def display(self):
         """ Create and Open the current gui windows """
-        self.CreateLayout()
+        res = cmds.window(self.winName, exists=True)
+        print (self.winName, res) 
+        if res and self.created:
+            if self.subdialog:
+                cmds.window(self.winName,e=1,vis=True)
+            elif self.dock  :
+                cmds.dockControl(self.winName, e=1,vis=True)
+            else :
+                cmds.window(self.winName,e=1,vis=True)
+        else :    
+            self.CreateLayout()
+            self.created = True
 
     def getDirectory(self):
         """return software directory for script and preferences"""

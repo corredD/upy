@@ -7,8 +7,13 @@ Created on Thu Dec  2 14:25:17 2010
 add Group
 add more layout support
 """
+import sys
 from time import time
-        
+import math
+
+if sys.version > '3.3.0' :
+    unicode = str
+
 class uiAdaptor(object):
     """
     The uiAdaptor abstract class
@@ -38,6 +43,9 @@ class uiAdaptor(object):
     
     def __init__(self,**kw):
         pass
+
+#    def getFlagAlignement(self,options):
+#        return options
         
     def timeFunction(self,function,*args):
         """
@@ -66,7 +74,7 @@ class uiAdaptor(object):
         @type  args: liste
         @param args: the liste of arguments for the function
         """ 
-        print ("action ",item["name"],item["action"])
+        #print ("action ", item["name"], item["action"])
         if item["action"] is not None:
             item['action'](*args)
 
@@ -81,13 +89,6 @@ class uiAdaptor(object):
         larg = tuple(larg)
 #        print "args",larg
         return funct(*larg)
-
-#    def check_addAction(self,funct,action,*args):
-#        larg = list(args)
-#        if action is not None :
-#            larg.append(action)
-#        larg = tuple(larg)
-#        return funct(*larg)
 
     def _callElemAction(self,item):
         """
@@ -130,7 +131,7 @@ class uiAdaptor(object):
         @type  args: list or args
         @param args: depending of the host the event's format is not the same.
         """
-#        print ("_commands ",args)
+        #print ("_commands ",args)
         evt = None
         if len(args):
             evt=args[0]
@@ -150,24 +151,27 @@ class uiAdaptor(object):
                             called = self._callElem(block[k],evt)
                 else :
                     for line in block["elems"]:
-                        called = self._callElem(line,evt)
+                        if type(line) is list :
+                            self._callElem(line,evt)
+                        else :
+                            if "0" in line:
+                                for k in line:
+                                    if k != "0":
+                                        called = self._callElem(line[k],evt)
+                            else :
+                                for l in line["elems"]:
+                                    called = self._callElem(l,evt)
         if self.host == 'blender':
             self.handleSCrollEvent(evt,args)
         if self.MENU_ID and not called:
             self.handleMenuEvent(evt,self.MENU_ID)
+        #EXTRA CALLBACK?
         self.updateViewer()
-  
-#    def _addLayout(self,listElem):
-#        """
-#        Function to add a block to the main layout of the gui. 
-#    
-#        @type  listElem: list or dictionary
-#        @param listElem: list or dictionary of item dictionary
-#        """
-#        self._layout.append(listElem)  
+   
     
-    def _addLayout(self,id=0,name="",width=10,height=10,label="",tooltip="",
-                   elems=None,type="frame",wcolor=[1.,0.,0.,1.],collapse=True,variable=None):
+    def _addLayout(self,id=0,name="",width=0,height=0,label="",tooltip="",
+                   elems=None,type="frame",wcolor=[1.,0.,0.,1.],collapse=True,
+                   scrolling=False, variable=None,alignement=None):
         """
         Return a dictionary reprensenting one sublayout, such as the collapsable 
         frame.
@@ -187,7 +191,7 @@ class uiAdaptor(object):
         @type  elems: list or dictionary
         @param elems: list or dictionary of item dictionary to put in the layout
         @type  type: string
-        @param type: type of layout
+        @param type: type of layout. ie frame or tab
         @type  wcolor: array
         @param wcolor: color of the layout
         @type  collapse: boolean
@@ -200,21 +204,24 @@ class uiAdaptor(object):
             for el in line :
                 if el is None :
                     continue
-                el["show"] = not collapse
+#                el["show"] = not collapse #check if work with otherhost that blender2.6
         elem = {"id":self.id,"name":name,"width":width,"height":height,"label":label,
-                "tooltip":tooltip,"elems":elems,"type":type,"wcolor":wcolor,
-                "collapse":collapse,"variable":variable}
+                "tooltip":tooltip,"elems":elems,"type":type,"wcolor":wcolor,"width":width,"height":height,
+                "collapse":collapse,"variable":variable,"scrolling":scrolling,"alignement":alignement}
         self.id = self.id + 1
 #        print ("host",self.host)
-        if self.host == 'blender25' :#or self.host == 'blender':
-            if elem["type"] == "frame":
+        if self.host in ['blender25', 'blender262','blender263'] :#or self.host == 'blender':
+            if elem["type"] == "frame":#TAB?
                 self.addVariablePropToSc(elem,"bool",collapse)#[type,val]
+            if elem["type"] == "tab" :
+                elem["type"] = "frame"
+                self.addVariablePropToSc(elem,"bool",collapse)
         return elem
 
-    def _addElemt(self,id=0,name="",width=10,height=10,label="",tooltip="",
+    def _addElemt(self,id=0,name="",width=10,height=10,label=None,tooltip="",
                   action=None,value=None,variable=None,type="label",icon=None,
                   maxi=10,mini=0,step=1,show=True,trigger=False,sub=None,
-                  precision=4.):
+                  precision=4.,alignement="hfit_scale"):
         """
         Return a dictionary reprensenting one sublayout, such as the collapsable 
         frame.
@@ -263,13 +270,16 @@ class uiAdaptor(object):
                 "value":value,"variable":variable,"type":type,"tooltip":tooltip,
                 "label":label,"icon":icon,"maxi":maxi,"mini":mini,"step":step,
                 "show":show,"trigger":trigger,"sub":sub,
-                "precision":precision}
+                "precision":precision,"alignement":alignement}
         self.id = self.id + 1              
 #        print ("host"+self.host)
-        if self.host == 'blender25' :#or self.host == 'blender':
+        if self.host in ['blender25', 'blender262', 'blender263'] :#or self.host == 'blender':
 #            print ("blender2.5 we will setup the Scene properties",variable)
             if variable is not None : #[type,val]
-                self.addVariablePropToSc(elem,variable[0],variable[1])
+                self.addVariablePropToSc(elem,variable[0],variable[1])#not for button
+        elif self.host == "tk":
+            if variable is None :
+                elem["variable"] = self.addVar(type,value)
         return elem
         
     def _draw(self,block,y):
@@ -303,22 +313,29 @@ class uiAdaptor(object):
             self.endBlock()
         else : #dictionary: multiple line / format dict?
             if "0" in block:
-                y = y +self.ystep
-                if self.host != "maya" :self.startBlock(m=block["0"][0])
-                for i in range(1,len(block)):
-                    x=5
-                    if self.host == "maya" and self.host == "houdini":
-                        self.startBlock(m=len(block[str(i)]))
-                    for elem in block[str(i)]:
-                        if elem is None :
-                            continue
-                        self._drawElem(elem,x,y)
-                        x += int(elem["width"]*self.scale) + 15
-                    if self.host == "maya" and self.host == "houdini":
-                        self.endBlock()
-                if self.host != "maya" : self.endBlock()
+                y = self._drawGroup(block,x,y)
             else :
                 y = self._drawFrame(block,x,y)
+                #self.endBlock()
+        return y
+    
+    def _drawGroup(self,block,x,y):
+        #can beoverwritten by child class
+        y = y +self.ystep
+        if self.host != "maya" :
+            self.startBlock(m=block["0"][0])
+        for i in range(1,len(block)):
+            x=5
+            if self.host == "maya" and self.host == "houdini":
+                self.startBlock(m=len(block[str(i)]))
+            for elem in block[str(i)]:
+                if elem is None :
+                    continue
+                self._drawElem(elem,x,y)
+                x += int(elem["width"]*self.scale) + 15
+            if self.host == "maya" and self.host == "houdini":
+                self.endBlock()
+        if self.host != "maya" : self.endBlock()
         return y
 
     def _drawFrame(self,bloc,x,y):
@@ -361,6 +378,8 @@ class uiAdaptor(object):
 #        print "dElem",elem["name"],x,y,w,h
         if elem is None :
             return
+        if elem["alignement"] is not None :
+            elem["alignement"] = self.getFlagAlignement(elem["alignement"])
         if elem["type"] == "button":
             self.drawButton(elem,x,y,w=w,h=h)
         elif elem["type"] == "pullMenu":
@@ -385,9 +404,8 @@ class uiAdaptor(object):
             self.drawLabel(elem,x,y,w=w,h=h)
         elif elem["type"] == "group": 
             self.drawGroup(elem,x,y,w=w,h=h)
-                        
-#        elif elem["type"] == "line": 
-#            self.drawLine(elem,x,y,w=w,h=h)
+        elif elem["type"] == "line": 
+            self.drawLine(elem,x,y,w=w,h=h)
 #        elif elem["type"] == "obj": 
 #            self.drawObj(elem,x,y,w=w,h=h)
             
@@ -398,82 +416,113 @@ class uiAdaptor(object):
 #        if type == "button":
 #            self.drawButton(elem,x,y,w=w,h=h)
         if typ == "pullMenu":
+            if val is None : val = 0
             return self.addVariable("int",val)
         elif typ == "inputStr" or type == "label":
+            if val is None : val = ""
             return self.addVariable("str",val)
 #        elif elem["type"] == "inputStrArea":
 #            self.drawStringArea(elem,x,y,w=w,h=h)
         elif typ == "checkbox":
+            if val is None : val = 0
             return self.addVariable("int",val)
         elif typ == "sliders":
+            if val is None : val = 0
             return self.addVariable("int",val)       
         elif typ == "inputInt":
+            if val is None : val = 0
             return self.addVariable("int",val)     
         elif typ == "inputFloat":
+            if val is None : val = 0.0
             return self.addVariable("float",val)     
 #        elif elem["type"] == "image":
 #            return self.getBool(elem)             
         elif typ == "color":
+            if val is None : val = (0,0,0)
             return self.addVariable("col",val)       
 #        elif elem["type"] == "label": 
 #            return self.getBool(elem)       
 
     def getVal(self,elem):
-#        if elem["type"] == "button":
-#            self.drawButton(elem,x,y,w=w,h=h)
-        if elem["type"] == "pullMenu":
-            return elem["value"][self.getLong(elem)]
-        if elem["type"] == "inputStr" or elem["type"] == "label":
-            return self.getString(elem)
-#        elif elem["type"] == "inputStrArea":
-#            self.drawStringArea(elem,x,y,w=w,h=h)
-        elif elem["type"] == "checkbox":
-            return self.getBool(elem)
-        elif elem["type"] == "sliders":
-            return self.getReal(elem)        
-        elif elem["type"] == "slidersInt":
-            return self.getLong(elem)        
-        elif elem["type"] == "inputInt":
-            return self.getLong(elem)       
-        elif elem["type"] == "inputFloat":
-            return self.getReal(elem)       
-#        elif elem["type"] == "image":
-#            return self.getBool(elem)             
-        elif elem["type"] == "color":
-            return self.getColor(elem)       
-#        elif elem["type"] == "label": 
-#            return self.getBool(elem)       
+        """
+        Return the value of the given widget
         
-    def setVal(self,elem,val):
+        @type  elem: dictionary widget
+        @param elem: the widget        
+        @rtype:   X
+        @return:  dependin on the type of widget will return a float, int, bool, or string
+        """
 #        if elem["type"] == "button":
 #            self.drawButton(elem,x,y,w=w,h=h)
-        if elem["type"] == "pullMenu":
-            if type(val) is str :
-                val = list(elem["value"]).index(val)
-            elif type(val) is list :
-                val = 0
-            return self.setLong(elem,val)
-        elif elem["type"] == "inputStr" or elem["type"] == "label":
-            return self.setString(elem,str(val))
-#        elif elem["type"] == "inputStrArea":
-#            self.drawStringArea(elem,x,y,w=w,h=h)
-        elif elem["type"] == "checkbox":
-            return self.setBool(elem,val)
-        elif elem["type"] == "sliders":
-            return self.setReal(elem,val)        
-        elif elem["type"] == "slidersInt":
-            return self.setLong(elem,val)        
-        elif elem["type"] == "inputInt":
-            return self.setLong(elem,val)       
-        elif elem["type"] == "inputFloat":
-            return self.setReal(elem,val)       
-#        elif elem["type"] == "image":
-#            return self.getBool(elem)             
-        elif elem["type"] == "color":
-            return self.setColor(elem,val)
+        try :
+            if elem["type"] == "pullMenu":
+                ind = self.getLong(elem)
+                if ind is None or len(elem["value"]) == 0 :
+                    return None
+                else :
+                    return elem["value"][ind]
+            if elem["type"] == "inputStr" or elem["type"] == "label":
+                return self.getString(elem)
+    #        elif elem["type"] == "inputStrArea":
+    #            self.drawStringArea(elem,x,y,w=w,h=h)
+            elif elem["type"] == "checkbox":
+                return self.getBool(elem)
+            elif elem["type"] == "sliders":
+                return self.getReal(elem)        
+            elif elem["type"] == "slidersInt":
+                return self.getLong(elem)        
+            elif elem["type"] == "inputInt":
+                return self.getLong(elem)       
+            elif elem["type"] == "inputFloat":
+                return self.getReal(elem)       
+    #        elif elem["type"] == "image":
+    #            return self.getBool(elem)             
+            elif elem["type"] == "color":
+                return self.getColor(elem)       
 #        elif elem["type"] == "label": 
 #            return self.getBool(elem)       
-
+        except :
+            return elem["value"]
+            
+    def setVal(self,elem,val):
+        """
+        Set the value of the given widget
+        
+        @type  elem: dictionary widget
+        @param elem: the widget    
+        @type  val: X
+        @param val: the new value for the widget
+        """
+        try :
+            if elem["type"] == "pullMenu":
+                if type(val) is str or type(val) is unicode:
+                    val = list(elem["value"]).index(str(val))#or values?
+                elif type(val) is list :
+                    val = 0
+                return self.setLong(elem,val)
+            elif elem["type"] == "inputStr" or elem["type"] == "label":
+                return self.setString(elem,str(val))
+    #        elif elem["type"] == "inputStrArea":
+    #            self.drawStringArea(elem,x,y,w=w,h=h)
+            elif elem["type"] == "checkbox":
+                return self.setBool(elem,val)
+            elif elem["type"] == "sliders":
+                return self.setReal(elem,val)        
+            elif elem["type"] == "slidersInt":
+                return self.setLong(elem,val)        
+            elif elem["type"] == "inputInt":
+                return self.setLong(elem,val)       
+            elif elem["type"] == "inputFloat":
+                return self.setReal(elem,val)       
+    #        elif elem["type"] == "image":
+    #            return self.getBool(elem)             
+            elif elem["type"] == "color":
+                return self.setColor(elem,val)
+    #        elif elem["type"] == "label": 
+    #            return self.getBool(elem)       
+        except :
+            pass
+        
     def _createLayout(self):
         """
         Main function to initialised and draw the gui. The function setup the 
@@ -493,23 +542,53 @@ class uiAdaptor(object):
             self.drawSub(self._layout,y)
         else :
             for block in self._layout:
+#                print type(block)
                 y=self._draw(block,y)
-            self.endLayout()
+        self.endLayout()
         return True
 
     def drawError(self,errormsg=""):
+        """
+        Open a dialog windows display the given error message.
+        * overwrited by children class for each host
+        """
         pass
-        
+    
     def startLayout(self,m=1,n=1):
+        """
+        Start the layout of the dialog
+        * overwrited by children class for each host
+        @type  m: int
+        @param m: number of columns   
+        @type  n: int
+        @param n: number of rows         
+        """
         pass
         
     def endLayout(self):
+        """
+        End the layout of the dialog
+        * overwrited by children class for each host
+        """
         pass
 
     def startBlock(self,m=1,n=1):
+        """
+        Start a block or group of widget in the current layout
+        * overwrited by children class for each host
+        
+        @type  m: int
+        @param m: number of columns   
+        @type  n: int
+        @param n: number of rows 
+        """
         pass
 
     def endBlock(self):
+        """
+        End a block or group of widget in the current layout
+        * overwrited by children class for each host
+        """
         pass
 
     def handleMenuEvent(self,ev,menu):
@@ -541,17 +620,75 @@ class uiAdaptor(object):
 
 
     def fileDialog(self,label="",callback=None):
-        pass
+        """
+        Open a file dialog windows letting browse to a particular file.
+        * overwrited by children class for each host
+        
+        @rtype:   string
+        @return:  absolute filname
+        """
+        return None
+
 
     def close(self):
+        """
+        Close the dialog windows.
+        * overwrited by children class for each host
+        """
         pass
 
     def getDirectory(self):
-        """return software directory for script and preferences"""
+        """
+        Rreturn software directory for script and preferences
+        * overwrited by children class for each host    
+        """
         pass
 
     def SetTitle(self,title):
+        """
+        Change the name of the dialog, which will appear at the top of the dialog
+        * overwrited by children class for each host
+        
+        @type  title: string
+        @param title: the title of the dialog  
+        """
         pass
 
     def drawGroup(self,elem,x,y,w=10,h=10):
+        """
+        Start a group of widget in the current layout
+        * overwrited by children class for each host
+        ***Not yet implemented***
+        @type  elem: array or dictionary
+        @param elem: list or dictionary of item dictionary
+        @type  x: int
+        @param x: position on x in the gui windows
+        @type  y: int
+        @param y: position on y in the gui windows
+        @type  w: int
+        @param w: force the width of the item
+        @type  h: int
+        @param h: force the height of the item
+        """
         pass
+
+    def getHeightElems(self,bloc):
+        """
+        Return the sum of elem height for the give blocks
+        Or return bloc heigh if any
+        """
+        if bloc["height"] is not None:
+            return bloc["height"]
+        H=0
+        for k,blck in enumerate(bloc["elems"]):
+            if type(blck) is list :
+                if len(blck) == 0 :
+                    continue
+                ih=0
+                for index, item in enumerate(blck):
+                    ih+=item["height"]*self.scale
+                if ih :
+                    H+=math.ceil(float(ih)/len(blck))
+            else : #dictionary: multiple line / format dict?
+                H+=self.getHeightElems(blck)
+        return int(H)

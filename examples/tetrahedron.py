@@ -3,13 +3,15 @@
 Created on Wed Jan 19 12:12:14 2011
 
 @author: Ludovic Autin - ludovic.autin@gmail.com
+this example is really similar to the Cube_sphere one. The purpose is to sho the use of the modellin helper to crate a mesh.
+
 """
 #example for a script not a plugin ....
 
 import sys,os
 #pyubic have to be in the pythonpath, if not add it
-pathtoupy = "/Users/ludo/DEV/"
-sys.path.insert(0,pathtoupy)
+#pathtoupy = "/Users/ludo/pathtoupy/"
+#sys.path.insert(0,pathtoupy)
 
 import upy
 upy.setUIClass()
@@ -20,11 +22,13 @@ helperClass = upy.getHelperClass()
 
 import math
 
+
+
 class Tetrahedron(uiadaptor):
 
-    def setup(self,verts=None,faces=None):
+    def setup(self,verts=None,faces=None,**kw):
         #get the helper
-        self.helper = helperClass(kw)
+        self.helper = helperClass(**kw)
         #dont want to dock it ie maya 
         self.dock = False
         self.initWidget(id=10)
@@ -45,26 +49,12 @@ class Tetrahedron(uiadaptor):
     def CreateLayout(self):
         self._createLayout()
         return 1
-
     def Command(self,*args):
 #        print args
         self._command(args)
         return 1
 
-    def createTetrahedron(self,*args):
-        name = "Tetrahedron"
-        o = self.helper.getObject(name)
-        if o is None :
-            object,mesh = self.helper.createsNmesh(name,self.verts,None,self.faces)
-            self.helper.addObjectToScene(self.helper.getCurrentScene(),object)
-                       
-    def scaleTetrahedron(self,*args):
-        #get the stat
-        scale = self.getReal(self.SLIDERS["Tetrahedron"])
-        o = self.helper.getObject("Mesh_Tetrahedron")
-        if o is not None :
-            self.helper.scaleObj(o,scale)
-            
+    
     def initWidget(self,id=None):
         #this where we define the buttons
         self.PUSHS = {}
@@ -89,6 +79,24 @@ class Tetrahedron(uiadaptor):
         frame1 = self._addLayout(id=100,name="Tetrahedron",elems=elemFrame1,type="tab")
         self._layout.append(frame1)
 
+#==============================================================================
+# create the calback function
+#==============================================================================
+
+    def createTetrahedron(self,*args):
+        name = "Tetrahedron"
+        o = self.helper.getObject(name)
+        if o is None :
+            object,mesh = self.helper.createsNmesh(name,self.verts,None,self.faces)
+            self.helper.addObjectToScene(self.helper.getCurrentScene(),object)
+                       
+    def scaleTetrahedron(self,*args):
+        #get the stat
+        scale = self.getReal(self.SLIDERS["Tetrahedron"])
+        o = self.helper.getObject("Tetrahedron")
+        if o is not None :
+            self.helper.scaleObj(o,scale)
+            
 if uiadaptor.host == "tk":
     #from DejaVu import Viewer
     #vi = Viewer()    
@@ -109,6 +117,6 @@ mygui.setup()
 mygui.display()
 if uiadaptor.host == "qt": app.exec_()#work without it ?
 
-#C4D : execfile("/Library/MGLTools/1.5.6.up/MGLToolsPckgs/pyubic/examples/layout.py")
+#C4D : execfile("/Users/ludo/DEV/upy/trunk/upy/examples/tetrahedron.py")
 #Blender Text Run Python Script
 #maya open and run in the console

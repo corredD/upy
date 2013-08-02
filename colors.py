@@ -189,7 +189,7 @@ try :
 except :
     print("require numpy")
 def RedWhiteBlueRamp(size=256):
-    ramp = Numeric.ones( (size, 3), 'f')
+    ramp = numpy.ones( (size, 3), 'f')
     mid = int(size/2)
     incr = 1./(mid-1)
     for i in range(mid):

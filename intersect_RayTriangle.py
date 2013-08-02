@@ -74,7 +74,7 @@ def intersect_RayTrianglePy( ray, Triangle):
 try:
     from geomutils.geomalgorithms import intersect_RayTriangle
 except ImportError:
-    print "shapefit.intersect_RayTriangle.py: defaulting  to python implementation"
+    print ("shapefit.intersect_RayTriangle.py: defaulting  to python implementation")
 
     intersect_RayTriangle = intersect_RayTrianglePy
 

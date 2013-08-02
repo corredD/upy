@@ -16,7 +16,7 @@ except :
         from PySide import QtGui,QtCore
     except :
         print ("noQt support ")
-        
+print ("ok Qt ")        
 #from PyQt4.Qwt5 import QwtSlider
 #QtGui.QMainWindow
 #QtGui.QWidget
@@ -26,7 +26,145 @@ from functools import partial
 # -add validator
 #
 
+mainRoot = None
+class SlidersGroup(QtGui.QWidget):
 
+    valueChanged = QtCore.pyqtSignal(int)
+
+    def __init__(self, orientation, title, stype="int", parent=None,min=0,max=10,step=1):
+        super(SlidersGroup, self).__init__( parent)
+
+        self.stype = stype
+        self.min=min
+        self.max=max
+        self.step=step
+        
+        self.slider = QtGui.QSlider(orientation)
+        self.slider.setFocusPolicy(QtCore.Qt.StrongFocus)
+        #self.slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        #self.slider.setTickInterval(10)
+        #self.slider.setSingleStep(1)
+
+        if self.stype == "float":
+            self.valueSpinBox = QtGui.QDoubleSpinBox()
+        else :
+            self.valueSpinBox = QtGui.QSpinBox()
+        #self.valueSpinBox.setRange(-100, 100)
+        #self.valueSpinBox.setSingleStep(1)
+        #self.valueSpinBox.setValue = self.spinerSetValue
+        #self.horizontalSliders.valueChanged.connect(self.verticalSliders.setValue)
+        #self.verticalSliders.valueChanged.connect(self.valueSpinBox.setValue)
+
+        #self.valueSpinBox.valueChanged.connect(self.slider.setValue)
+
+        #self.scrollBar = QtGui.QScrollBar(orientation)
+        #self.scrollBar.setFocusPolicy(QtCore.Qt.StrongFocus)
+
+        #self.dial = QtGui.QDial()
+        #self.dial.setFocusPolicy(QtCore.Qt.StrongFocus)
+
+        #self.slider.valueChanged.connect(self.valueSpinBox.setValue)
+        self.slider.valueChanged.connect(self.spinerSetValue)
+        self.valueSpinBox.valueChanged.connect(self.sliderSetValue)
+        #self.valueSpinBox.editingFinished.connect(self.sliderSetValue)
+        #self.connect(self.valueSpinBox, QtCore.SIGNAL('valueChanged'), self.sliderSetValue)
+        
+        #self.scrollBar.valueChanged.connect(self.dial.setValue)
+        #self.dial.valueChanged.connect(self.slider.setValue)
+        #self.dial.valueChanged.connect(self.valueChanged)
+
+        slidersLayout = QtGui.QHBoxLayout()
+        slidersLayout.addWidget(self.valueSpinBox)
+        slidersLayout.addWidget(self.slider)
+        #slidersLayout.addWidget(self.scrollBar)
+        #slidersLayout.addWidget(self.dial)
+        self.setLayout(slidersLayout)    
+        self.setRange(self.min,self.max)
+        self.setSingleStep(self.step)
+
+    def sliderSetValue(self,*args):
+        #print "sliderSetValue",self,args
+        value = self.valueSpinBox.value()
+        if self.stype == "float":
+            value = int(value*(1./self.step))
+        self.slider.setValue(value)
+
+    def spinerSetValue(self,value):
+        #print "spinerSetValue",value
+        if self.stype == "float":
+            value = float(value*float(self.step))
+        self.valueSpinBox.setValue(value)
+        if self.stype == "float":
+            signal = 'valueChanged(double)'
+        elif self.stype == "int":
+            signal = 'valueChanged(int)'       
+        self.emit(QtCore.SIGNAL(signal) , value)
+        
+    def setValue(self, value):
+        self.sliderSetValue(value)
+        self.valueSpinBox.setValue(value)
+        if self.stype == "float":
+            signal = 'valueChanged(double)'
+        elif self.stype == "int":
+            signal = 'valueChanged(int)'       
+        self.emit(QtCore.SIGNAL(signal) , value)
+        
+    def convertValue(self,value):
+        #float is range 0-100 with step = 1 an
+        elem["id"].setRange(elem["mini"]*(1/elem["step"]), elem["maxi"]*(1/elem["step"]))#,elem["step"])
+        elem["id"].setSingleStep(elem["id"].maximum()/100.0)#elem["step"]
+        if stype == "float":
+            value = value
+
+    def setRange(self, valuemin,valuemax):
+        if self.stype == "float":
+            valuemin = valuemin * (1.0/self.step)
+            valuemax = valuemax * (1.0/self.step)
+        self.slider.setRange(valuemin,valuemax)
+        self.valueSpinBox.setRange(valuemin,valuemax)
+        #self.scrollBar.setMinimum(value)
+        #self.dial.setMinimum(value)
+        
+    def setMinimum(self, value):    
+        self.slider.setMinimum(value)
+        self.valueSpinBox.setMinimum(value)
+        #self.scrollBar.setMinimum(value)
+        #self.dial.setMinimum(value)    
+
+    def setMaximum(self, value):    
+        self.slider.setMaximum(value)
+        self.valueSpinBox.setMaximum(value)
+        #self.scrollBar.setMaximum(value)
+        #self.dial.setMaximum(value)    
+        
+    def invertAppearance(self, invert):
+        self.slider.setInvertedAppearance(invert)
+        #self.scrollBar.setInvertedAppearance(invert)
+        #self.dial.setInvertedAppearance(invert)    
+
+    def setSingleStep(self,step):
+        self.valueSpinBox.setSingleStep(step)
+        if self.stype == "float":
+            step = step * (1.0/self.step)
+        self.slider.setSingleStep(step)
+        
+    def value(self):
+        v = self.slider.value()
+        if self.stype == "float":
+            return float(v)*self.step
+        else :
+            return int(v)
+        
+    def invertKeyBindings(self, invert):
+        self.slider.setInvertedControls(invert)
+        #self.scrollBar.setInvertedControls(invert)
+        #self.dial.setInvertedControls(invert)
+
+    #def valueChanged(self,value):
+    #    print "valueChanged",value
+    #    print self.slider.value()
+    #   print self.valueSpinBox.value()
+    
 class ColorButton(QtGui.QPushButton):
 
         StyleSheet = 'background-color: %s;'
@@ -72,7 +210,7 @@ class ColorButton(QtGui.QPushButton):
 
 
 #UI general interface
-class qtUI(QtGui.QMainWindow,QtGui.QWidget):
+class qtUI(QtGui.QDialog,QtGui.QMainWindow,QtGui.QWidget):
     """
     The qt uiAdaptor abstract class
     ====================================
@@ -89,13 +227,13 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
     winName=""
     subdialog = False
     dock = True
-    w=200
+    w=400
     h=100
     notebook = None
     x=20
     y=0
     ystep = 30
-
+    collapsible_frame = None
         
         
     def keyPressEvent(self, event):
@@ -118,13 +256,34 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         self.winName= title.replace(" ","_")+"_gui"
 #        print winName
 #        print cmds.window(winName, q=1, exists=1)
-        #self.resize(self.w*self.scale,self.h*self.scale)
+        self.resize(self.w*self.scale,self.h*self.scale)
         self.setWindowTitle(title)
+        self.mainlayout = QtGui.QVBoxLayout(self)
+        self.setLayout(self.mainlayout)
         #self.winName = winName
 #        print self.winName, " created"
 
-#    def createMenuAction(self,)
-
+    def ctxMenu(self,menu_entry,menuDictionary):
+        menu = QtGui.QMenu()  
+        for elem in menuDictionary:
+            if elem["sub"] is not None:
+                submenu = menu.addMenu(elem["name"])
+                for sub in elem['sub'].keys():
+                    if elem['sub'][sub]["action"] is not None :
+                        sube = QtGui.QAction(elem['sub'][sub]["name"],self)
+                        self.connect(sube, QtCore.SIGNAL('triggered()'),partial(elem['sub'][sub]["action"],sub))
+                        submenu.addAction(sube)
+                    else :
+                        submenu.addAction(elem['sub'][sub]["name"])
+            else:
+                if elem["action"] is not None :
+                    ac=QtGui.QAction(elem["name"],self)#uItem( label=elem["name"],c=elem["action"])
+                    self.connect(ac, QtCore.SIGNAL('triggered()'),elem["action"])
+                    menu.addAction(ac)
+                else :
+                    menu.addAction(elem["name"])        
+        menu.exec_(QtGui.QCursor.pos())
+              
     def createMenu(self,menuDic,menuOrder=None):
         """ Define and draw the window/widget top file menu
         @type  menuDic: dictionary
@@ -133,54 +292,24 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         @param menuOrder: the menu keys oredered
         """        
         #always use toolbar except if specify
-        if self.subdialog :
-            return 
+        #if self.subdialog :
+        #    return 
 #        self.exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
 #        self.exit.setShortcut('Ctrl+Q')
 #        self.connect(self.exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
-#
-#        self.toolbar = self.addToolBar('Exit')
-#        self.toolbar.addAction(self.exit)
-#
-
-#        openFile = QtGui.QAction(QtGui.QIcon('open.png'), 'Open', self)
-#        openFile.setShortcut('Ctrl+O')
-#        openFile.setStatusTip('Open new File')
-#        self.connect(openFile, QtCore.SIGNAL('triggered()'), self.showDialog)
-#
-#        self.menubar = self.menuBar()
-#        #=>require MainWindows and its the main in Mac at top
-#        #thats a problem, may have to use pullDown menu instead.
-#        fileMenu = menubar.addMenu('&File')
-#        fileMenu.addAction(openFile)
-#        
-#
-#        if menuOrder : 
-#            lookat = menuOrder
-#        else :
-#            lookat = menuDic.keys()
-#        for mitem in lookat:
-#            fileMenu = menubar.addMenu('&'+mitem)
-#            for elem in menuDic[mitem]:            
-#                if elem["sub"] is not None:
-#                    elem['id']=cmds.menuItem(subMenu=True, label=elem["name"])
-#                    for sub in elem['sub'].keys():
-#                        checkBox = False#elem['sub'][sub]['checkBox']
-#                        if elem['sub'][sub]["action"] is not None :
-#                            elem['sub'][sub]['id']=cmds.menuItem( label=elem['sub'][sub]["name"],
-##                                                            checkBox=checkBox,
-#                                                            c=partial(elem['sub'][sub]["action"],sub))
-#                        else :
-#                            elem['sub'][sub]['id']=cmds.menuItem( label=elem['sub'][sub]["name"],)
-##                                                            checkBox=checkBox,)
-##                        if checkBox and elem['sub'][sub].has_key("var"):
-##                            cmds.menuItem(elem['sub'][sub]['id'],e=1,checkBox=bool(elem['sub'][sub]['var']))
-#                    cmds.setParent( '..', menu=True )
-#                else:
-#                    if elem["action"] is not None :
-#                        elem['id']=cmds.menuItem( label=elem["name"],c=elem["action"])
-#                    else :
-#                        elem['id']=cmds.menuItem( label=elem["name"])
+        self.toolBar = QtGui.QToolBar(self)
+        self.toolBar.setObjectName(self.winName+"toolBar")
+        self.mainlayout.addWidget(self.toolBar)
+        #self.addToolBar(self.toolBar)
+        if menuOrder : 
+            lookat = menuOrder
+        else :
+            lookat = menuDic.keys()
+        for mitem in lookat:
+            action = QtGui.QPushButton(mitem, self)
+            self.toolBar.addWidget(action)
+            action.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.connect(action,QtCore.SIGNAL('clicked()'),partial(self.ctxMenu,mitem,menuDic[mitem]))
 
     def addVariable(self,type,value):
         """ Create a container for storing a widget states """
@@ -191,6 +320,9 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
             return col
         else :
             return value
+
+    def getFlagAlignement(self,alignement):
+        pass
 
     def drawButton(self,elem,x,y,w=None,h=None):
         """ Draw a Button 
@@ -204,9 +336,14 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         @param w: force the width of the item
         @type  h: int
         @param h: force the height of the item
-        """        
-        elem["id"] = QtGui.QPushButton(elem["name"], self)
-        elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
+        """
+        #if elem["alignement"] is None :
+        #    elem["alignement"] = c4d.BFH_CENTER | c4d.BFV_MASK
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+        elem["id"] = QtGui.QPushButton(name, self)
+        #elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
         if elem["action"] is not None :
             self.connect(elem["id"], QtCore.SIGNAL('clicked()'),partial(elem["action"],elem))
         print (x,y, elem["name"])
@@ -225,7 +362,10 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         @type  h: int
         @param h: force the height of the item
         """             
-        elem["id"] = QtGui.QCheckBox(elem["name"], self)#or name
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
+        elem["id"] = QtGui.QCheckBox(name, self)#or name
         elem["id"].setFocusPolicy(QtCore.Qt.NoFocus)
         elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
         #elem["id"].toggle() #default uncheck
@@ -382,8 +522,9 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         elem["id"] = QtGui.QPlainTextEdit(self) 
         elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
         elem["id"].appendPlainText(elem["value"])
-        
-    def drawSliders(self,elem,x,y,w=None,h=None):
+
+           
+    def drawSliders1(self,elem,x,y,w=None,h=None):
         """ Draw a Slider elem, the variable/value of the elem define the slider format
         @type  elem: dictionary
         @param elem: the slider input dictionary
@@ -405,19 +546,60 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         elem["label"] = "A" 
         if elem["type"] == "sliders":
             elem["id"] = QtGui.QSlider(QtCore.Qt.Horizontal,self)#QwtSlider(self,QtCore.Qt.Horizontal)
-            elem["id"].setRange(elem["mini"], elem["maxi"])#,elem["step"])
+            elem["id"].setRange(elem["mini"]*(1/elem["step"]), elem["maxi"]*(1/elem["step"]))#,elem["step"])
+            elem["id"].setSingleStep(elem["id"].maximum()/100.0)#elem["step"]
         elif elem["type"] == "slidersInt":
             elem["id"] = QtGui.QSlider(QtCore.Qt.Horizontal,self)
             elem["id"].setRange(elem["mini"], elem["maxi"])
             elem["id"].setSingleStep(elem["step"])
+        elem["id"].setGeometry(x+(elem["width"]*self.scale/2.0), y,(elem["width"]*self.scale/2.0),elem["height"]*self.scale)
+        elem["id"].spin = QtGui.QSpinBox(self)
+        elem["id"].spin.setGeometry(x, y,(elem["width"]*self.scale/2.0),elem["height"]*self.scale)
+        elem["id"].spin.setRange(elem["mini"], elem["maxi"])
+        elem["id"].spin.setSingleStep(elem["step"])
+        elem["id"].spin.setValue(elem["value"])     
+        elem["id"].spin.valueChanged.connect(elem["id"].setValue)
+        elem["id"].valueChanged.connect(elem["id"].spin.setValue)
+        if elem["action"] is not None :
+            signal = 'valueChanged(int)'
+            if elem["type"] == "slidersInt":
+                signal = 'valueChanged(int)'
+            elif elem["type"] == "sliders":
+                signal = 'valueChanged(double)'
+            signal = 'valueChanged(int)'
+            self.connect(elem["id"], QtCore.SIGNAL(signal), 
+                         partial(elem["action"],elem))
 
-        elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
-        
-#        slider.setSingleStep(16)
-#        slider.setPageStep(15 * 16)
-#        slider.setTickInterval(15 * 16) 
-        #if elem["type"] == "slidersInt":
-            #precision
+    def drawSliders(self,elem,x,y,w=None,h=None):
+        """ Draw a Slider elem, the variable/value of the elem define the slider format
+        @type  elem: dictionary
+        @param elem: the slider input dictionary
+        @type  x: int
+        @param x: position on x in the gui windows
+        @type  y: int
+        @param y: position on y in the gui windows
+        @type  w: int
+        @param w: force the width of the item
+        @type  h: int
+        @param h: force the height of the item
+        """                
+        if elem["variable"] is None :
+            elem["variable"] =0.0
+        if elem["value"] is None :
+            elem["value"] = 0
+        if elem["value"] > elem["maxi"] :
+            elem["maxi"] = elem["value"]+10
+        if elem["value"] < elem["mini"] :
+            elem["mini"] = elem["value"]-10        
+        elem["label"] = "A" 
+        if elem["type"] == "sliders":
+            elem["id"] = SlidersGroup(QtCore.Qt.Horizontal, "Horizontal",stype="float",
+                                                min=elem["mini"],max=elem["maxi"],step=elem["step"])
+        elif elem["type"] == "slidersInt":
+            elem["id"] = SlidersGroup(QtCore.Qt.Horizontal, "Horizontal",stype="int",
+                                                min=elem["mini"],max=elem["maxi"],step=elem["step"])
+        elem["id"].setGeometry(x+(elem["width"]*self.scale/2.0), y,(elem["width"]*self.scale/2.0),elem["height"]*self.scale)
+        elem["id"].setValue(elem["variable"])
         if elem["action"] is not None :
             signal = 'valueChanged(int)'
             if elem["type"] == "slidersInt":
@@ -601,12 +783,14 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         listes_x=[]
         if self.notebook is None :
             mdiarea = QtGui.QTabWidget(self)
-            tab_bar = QtGui.QTabBar(mdiarea)
-            self.setCentralWidget( mdiarea )
+            self.mainlayout.addWidget(mdiarea)
+            #tab_bar = QtGui.QTabBar(mdiarea)
+            #self.setCentralWidget( mdiarea )
             self.notebook = {}
             self.notebook["id"] = mdiarea
 #            print "ok", self.notebook["id"]
             self.notebook["tab"]={}#.append(bloc["name"])
+            #self.mainlayout.addWidget(mdiarea)
         self.notebook["tab"][bloc["name"]] =  bloc
 
         #bloc["id"] = QtGui.QSplitter(self,)
@@ -615,19 +799,26 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         bloc["id"] = QtGui.QWidget()
         bloc["layout"] = QtGui.QVBoxLayout(bloc["id"])
         for k,blck in enumerate(bloc["elems"]):
-            #add the widget to the layout
-            #one blk is a line
-            layout = QtGui.QHBoxLayout()
-            bloc["layout"].addLayout(layout)
-            y = y +self.ystep
-            for index, item in enumerate(blck):
-                self._drawElem(item,x,y)
-                x += int(item["width"]*self.scale) + 15
-                layout.addWidget(item["id"])
-                if item["type"] != "inputStrArea":
-                    item["id"].setFixedHeight(item["height"]*self.scale)
-                    item["id"].setFixedWidth(item["width"]*self.scale)
-            self.endBlock()
+            if type(blck) is list :
+                #add the widget to the layout
+                #one blk is a line
+                layout = QtGui.QHBoxLayout()
+                bloc["layout"].addLayout(layout)
+                y = y +self.ystep
+                for index, item in enumerate(blck):
+                    self._drawElem(item,x,y)
+                    x += int(item["width"]*self.scale) + 15
+                    layout.addWidget(item["id"])
+                    if item["type"] != "inputStrArea":
+                        item["id"].setFixedHeight(item["height"]*self.scale)
+                        item["id"].setFixedWidth(item["width"]*self.scale)
+                self.endBlock()
+            else : #dictionary: multiple line / format dict?
+                if "0" in blck:
+                    y = self._drawGroup(blck,x,y)
+                else :
+                    y = self._drawFrame(blck,x,y)
+           
         self.notebook["id"].addTab(bloc["id"],bloc["name"])
         #if bloc["name"] not in self.notebook["tab"].values():
         self.notebook["tab"][bloc["name"]] =  bloc
@@ -661,7 +852,7 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
             mdiarea.setTabShape( QtGui.QTabWidget.Rounded )
             mdiarea.setViewMode( QtGui.QMdiArea.TabbedView )
             mdiarea.show()
-            self.setCentralWidget( mdiarea )
+            #self.setCentralWidget( mdiarea )
             self.notebook = {}
             self.notebook["id"] = mdiarea
 #            print "ok", self.notebook["id"]
@@ -705,9 +896,67 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         @return:  the new horizontal position, used for blender
         """       
         listes_x=[]
+        
+        if self.collapsible_frame is None :
+            from upy.pythonUI.qtCollapsible import AccordianWidget 
+            mdiarea = AccordianWidget(self)#QtGui.QTreeWidget(self)
+            self.mainlayout.addWidget(mdiarea)
+#            mdiarea.setWidgetResizable(True)
+#            mdiarea.setAlignment(QtCore.Qt.AlignmentFlag.AlignJustify)
+            #mdiarea.setResizeMode(QtGui.QListView.Adjust)            
+            #self.setCentralWidget( mdiarea )
+            self.collapsible_frame = {}
+            self.collapsible_frame["id"] = mdiarea
+#            print "ok", self.notebook["id"]
+            self.collapsible_frame["tab"]={}#.append(bloc["name"])
+#            self.notebook["id"].show()
+        bloc["id"] = QtGui.QGroupBox()
+        bloc["id"].setFlat(True)
+        bloc["layout"] = QtGui.QVBoxLayout(bloc["id"])
+#        formLayout = QtGui.QFormLayout()
+#        formLayout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
+        self.collapsible_frame["tab"][bloc["name"]] =  bloc["id"]
+        #bloc["layout"] = QtGui.QVBoxLayout(bloc["id"])
+        oriy = y
+        x=self.x
+    
+        for k,blck in enumerate(bloc["elems"]):
+            #add the widget to the layout
+            layout = QtGui.QHBoxLayout()
+            bloc["layout"].addLayout(layout)
+            y = y +self.ystep
+            for index, item in enumerate(blck):
+                self._drawElem(item,x,y)
+                x += int(item["width"]*self.scale) + 15
+                layout.addWidget(item["id"])
+                if item["type"] == "inputStrArea":
+#                    item["id"].setFixedHeight(item["height"]*self.scale)
+#                    item["id"].setFixedWidth(item["width"]*self.scale)
+                    y = item["height"]*self.scale
+                    oriy = 0
+            #self.endBlock()
+        self.collapsible_frame["id"].addItem(bloc["name"], bloc["id"])
+        return y
+        
+    def drawFrameList(self,bloc,x,y):
+        """
+        Function to draw a block as a collapsable frame layout of the gui. 
+        
+        @type  block: array or dictionary
+        @param block: list or dictionary of item dictionary
+        @type  x: int
+        @param x: position on x in the gui windows, used for blender
+        @type  y: int
+        @param y: position on y in the gui windows, used for blender
+        
+        @rtype:   int
+        @return:  the new horizontal position, used for blender
+        """       
+        listes_x=[]
         if self.notebook is None :
-            mdiarea = QtGui.QTreeWidget(self) 
-            self.setCentralWidget( mdiarea )
+            mdiarea = QtGui.QTreeWidget(self)
+            #mdiarea.setResizeMode(QtGui.QListView.Adjust)            
+            #self.setCentralWidget( mdiarea )
             self.notebook = {}
             self.notebook["id"] = mdiarea
 #            print "ok", self.notebook["id"]
@@ -717,8 +966,9 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         bloc["id"].setText(0,bloc["name"])   #Sets the "header" for your [+] box
         list1 = QtGui.QListWidget(self)                #This will contain your icon list
         list1.setMovement(QtGui.QListView.Static)  #otherwise the icons are draggable
-        list1.setResizeMode(QtGui.QListView.Adjust) #Redo layout every time we resize
-        list1.setViewMode(QtGui.QListView.IconMode) #Layout left-to-right, not top-to-bottom
+        #list1.setResizeMode(QtGui.QListView.Adjust)  
+        #list1.setViewMode(QtGui.QListView.IconMode) #Layout left-to-right, not top-to-bottom
+        
         #list1.doItemsLayout()
         #list1.setModelColumn(2)
         
@@ -727,7 +977,7 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         #list1.setBatchSize(5)
         #list1.setGridSize(QtCore.QSize(50,50))
         #list1.setSpacing(20)
-        list1.setUniformItemSizes(True)
+        #list1.setUniformItemSizes(True)
 #        blc = QtGui.QSplitter(self,)
 #        #frame = QtGui.QFrame(bloc["id"])
 #        blc.setWindowTitle(bloc["name"])
@@ -739,7 +989,7 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
                 self._drawElem(item,x,y)
                 x += int(item["width"]*self.scale) + 15
                 listItem = QtGui.QListWidgetItem(list1)
-                listItem.setSizeHint(QtCore.QSize(item["width"]*self.scale,item["height"]*self.scale)) 
+                #listItem.setSizeHint(QtCore.QSize(item["width"]*self.scale,item["height"]*self.scale)) 
                 #Or else the widget items will overlap (irritating bug)
 #                blc.addWidget(item["id"])
                 list1.setItemWidget(listItem,item["id"])
@@ -753,14 +1003,21 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         #bloc["id"].setSizeHint(0,QtCore.QSize(200,y-oriy))
         self.notebook["tab"][bloc["name"]] =  bloc["id"]
         treeSubItem1 = QtGui.QTreeWidgetItem(bloc["id"])  #Make a subitem to hold our list
+        #treeSubItem1.setColumnWidth(0,self.w*self.scale)
         #treeSubItem1.setBackgroundColor(0,QtGui.QColor(0, 0, 0))
-        treeSubItem1.setSizeHint(0,QtCore.QSize(50,50))
+        #treeSubItem1.setSizeHint(0,QtCore.QSize(50,50))
         self.notebook["id"].setItemWidget(treeSubItem1,0,list1)       #Assign this list as a tree item
-        list1.setGeometry(0, 0,50,50)
-        list1.setFixedHeight(y-oriy)
+        self.notebook["id"].setColumnWidth(0,self.w*self.scale)
+        self.notebook["id"].setColumnWidth(1,self.w*self.scale)
+        print dir(self.notebook["id"])
+        #list1.setGeometry(0, 0,50,50)
+        #list1.setFixedHeight(y-oriy)
         self.endBlock()
         #bloc["id"].setSizes(listes_x)
         return y
+
+
+
 #
 #    def saveDialog(self,label="",callback=None):
 #        """ Draw a File input dialog
@@ -876,10 +1133,9 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         """                                
         #to do interpret the elem["type"] to call the correct function
         #have to look at the type too
+#        return elem["id"].value()
+
         return elem["id"].value()
-#        if elem["type"] == 'sliders':
-#            return cmds.floatSliderGrp(elem["id"],q=1,v=1)
-#        elif elem["type"] == "inputInt":
 #            return float(cmds.intField(elem["id"],q=1,v=1))
 #        elif elem["type"] == "inputFloat":
 #            return float(cmds.floatField(elem["id"],q=1,v=1))
@@ -1065,11 +1321,14 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
         @type  callback: function
         @param callback: the associate callback
         """        
-        dial.CreateLayout()
+        dial.display()
+        #dial.CreateLayout()
+        #dial.show()
 
 #    already define 
 #    def close(self,*args):
 #        """ Close the windows"""
+#        self._close()
 #        cmds.window(self.winName,e=1,vis=False)
 #
     def display(self):
@@ -1091,24 +1350,76 @@ class qtUI(QtGui.QMainWindow,QtGui.QWidget):
 #            else :
 #                self.softdir = plugdirs[0]
 #        print plugdirs
-
+    def _draw(self,block,y):
+        """
+        Function to draw a block by line in the main layout of the gui. 
+        block is an array. [c1,c2,c3] or {0:[c1,c2,c3],1:[c1,c2,c3]} 
+        for two lines with same height.
+        
+        @type  block: array or dictionary
+        @param block: list or dictionary of item dictionary
+        @type  y: int
+        @param y: position on y in the gui windows, used for blender
+        
+        @rtype:   int
+        @return:  the new horizontal position, used for blender
+        """
+        x=self.x
+        if type(block) is list : #one line
+            #unable the last tab
+            if self.notebook is not None and not self.notebookend:
+                self.notebookend = True
+                self.endBlock()
+            y = y +self.ystep
+            self.startBlock(m=len(block))
+            layout = QtGui.QHBoxLayout()
+            self.mainlayout.addLayout(layout)
+            x=self.x
+            for elem in block:
+                if elem is None :
+                    continue
+                #if self.subdialog: print "draw",elem["type"]
+                self._drawElem(elem, x, y)
+                if type(elem["id"]) == int :
+                    print elem
+                else :
+                    layout.addWidget(elem["id"])                        
+                x += int(elem["width"]*self.scale) + 15
+            self.endBlock()
+        else : #dictionary: multiple line / format dict?
+            if "0" in block:
+                y = self._drawGroup(block,x,y)
+            else :
+                y = self._drawFrame(block,x,y)
+                #self.endBlock()
+        return y
+    
             
 class qtUIDialog(qtUI,uiAdaptor):
     def __init__(self,**kw):
+        parent = mainRoot
     #def __init__(self, parent=None,subdialog=False):
         self.subdialog = False
         if "subdialog" in kw :
             self.subdialog = kw["subdialog"]
+        if "parent" in kw :
+            parent = kw["parent"]
         #QtGui.QWidget.__init__(self, parent)
+        #QtGui.QMainWindow.__init__(self,kw["parent"])
+        #print ("setCentralWidget",self.setCentralWidget)
+        #close_old = self.close
         if self.subdialog :
             QtGui.QWidget.__init__(self,parent)
         else :
-            QtGui.QMainWindow.__init__(self,)
-#        print "ok"
+            QtGui.QDialog.__init__(self,parent)
+        #close_widget = self.close
+        #self.close = close_old
+        #self._close = close_widget
         #self._createLayout()         
         if kw.has_key("title"):
             self.title= kw["title"]
             self.SetTitle(self.title)
+        print ("ok diag inited")            
 #        
 #
 #

@@ -518,7 +518,7 @@ class houdiniHelper(hostHelper.Helper):
             polygon.colors = colors
         polygon.sop.cook(force = True)
 
-    def updateMesh(self,obj,vertices=None,faces = None,colors = None):
+    def updateMesh(self,obj,vertices=None,faces = None,colors = None, smooth=False):
         if type(obj) == str:
             mesh = self.mesh["mesh_"+obj]
         else :
