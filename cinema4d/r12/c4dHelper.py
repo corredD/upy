@@ -31,6 +31,31 @@ from upy.hostHelper import Helper
 if hostHelper.usenumpy:
     import numpy
 
+
+from c4d.threading import C4DThread
+
+class UserThread(C4DThread):
+
+    def Main(self,func,*args,**kw):
+        # Put in your code here
+        # which you want to run
+        # in another thread
+        if self.TestBreak():
+                print "Canceled thread-execution."
+                return
+        func(*args, **kw)
+
+    def cb(self,):
+        if self.TestBreak():
+            return False
+        return True
+    
+    def TestDBreak(self):
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_KEYBOARD, c4d.KEY_ESC, bc)
+        # how to proceed?
+        #break the process ?
+        
 class c4dSynchro:
     #period problem
     def __init__(self,helper=None,use_generator=False):
@@ -191,6 +216,7 @@ class c4dHelper(Helper):
         #we can define here some function alias
         self.updateAppli = self.update
         #some synonym,dejaVu compatilbity->should disappear later
+        self._render_instance=True
         self.Cube = self.box
         self.Box = self.box
         self.Geom = self.newEmpty
@@ -241,6 +267,17 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
+
+    def start_thread(self,job):
+        thread = UserThread()
+        thread.Start()
+        # Do some other operations here
+        thread.Wait(True) #
+
+    def testForEscape(self,):
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_KEYBOARD, c4d.KEY_ESC, bc)
+        return bc.GetLong(c4d.BFM_INPUT_VALUE)
 
     def synchronize(self,cb):
         self.synchro_cb.add_callback(cb)
@@ -1147,19 +1184,21 @@ class c4dHelper(Helper):
             texture[1010] = material
         return stick
         
-    def Cylinder(self,name,radius=1.,length=1.,res=10, pos = [0.,0.,0.],parent=None,**kw):
+    def Cylinder(self,name,radius=1.,length=1.,res=3, pos = [0.,0.,0.],parent=None,**kw):
 #        QualitySph={"0":16,"1":3,"2":4,"3":8,"4":16,"5":32}
         baseCyl = c4d.BaseObject(self.CYLINDER)
         baseCyl.SetName(name)
         baseCyl[5000] = radius
         baseCyl[5005] = length
         #if str(res) not in QualitySph.keys():
+        #Default axes is +Y
         baseCyl[c4d.PRIM_CYLINDER_SEG] = res
         if "axis" in kw : #orientation
             dic = {"+X":0,"-X":1,"+Y":2,"-Y":3,"+Z":4,"-Z":5}
             if type(kw["axis"]) is str :
                 axis = dic[kw["axis"]]
             else : 
+#                axis = dic[self.rerieveAxis([kw["axis"][2],kw["axis"][1],kw["axis"][0]])]
                 axis = dic[self.rerieveAxis(kw["axis"])]
             baseCyl[c4d.PRIM_AXIS]=axis
 #        else :#default is +Y
@@ -1270,6 +1309,13 @@ class c4dHelper(Helper):
 #            texture[1010] = mat[atN[0]]
 #            k=k+1
 #        return spher
+
+    def Spheres(self,name,vertices=[],radii=[],colors=[],**kw):
+        """match DejaVu API """
+        #need a base sphere
+        base=self.Sphere(name+"_base")[0]
+        return self.instancesSphere(name,vertices,radii,base,
+                        colors,None)
         
     def instancesSphere(self,name,centers,radii,meshsphere,
                         colors,scene,parent=None):
@@ -2774,7 +2820,7 @@ class c4dHelper(Helper):
                     else :
                         mx = mat 
                 if globalT :
-                    instance[-1].SetMg(mx)
+                    instance[-1].SetMg(mx)#scaling ?
                 else :
                     instance[-1].SetMl(mx)
             #instance[-1].MakeTag(c4d.Ttexture)
@@ -4362,7 +4408,7 @@ class c4dHelper(Helper):
         if "rotation" in key :
             mo = self.getTransformation(obj)
             m = self.ToMat(mo)#.transpose()
-            mws = m.transpose()
+            mws = m.transpose()#Transpose ?
             rotMatj = mws[:]
             rotMatj[3][:3]*=0.0
             res.append(rotMatj)
@@ -4598,6 +4644,7 @@ class c4dHelper(Helper):
         poly = self.getMesh(poly)
         if edit :
             poly = self.makeEditable(poly,copy=copy)
+            poly = self.getObject(self.getName(poly))
         #triangulate
         if tri:
             self.triangulate(poly)
@@ -4641,12 +4688,15 @@ class c4dHelper(Helper):
         #need to apply the transformation
 #        vnormals=self.FixNormals(vertices,faces, vnormals,fn=fnormals)# v,f,vn
         if transform :
+            #transpose ?
             mat = self.getTransformation(poly)
             #c4dmat = poly.GetMg()
             #mat,imat = self.c4dMat2numpy(c4dmat)
             vertices = self.ApplyMatrix(vertices,self.ToMat(mat))
-#            vnormals = self.ApplyMatrix(vnormals,self.ToMat(mat))
-        #fix the normals
+            m=numpy.identity(4)
+            m[:3,:3]=numpy.array(self.ToMat(mat))[:3,:3]
+            vnormals = self.ApplyMatrix(vnormals,m)#rotation only ?
+        #fix the normals ? 
         if edit and copy :
             self.getCurrentScene().SetActiveObject(poly)
             c4d.CallCommand(100004787) #delete the obj       

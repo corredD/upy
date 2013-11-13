@@ -36,9 +36,11 @@ from types import StringType, ListType
 #from DejaVu import Viewer
            
 import numpy
+from numpy import matrix
 import Image
 #base helper class
 from upy import hostHelper
+from upy import ray
 
 try :
     import collada
@@ -48,7 +50,33 @@ except :
 
 #Problem instance doesnt really exist as its. Or its instance of mesh/sphere/cylinder directly.
 #check autofill display
+#we need to create a new class of object that will represent an instance...
+class Instance:
+    def __init__(self,name,geom,position=None, matrice=None):
+        self.name = name        
+        self.geom = geom
+        self.id = len(geom.instanceMatricesFortran)
+        self.matrice = [ 1.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  1.,  0.,  0.,
+         0.,  0.,  1.]
+        self.isinstance = True
+        if matrice is not None :
+           self.matrice = numpy.array(matrice).reshape((16,))#need to beflatten (16,) 
+        matrices =  geom.instanceMatricesFortran.tolist()
+        matrices.append(self.matrice)
+        m=[numpy.array(mat).reshape((4,4)) for mat in matrices]
+        geom.Set(instanceMatrices=numpy.array(m))
 
+    def SetTransformation(self,matrice):
+        matrices =  self.geom.instanceMatricesFortran.tolist()
+        matrices[self.id] = numpy.array(matrice).reshape((16,))
+        #print (matrices)
+        m=[numpy.array(mat).reshape((4,4)) for mat in matrices]
+        print ("set")
+        self.geom.Set(instanceMatrices=numpy.array(m), visible=1)
+
+    def SetTranslation(self,pos):
+        pass
+                
 class dejavuHelper(hostHelper.Helper):
     """
     The DejaVu helper abstract class
@@ -74,45 +102,64 @@ class dejavuHelper(hostHelper.Helper):
         hostHelper.Helper.__init__(self)
         #we can define here some function alias
         self.nogui = False        
-        self.updateAppli = self.update
-        self.Cube = self.box
-        self.Box = self.box 
+        
         print ("INITHELPER")
         if master is not None :
             if type(master) is dict :
                 self.viewer = master["master"]
             else :
                 self.viewer = master
-            if not isinstance(self.viewer,Viewer) or self.viewer is None :
+            if self.viewer == "nogui" :
+                self.nogui = True
+            elif not isinstance(self.viewer,Viewer) or self.viewer is None :
                 self.viewer = Viewer(master)              
         if vi is not None :
             self.viewer = vi
-            if not isinstance(self.viewer,Viewer.Viewer) or self.viewer is None :
+            if self.viewer == "nogui" :
+                self.nogui = True
+            elif not isinstance(self.viewer,Viewer) or self.viewer is None :
                 print ("no Viewer pass")
         if self.viewer is None:
             print ("no Viewer golboals")
             dicG = globals()
             for d in dicG: 
-                try :
-                    if isinstance(dicG[d],Viewer.Viewer):
-                        self.viewer = dicG[d]
-                        break
-                except :
-                    continue
-        if self.viewer is None and vi != "nogui":
-            self.viewer  = Viewer.Viewer(nogui=1)
-        if vi == "nogui" : self.nogui = True    
+               if isinstance(dicG[d],Viewer):
+                    self.viewer = dicG[d]
+                    break
+        if self.viewer is None:
+            self.viewer = Viewer()
+        
         #self.getCurrentScene = c4d.documents.GetActiveDocument
-        self.Polylines = Polylines
-        self.Spheres = Spheres
-        self.Cylinders =Cylinders
-        #self.Points = Points
-        self.Geom = Geom
-        self.Labels = Labels
-        self.IndexedPolygons = IndexedPolygons
         if self.viewer is not None and not self.nogui:
             self.AddObject = self.viewer.AddObject
         self.hext = "dae"
+
+    def updateAppli(self,*args,**kw):
+        return self.update(*args,**kw)
+    
+    def Cube(self,*args,**kw):
+        return self.box(*args,**kw)
+        
+    def Box(self,*args,**kw):
+        return self.box(*args,**kw)
+    
+    def Polylines(self,*args,**kw):
+        return Polylines(*args,**kw) 
+
+    def Spheres(self,*args,**kw):
+        return Spheres(*args,**kw)
+        
+    def Cylinders(self,*args,**kw):
+        return Cylinders(*args,**kw)
+
+    def Geom(self,*args,**kw):
+        return Geom(*args,**kw)
+
+    def Labels(self,*args,**kw):
+        return Labels(*args,**kw)
+
+    def IndexedPolygons(self,*args,**kw):
+        return IndexedPolygons(*args,**kw)
         
     def setViewer(self,vi):
         self.viewer = vi
@@ -129,7 +176,10 @@ class dejavuHelper(hostHelper.Helper):
         @param progress: the new progress
         @type  label: string
         @param label: the new message to put in the progress status
-        """   #resetProgressBar
+        """   
+        #resetProgressBar
+        print ("Progress ",str(progress),label)
+        return
         from mglutil.gui.BasicWidgets.Tk.progressBar import ProgressBar
         if not hasattr(self.viewer,"Bar"):
             bar = ProgressBar(master=self.viewer.master,width=150, height=18)
@@ -143,14 +193,15 @@ class dejavuHelper(hostHelper.Helper):
         
     def resetProgressBar(self):
         """reset the Progress Bar, using value"""
+        return
         if hasattr(self.viewer,"Bar"):
             self.viewer.Bar.reset()
         self.update()
         
     def update(self):
         vi = self.getCurrentScene()
-        vi.update()
         vi.OneRedraw()
+        vi.update()
 #        vi.Redraw()
 
     def getType(self,object):
@@ -167,6 +218,8 @@ class dejavuHelper(hostHelper.Helper):
     def getName(self,o):
         if type(o) is str:
             o = self.getCurrentScene().findGeomsByName(o)
+        else :
+            print ("getName",o,type(o))
         return o.name
     
     def getObject(self,name):
@@ -183,7 +236,7 @@ class dejavuHelper(hostHelper.Helper):
                         return o
                 return None
         except : 
-            print ("problem")
+            print ("problem get Object",name)
             obj=None
         return obj
 
@@ -192,11 +245,14 @@ class dejavuHelper(hostHelper.Helper):
 
     def deleteObject(self,obj):
         vi= self.getCurrentScene()
+        if hasattr(obj,"isinstance"):
+            self.deleteInstance(obj)
+            return
         try :
 #            print obj.name
             vi.RemoveObject(obj)
-        except:
-            print("problem deleting ", obj)
+        except Exception as e:
+            print("problem deleting ", obj,e)
     
     def newEmpty(self,name,location=None,parentCenter=None,display=1,visible=0,**kw):
         empty = Geom(name, visible=display)
@@ -207,16 +263,49 @@ class dejavuHelper(hostHelper.Helper):
         parent = None
         if "parent" in kw :
             parent = kw["parent"]
-        self.addObjectToScene(self.getCurrentScene(),empty,parent=parent)    
+        self.addObjectToScene(None,empty,parent=parent)    
         return empty
 
     def updateMasterInstance(self,master, newMesh,**kw):
         #get the instancematrix frommaster
         #apply them to new newMesh
         pass
-    
+
+    def deleteInstance(self,instance):
+        #pop the instance from the instanceMatrice
+        #delete the object
+        m=instance.geom.instanceMatricesFortran[:]
+        m=numpy.delete(m,instance.id,0)
+        m=m.tolist()
+#        m.pop(instance.id)
+        matrice=[numpy.array(mat).reshape((4,4)) for mat in m]
+        instance.geom.Set(instanceMatrices=numpy.array(matrice))
+        del instance
+        
     def newInstance(self,name,object,location=None,c4dmatrice=None,matrice=None,
                     parent = None,material=None):
+        object = self.getObject(object)
+        if isinstance(object,Spheres):
+            #create a sphere
+            c=object.materials[1028].getState()['diffuse'][0][:3]
+            geom = self.Spheres(name+"copy",radii=[object.radius],centers=[[0,0,0]],
+                                visible=1,inheritMaterial = False,)
+            geom.Set(materials=[c,])
+            self.addObjectToScene(None,geom,parent=parent)
+        elif isinstance(object,IndexedPolygons):    
+            geom = IndexedPolygons(name, vertices=object.getVertices(),
+                      faces=object.getFaces(), vnormals=object.getVNormals(),
+                      inheritMaterial = False,)
+            geom.materials[1028].Set(object.materials[1028].getState())
+            geom.materials[1029].Set(object.materials[1028].getState())
+            self.addObjectToScene(None,geom,parent=parent) 
+        else :
+            geom = Instance(name,object,position=location)
+            #currentMatrices = geom.instanceMatricesFortran
+            #currentMatrices.append(numpy.identity)
+        if location != None :
+            self.setTranslation(geom,pos=location)
+        return geom
 #        instance = c4d.BaseObject(c4d.Oinstance)
 #        instance[1001]=iMe[atN[0]]        
 #        instance.SetName(n+"_"+fullname)#.replace(":","_")
@@ -229,9 +318,13 @@ class dejavuHelper(hostHelper.Helper):
 #            mx = self.matrix2c4dMat(matrice)
 #            instance.SetMg(mx)
 #        return instance
-        return object
+#        return object
         
-    def setObjectMatrix(self,object,matrice,c4dmatrice=None):
+    def setObjectMatrix(self,object,matrice,c4dmatrice=None,**kw):
+#            print (object, matrice)
+            if "transpose" in kw and not hasattr(object,"isinstance"):
+                if kw["transpose"]:
+                    matrice = numpy.array(matrice).transpose()                
             object.SetTransformation(matrice)
 #        if c4dmatrice !=None :
 #            #type of matre
@@ -271,8 +364,11 @@ class dejavuHelper(hostHelper.Helper):
         
     def addObjectToScene(self,doc,obj,parent=None,centerRoot=True,rePos=None):
         #doc.start_undo()
+        if self.nogui :
+            return
         if doc is None :
             if self.viewer is None :
+                print ("#ERROR there is no viewer setup")
                 return
             doc = self.viewer
         if parent != None : 
@@ -306,7 +402,9 @@ class dejavuHelper(hostHelper.Helper):
         if type(obj) == list or type(obj) == tuple:
             [vi.ReparentObject(self.getObject(o),parent,objectRetainsCurrentPosition=True) for o in obj]
         else :
-            obj = self.getObject(obj)            
+            obj = self.getObject(obj)
+            if obj.viewer is None :
+                obj.viewer = vi            
             vi.ReparentObject(obj,parent,objectRetainsCurrentPosition=True)
     
     def setInstance(self,name,object,location=None,c4dmatrice=None,matrice=None):
@@ -356,6 +454,8 @@ class dejavuHelper(hostHelper.Helper):
         obj.Set(rotation = numpy.array(mat).flatten()) #obj.rotation 
 
     def getTransformation(self,geom):
+        if self.nogui :
+            return numpy.identity(4)
         geom = self.getObject(geom)
         return geom.GetMatrix(geom.LastParentBeforeRoot())
 
@@ -391,7 +491,7 @@ class dejavuHelper(hostHelper.Helper):
         
     #####################MATERIALS FUNCTION########################
     def addMaterial(self,name,color):
-          pass
+        return color
 
     def createTexturedMaterial(self,name,filename,normal=False,mat=None):
         footex = Texture()
@@ -414,7 +514,7 @@ class dejavuHelper(hostHelper.Helper):
         return None
 
     def getMaterial(self,mat):
-        return None
+        return mat
 
     def getAllMaterials(self):
         return []
@@ -508,7 +608,7 @@ class dejavuHelper(hostHelper.Helper):
                 baseSphere.Set(materials=[color,])
 #                mat = self.addMaterial(name,color)
 #                self.assignMaterial(mat, baseSphere)
-        self.addObjectToScene(self.getCurrentScene(),baseSphere,parent=parent)
+        self.addObjectToScene(None,baseSphere,parent=parent)
         if pos != None :
             self.setTranslation(baseSphere,pos)
         return [baseSphere,baseSphere]
@@ -1774,11 +1874,11 @@ class dejavuHelper(hostHelper.Helper):
         #lowCorner
         lc = [center[0] - size[0]/2.,
               center[1] - size[1]/2.,
-              center[2] - size[1]/2.]
+              center[2] - size[2]/2.]
         uc = [center[0] + size[0]/2.,
               center[1] + size[1]/2.,
               center[2] + size[2]/2.]
-        cornerPoints=[[lc[0],lc[1],lc[1]],[uc[0],uc[1],uc[1]]]
+        cornerPoints=[[lc[0],lc[1],lc[2]],[uc[0],uc[1],uc[2]]]
         return cornerPoints
     
     
@@ -1892,15 +1992,20 @@ class dejavuHelper(hostHelper.Helper):
 
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
         #get infos
-        if isinstance(poly,Geom):
+        if isinstance(poly,Geom) and not isinstance(poly,IndexedPolygons):
             #getfirst child
-            poly = self.getChilds(poly)
-            if len(poly):
-                poly=poly[0]
+            child = self.getChilds(poly)
+            if len(child):
+                poly=child[0]
+            elif isinstance(poly,Cylinders):
+                poly = poly.asIndexedPolygons()
             else :
                 return [],[],[]
         if not isinstance(poly,IndexedPolygons):
-            return [],[],[]
+            if isinstance(poly,Cylinders):
+                poly = poly.asIndexedPolygons()
+            else :
+                return [],[],[]
         faces = poly.getFaces()
         vertices = poly.getVertices()
         vnormals = poly.getVNormals()
@@ -1931,7 +2036,9 @@ class dejavuHelper(hostHelper.Helper):
         for bg in boundg:
 #            print bg.original,geom
             if bg.original == geom :
-               mat = bg.materialnodebysymbol.values()[0].target
+               m = bg.materialnodebysymbol.values()
+               if len(m):
+                   mat = bg.materialnodebysymbol.values()[0].target
         return mat
     
     def TextureFaceCoordintesToVertexCoordinates(self,v,f,t,ti):
@@ -2075,7 +2182,7 @@ class dejavuHelper(hostHelper.Helper):
         if len(sh) == 2 and sh[1] == 3 :
             f= g.primitives[0].vertex_index
         else :
-            f=g.primitives[0].vertex_index.reshape((nf/3,3))
+            f=g.primitives[0].vertex_index[:(nf/3*3)].reshape((nf/3,3))
         n=g.primitives[0].normal
         ni = g.primitives[0].normal_index
         vn = self.getNormals(f,v,n,ni)            
@@ -2177,7 +2284,7 @@ class dejavuHelper(hostHelper.Helper):
 #                self.transformNode(node,i,col,col.scene.xmlnode[i])
         else :
             from DejaVu.IndexedPolygons import IndexedPolygonsFromFile
-            geomS = IndexedPolygonsFromFile(filename, fileName)
+            geoms = IndexedPolygonsFromFile(filename, fileName)
             self.AddObject(geoms)             
 #        raw_input()
         
@@ -2203,6 +2310,31 @@ class dejavuHelper(hostHelper.Helper):
         if isinstance(polygon,IndexedPolygons):
             polygon.writeToFile(filename)
 
+
+    def raycast(self, obj, start, end, length, **kw ):
+        from numpy import matrix
+        obj = self.getObject(obj)
+        mat = self.getTransformation(obj)
+        mmat = matrix(mat)
+        immat = mmat.I
+        mat = numpy.array(immat.tolist())
+        start = self.ApplyMatrix([start,],mat)[0]
+        end = self.ApplyMatrix([numpy.array(end)-numpy.array(start),],mat)[0]
+        vertices=[]
+        faces=[]        
+        if "vertices" in kw :
+            vertices = kw["vertices"]
+        if "faces" in kw :
+            faces = kw["faces"]
+        if not len(vertices):
+            faces,vertices,vnormals = self.DecomposeMesh(obj,
+                           edit=False,copy=False,tri=True,transform=False)
+        print ("raycast",start,self.unit_vector(end)*length)
+        vHitCount = ray.ray_intersect_polyhedron(start, self.unit_vector(end)*length, vertices, faces,False)
+        intersect = vHitCount > 0
+        if "count" in kw :
+            return intersect,vHitCount
+        return intersect
 
 #        
 #    ##############################AR METHODS#######################################

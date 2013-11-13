@@ -205,6 +205,8 @@ class uiAdaptor(object):
                 if el is None :
                     continue
 #                el["show"] = not collapse #check if work with otherhost that blender2.6
+        if self.host == "dejavu":
+            collapse=True
         elem = {"id":self.id,"name":name,"width":width,"height":height,"label":label,
                 "tooltip":tooltip,"elems":elems,"type":type,"wcolor":wcolor,"width":width,"height":height,
                 "collapse":collapse,"variable":variable,"scrolling":scrolling,"alignement":alignement}
@@ -375,7 +377,8 @@ class uiAdaptor(object):
         @param h: force the height of the item
         """ 
 #        print (elem)
-#        print "dElem",elem["name"],x,y,w,h
+#        print elem["alignement"]
+#        print "dElem",elem["name"],x,y,w,h       
         if elem is None :
             return
         if elem["alignement"] is not None :

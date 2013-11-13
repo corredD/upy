@@ -148,8 +148,11 @@ class c4dUI(gui.GeDialog):
                   "hfit_scale":c4d.BFH_SCALEFIT| c4d.BFV_MASK,
                   "hcenter":c4d.BFH_CENTER| c4d.BFV_MASK,
                   }
-        if type(options) is int or options not in alignement :
+        if type(options) is int :
             return options
+        elif options not in alignement :
+            print options
+            return c4d.BFH_SCALEFIT|c4d.BFV_MASK
         return alignement[options]
 
     def drawButton(self,elem,x,y,w=None,h=None):

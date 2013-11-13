@@ -101,6 +101,17 @@ class Helper:
               "zada":None,       
              }
         self.usenumpy = self._usenumpy
+        self.nogui = False
+
+#==============================================================================
+# some helper for treading and asynchrone stuff
+#==============================================================================
+    def testForEscape(self,):
+        """    
+        return True if ESC is press
+        """
+        return False
+        
 #==============================================================================
 # mathutils
 #==============================================================================
@@ -188,7 +199,7 @@ class Helper:
             pos = self.ApplyMatrix([pos,],matrice)[0]
         return pos
         
-    def randpoint_onsphere(radius,biased=None):
+    def randpoint_onsphere(self,radius,biased=None):
         """ 
         Generate a random point on the outside of a sphere.
         
@@ -239,8 +250,12 @@ class Helper:
             theta = biased * ( 2 * pi )
             u = biased * 2 - 1 #represent sin(phi)
         else :
-            theta = random.random() * ( 2 * pi )
-            u = random.random() * 2 - 1
+            theta = random.uniform(0.,1.0)* ( 2 * pi )
+            u = random.uniform(0.,1.0) * 2 - 1
+#        print ("u ",u," theta ",theta)
+#        print ("radius ",radius)
+#        print ("sqrt ",( 1 - u**2)," sqrt ",sqrt(  1 - u**2))
+#        print ("cos ",cos(theta))
         x = radius * sqrt(  1 - u**2) * cos(theta)
         y = radius * sqrt(  1 - u**2) * sin(theta)
         z = radius * u

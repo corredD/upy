@@ -265,7 +265,7 @@ class dejavuUI:
         self.root_frame.grid(sticky=S+E+W)
         #self.root_frame.grid(sticky='news')
         self.root.protocol("WM_DELETE_WINDOW", self.withdraw)
-        self.root.geometry("%ix%i" % (self.w*2,self.h*2))
+        #self.root.geometry("%ix%i" % (self.w*2,self.h*2))
         #self.geometry('+'+w+'+'+h)
         
     def createMenu(self,menuDic,menuOrder=None):
@@ -322,13 +322,21 @@ class dejavuUI:
     def addVariable(self,type,value):
         """ Create a container for storing a widget states """
         if type == "int":
-            return IntVar(self.root)
+            var = IntVar(self.root)
+            var.set(value)
+            return var
         elif type == "float":
-            return DoubleVar(self.root)
+            var = DoubleVar(self.root)
+            var.set(value)
+            return var
         elif type == "str":
-            return StringVar(self.root)
+            var =  StringVar(self.root)
+            var.set(value)
+            return var
         elif type == "bool":
-            return BooleanVar(self.root)
+            var =  BooleanVar(self.root)
+            var.set(value)
+            return var
         elif type == "col":
             return [0,0,0]
         return None
@@ -446,11 +454,12 @@ class dejavuUI:
         if elem["label"] != None:
             name = elem["label"]
         chkbox = Checkbutton(self.root_frame,
-                                              text = name,
-                                              command = elem["action"],
-                                              variable = elem["variable"],
-                                              #height = int(elem["height"]*self.scale),
-                                              width = int(elem["width"]*self.scale))
+                             text = name,
+                             command = elem["action"],
+                             variable = elem["variable"],
+                             #height = int(elem["height"]*self.scale),
+                             #width = int(elem["width"]*self.scale)
+                             )
         if elem["value"] is not None :
             elem["variable"].set(elem["value"])
         else :
@@ -464,7 +473,7 @@ class dejavuUI:
 #            col = self.col 
 #            chkbox.grid(row=self.row,column=self.col,sticky=E,columnspan= )
 #        else :
-        chkbox.grid(row=self.row,column=self.col,sticky=W+E)#S+E+'w')
+        chkbox.grid(row=self.row,column=self.col,sticky=W)#S+E+'w')
         self.col = self.col +1
         if self.col == self.ncol:
             self.row = self.row +1 
@@ -517,6 +526,7 @@ class dejavuUI:
         elem["variable"] = StringVar(self.root)
         if not elem["value"]:
             elem["value"] = [elem["name"],]
+        elem["variable"].set(elem["value"][0])
         elem["id"] = OptionMenu(self.root_frame,elem["variable"],*elem["value"])
         #w = apply(OptionMenu, (self.root_frame, elem["variable"])+tuple(elem["value"]))
         #w["command"]=elem["action"]
@@ -880,9 +890,15 @@ class dejavuUI:
             if len(blck) >  self.maxcol:
                  self.maxcol = len(blck)         
         for k,blck in enumerate(bloc["elems"]):
-            self.ncol=len(blck)
-            for index, item in enumerate(blck):
-                self._drawElem(item,0,0)
+            if type(blck) is list :
+                self.ncol=len(blck)
+                for index, item in enumerate(blck):
+                    self._drawElem(item,0,0)
+            else : #dictionary: multiple line / format dict?
+                if "0" in blck:
+                    y = self._drawGroup(blck,x,y)
+                else :
+                    y = self._drawFrame(blck,x,y)
         self.notebook.add_screen(self.root_frame, bloc["name"])
         self.root_frame = self.root_store
 #        self.LayoutChanged(bloc["id"])
@@ -891,7 +907,7 @@ class dejavuUI:
     def frame_cb(self,bloc):
 #        print bloc["name"]
         bloc["collapse"] = bloc["variable"].get()
-#        print bloc["collapse"]
+        print "collapse in cb",bloc["collapse"]
         bloc["id"].destroy()
         self.Frame(bloc,0,0)
 #        bloc["id"].update()
@@ -912,11 +928,12 @@ class dejavuUI:
         @return:  the new horizontal position, used for blender
         """            
         bloc["variable"] = IntVar(self.root)
+        bloc["variable"].set(1)   
+        bloc["collapse"] = bloc["variable"].get()
         bloc["labelwidget"] = Checkbutton(self.root,
                                               text = bloc["name"],
                                               command = partial(self.frame_cb,bloc),
                                               variable = bloc["variable"])
-        bloc["variable"].set(1)
         bloc["nlayout"] = self.nlayout
         self.nlayout = self.nlayout + 1
         self.Frame(bloc,x,y)
@@ -939,6 +956,8 @@ class dejavuUI:
         if self.rowFrame is None :
            self.rowFrame = self.row
         self.root_frame.grid(sticky=N+S+E+W,row=self.rowFrame+bloc["nlayout"],columnspan=3) 
+#        print("COLLAPSE##########", bloc["collapse"], (bloc["collapse"]==True))
+        print "collapse in frame ",bloc["collapse"],bloc["variable"].get()
         if bloc["collapse"] :
             self.startBlock(n=len(bloc["elems"]))#,m=len(blck))
             self.maxcol=0
@@ -1242,7 +1261,7 @@ class dejavuUIDialog(dejavuUI,uiAdaptor):
             self.root = Toplevel(self.master)#self.master
             print "ok Toplevel",self.root
         else :
-            self.root =self.master = Tk()
+            self.root = self.master = Toplevel()
             print "ok tk", self.root
 #            self.root =  Toplevel()
 

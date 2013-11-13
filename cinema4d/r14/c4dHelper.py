@@ -360,45 +360,7 @@ class c4dHelper(Helper):
                 object.SetMl(cml*mx)
             else :
                 object.SetMg(cmg*mx)
-                
-    #def GetAbsPosUntilRoot(self,obj):
-    #    stop = False
-    #    parent = obj.GetUp()
-    #    pos=self.FromVec((0.,0.,0.))
-    #    while not stop :
-    #        pos = pos + parent.GetAbsPos()
-    #        parent = parent.GetUp()
-    #        if parent is None :
-    #            stop = True
-    #    return pos                                            
-        
-    def addObjectToScene(self,doc,ob,parent=None,centerRoot=True,rePos=None):
-        if type(ob) is list:
-            obj = ob[0]
-        else :
-            obj = ob
-        if doc is None:
-            doc = self.getCurrentScene()
-        if self.getObject(obj.GetName()) == None:
-            if parent != None : 
-                if type(parent) == str : parent = self.getObject(parent)
-                doc.InsertObject(obj,parent=parent)
-                if centerRoot :
-                    currentPos = obj.GetAbsPos()         
-                    if rePos != None : 
-                        parentPos = self.FromVec(rePos)          
-                    else :
-                        parentPos = self.GetAbsPosUntilRoot(obj)#parent.GetAbsPos()                            
-                    obj.SetAbsPos(currentPos-parentPos)                
-            else :    doc.InsertObject(obj)
-        else :
-            if parent != None :
-                parent = self.getObject(parent)
-                self.reParent(obj,parent)
-        #add undo support
-        #doc.add_undo(c4d.UNDO_NEW, obj)    
-        #doc.end_undo()
-        
+                        
     def AddObject(self,ob,parent=None,centerRoot=True,rePos=None):
         if type(ob) is list:
             obj = ob[0]
@@ -921,25 +883,7 @@ class c4dHelper(Helper):
         self.addObjectToScene(self.getCurrentScene(),baseCone,parent=parent)
         return baseCone,baseCone
 
-    def Sphere(self,name,radius=1.0,res=0,parent=None,color=None,mat=None, pos = [0.,0.,0.]):
-        QualitySph={"0":6,"1":4,"2":5,"3":6,"4":8,"5":16} 
-        baseSphere = c4d.BaseObject(c4d.Osphere)
-        baseSphere[self.PRIM_SPHERE_RAD] = radius
-        baseSphere[1111]=res
-        baseSphere.MakeTag(c4d.Tphong)
-        baseSphere.SetName(name)
-        if mat is not None :
-            mat = self.getMaterial(mat)
-            self.assignMaterial(baseSphere,mat)
-        else :
-            if color != None :
-                #color = [1.,1.,0.]
-                mat = self.addMaterial(name,color)
-                self.assignMaterial(baseSphere,mat)
-        baseSphere.SetAbsPos(self.FromVec(pos))
-        self.addObjectToScene(self.getCurrentScene(),baseSphere,parent=parent)
-        return [baseSphere,baseSphere]
-                          
+
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
                          scale=1.):
         mesh=self.getMesh(mesh)
