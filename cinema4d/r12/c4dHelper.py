@@ -383,7 +383,7 @@ class c4dHelper(Helper):
     def getFirstMesh (self,m):
         if m is None :
             return None
-        print ("getFirstMesh",m,m.GetType(),m.GetType() == c4d.Opolygon)
+        #print ("getFirstMesh",m,m.GetType(),m.GetType() == c4d.Opolygon)
         if m.GetType() == c4d.Opolygon :
             return m
         elif m.GetType() == c4d.Onull :
