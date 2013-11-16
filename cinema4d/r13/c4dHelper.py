@@ -162,21 +162,7 @@ class c4dHelper(Helper):
               "zada":c4d.NOISE_ZADA,       
              }
 
-#    @classmethod    
-    def getCurrentScene(self):
-        if hasattr(self,"doc"):
-            if self.doc.IsAlive():
-                return self.doc
-            else :
-                return c4d.documents.GetActiveDocument()
-        else :
-            return c4d.documents.GetActiveDocument()
 
-#    @classmethod    
-    def getCurrentSceneName(self):
-        doc = self.getCurrentScene()
-        return doc.GetDocumentName()
-        
     def fit_view3D(self):
         c4d.CallCommand(self.FITTOVIEW)
 
@@ -240,24 +226,7 @@ class c4dHelper(Helper):
         except :
             return None
 
-    def getMeshFrom(self,obj):
-        return self.getMesh(obj)
-        
-    def getMesh(self,m):
-        if type(m) is str:
-            m = self.getCurrentScene().SearchObject(m)
-        if m is not None :
-            if m.GetType() == c4d.Onull :
-                if m.GetDown() is not None :
-                    return self.getMesh(m.GetDown())
-                else :
-                    return m
-            elif m.GetType() == c4d.Oinstance :
-                return self.getMesh(m[c4d.INSTANCEOBJECT_LINK])
-            else :
-                return m
-        else :
-            return None
+
 
     def getBoundingBox(self,o,**kw):
         if o is None :
@@ -4082,63 +4051,6 @@ class c4dHelper(Helper):
         
 
   
-#    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,fn=False):
-#        #make it editable
-#        if edit :
-#            poly = self.makeEditable(poly,copy=copy)
-#        #triangulate
-#        if tri:
-#            self.triangulate(poly)
-#        #get infos
-#        
-#        #check the polycache
-#        cach = poly.GetCache()
-#        if cach is None :
-#            cach = poly.GetDeformCache()
-#        if cach is not None :
-#            poly = cach
-#        print poly,self.getName(poly)
-#        faces = self.getFaces(poly)
-#        vertices = self.getMeshVertices(poly,selected=False)
-#        #this require that the phong tag is present
-#        phong = poly.GetTag(c4d.Tphong)
-#        if phong is None :
-#            poly.MakeTag(c4d.Tphong)
-#        c4dvnormals = poly.CreatePhongNormals()
-#        if not c4dvnormals :
-#            print poly,self.getName(poly)
-#        vnormals=vertices[:]
-#        fnormals=[]
-#        #import numpy
-#
-#        for i,f in enumerate(faces):
-#            #one face : 4 vertices
-#            if self._usenumpy:
-#                fns=numpy.zeros((len(f),3))
-#            else :
-#                fns=[]
-#            for k,j in enumerate(f):
-#                #print i,j,(i*4)+k
-#                vnormals[j] = self.ToVec(c4dvnormals[(i*4)+k])
-#                if self._usenumpy: fns[k][:] = vnormals[j][:]
-#                else : fns.append(vnormals[j][:])
-#            if  self._usenumpy: fnormals.append(numpy.average(fns,0))
-#            else  : fnormals.append(fns[-1])
-#        #remove the copy if its exist? or keep it ?
-#        #need to apply the transformation
-#        if transform :
-#            mat = self.getTransformation(poly)
-#            #c4dmat = poly.GetMg()
-#            #mat,imat = self.c4dMat2numpy(c4dmat)
-#            vertices = self.ApplyMatrix(vertices,self.ToMat(mat))
-#        if edit and copy :
-#            self.getCurrentScene().SetActiveObject(poly)
-#            c4d.CallCommand(100004787) #delete the obj       
-#        if fn :
-#            return faces,vertices,vnormals,fnormals
-#        else :
-#            return faces,vertices,vnormals
-
     def ApplyMatrix(self,coords,mat):
         """
         Apply the 4x4 transformation matrix to the given list of 3d points.
@@ -4231,15 +4143,6 @@ class c4dHelper(Helper):
             return R.transpose()
         else :
             return R          
-
-    def read(self,filename,**kw):
-        fileName, fileExtension = os.path.splitext(filename)
-        doc = self.getCurrentScene()
-        c4d.documents.MergeDocument(doc,filename,c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
-    
-    def write(self,listObj,**kw):
-        pass
-
 
 
 

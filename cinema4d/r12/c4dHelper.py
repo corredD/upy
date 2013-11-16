@@ -2,7 +2,6 @@
 """
 Created on Sun Dec  5 23:30:44 2010
 
-@author: Ludovic Autin - ludovic.autin@gmail.com
 """
 #C4d module
 import c4d
@@ -267,7 +266,8 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
-
+        #
+             
     def start_thread(self,job):
         thread = UserThread()
         thread.Start()
@@ -295,6 +295,7 @@ class c4dHelper(Helper):
             else :
                 return c4d.documents.GetActiveDocument()
         else :
+            #self.doc = c4d.documents.GetActiveDocument()
             return c4d.documents.GetActiveDocument()
 
 #    @classmethod    
@@ -378,17 +379,26 @@ class c4dHelper(Helper):
 
     def getMeshFrom(self,obj):
         return self.getMesh(obj)
+
+    def getFirstMesh (self,m):
+        if m is None :
+            return None
+        print ("getFirstMesh",m,m.GetType(),m.GetType() == c4d.Opolygon)
+        if m.GetType() == c4d.Opolygon :
+            return m
+        elif m.GetType() == c4d.Onull :
+            return self.getFirstMesh(m.GetDown())
+        elif m.GetType() == c4d.Oinstance :
+            return self.getFirstMesh(m[c4d.INSTANCEOBJECT_LINK])
+        else :
+            #print ("what ? getFirstMesh",m,m.GetType())
+            return m#can be cylinder#cself.getFirstMesh(m.GetDown())
         
     def getMesh(self,m):
         if type(m) is str:
             m = self.getCurrentScene().SearchObject(m)
         if m is not None :
-            if m.GetType() == c4d.Onull :
-                return self.getMesh(m.GetDown())#should return all child ?
-            elif m.GetType() == c4d.Oinstance :
-                return self.getMesh(m[c4d.INSTANCEOBJECT_LINK])
-            else :
-                return m
+            return self.getFirstMesh(m)
         else :
             return None
             
@@ -4642,9 +4652,12 @@ class c4dHelper(Helper):
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,fn=False):
         #make it editable
         poly = self.getMesh(poly)
+#        print ("Decompose",poly,poly.GetType(),poly.GetType() == c4d.Opolygon)
+    
         if edit :
             poly = self.makeEditable(poly,copy=copy)
-            poly = self.getObject(self.getName(poly))
+            #here problem when name is identic with parent and mesh
+            poly = self.getMesh(self.getObject(self.getName(poly)))
         #triangulate
         if tri:
             self.triangulate(poly)
@@ -4817,9 +4830,12 @@ class c4dHelper(Helper):
             return R          
 
     def read(self,filename,**kw):
-        fileName, fileExtension = os.path.splitext(filename)
+#        fileName, fileExtension = os.path.splitext(filename)
         doc = self.getCurrentScene()
-        c4d.documents.MergeDocument(doc,filename,c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
+#        print self
+#        print doc ,doc.IsAlive()
+#        print c4d.documents.GetActiveDocument(),c4d.documents.GetActiveDocument().IsAlive()
+        c4d.documents.MergeDocument(doc,str(filename),c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
         
 #        else :
 #            c4d.documents.LoadFile(filename)

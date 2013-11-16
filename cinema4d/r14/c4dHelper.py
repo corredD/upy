@@ -161,21 +161,6 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
-
-#    @classmethod    
-#    def getCurrentScene(self):
-#        if hasattr(self,"doc"):
-#            if self.doc.IsAlive():
-#                return self.doc
-#            else :
-#                return c4d.documents.GetActiveDocument()
-#        else :
-#            return c4d.documents.GetActiveDocument()
-
-#    @classmethod    
-    def getCurrentSceneName(self):
-        doc = self.getCurrentScene()
-        return doc.GetDocumentName()
         
     def fit_view3D(self):
         c4d.CallCommand(self.FITTOVIEW)
@@ -238,22 +223,6 @@ class c4dHelper(Helper):
         try :
             return object.GetType()
         except :
-            return None
-
-    def getMeshFrom(self,obj):
-        return self.getMesh(obj)
-        
-    def getMesh(self,m):
-        if type(m) is str:
-            m = self.getCurrentScene().SearchObject(m)
-        if m is not None :
-            if m.GetType() == c4d.Onull :
-                return m.GetDown()
-            elif m.GetType() == c4d.Oinstance :
-                return self.getMesh(m[c4d.INSTANCEOBJECT_LINK])
-            else :
-                return m
-        else :
             return None
                     
     def setName(self,o,name):
@@ -4158,13 +4127,7 @@ class c4dHelper(Helper):
         else :
             return R          
 
-    def read(self,filename,**kw):
-        fileName, fileExtension = os.path.splitext(filename)
-        doc = self.getCurrentScene()
-        c4d.documents.MergeDocument(doc,filename,c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
-    
-    def write(self,listObj,**kw):
-        pass
+
 
 
 
