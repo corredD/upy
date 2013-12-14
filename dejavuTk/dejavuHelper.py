@@ -40,7 +40,7 @@ from numpy import matrix
 import Image
 #base helper class
 from upy import hostHelper
-from upy import ray
+#from upy import ray
 
 try :
     import collada
@@ -103,7 +103,7 @@ class dejavuHelper(hostHelper.Helper):
         #we can define here some function alias
         self.nogui = False        
         
-        print ("INITHELPER")
+        print ("INITHELPER1")
         if master is not None :
             if type(master) is dict :
                 self.viewer = master["master"]
@@ -594,6 +594,7 @@ class dejavuHelper(hostHelper.Helper):
 #        cradius = cradius*1/0.2
         #should used current Y scale too
         mesh.Set(radii=[cradius],quality=quality)
+
         
     def Sphere(self,name,radius=1.0,res=0,parent=None,color=None,mat=None,pos=None):
         QualitySph={"0":6,"1":4,"2":5,"3":6,"4":8,"5":16} 
@@ -1992,18 +1993,18 @@ class dejavuHelper(hostHelper.Helper):
 
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
         #get infos
-        if isinstance(poly,Geom) and not isinstance(poly,IndexedPolygons):
-            #getfirst child
-            child = self.getChilds(poly)
-            if len(child):
-                poly=child[0]
-            elif isinstance(poly,Cylinders):
-                poly = poly.asIndexedPolygons()
-            else :
-                return [],[],[]
         if not isinstance(poly,IndexedPolygons):
             if isinstance(poly,Cylinders):
                 poly = poly.asIndexedPolygons()
+            elif isinstance(poly,Geom) :
+                #getfirst child
+                child = self.getChilds(poly)
+                if len(child):
+                    poly=child[0]
+                elif isinstance(poly,Cylinders):
+                    poly = poly.asIndexedPolygons()
+                else :
+                    return [],[],[]
             else :
                 return [],[],[]
         faces = poly.getFaces()
@@ -2312,6 +2313,7 @@ class dejavuHelper(hostHelper.Helper):
 
 
     def raycast(self, obj, start, end, length, **kw ):
+        return
         from numpy import matrix
         obj = self.getObject(obj)
         mat = self.getTransformation(obj)
@@ -2330,7 +2332,7 @@ class dejavuHelper(hostHelper.Helper):
             faces,vertices,vnormals = self.DecomposeMesh(obj,
                            edit=False,copy=False,tri=True,transform=False)
         print ("raycast",start,self.unit_vector(end)*length)
-        vHitCount = ray.ray_intersect_polyhedron(start, self.unit_vector(end)*length, vertices, faces,False)
+        vHitCount = 0#ray.ray_intersect_polyhedron(start, self.unit_vector(end)*length, vertices, faces,False)
         intersect = vHitCount > 0
         if "count" in kw :
             return intersect,vHitCount

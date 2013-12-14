@@ -2242,7 +2242,75 @@ class Helper:
         v,f,n = self.icosahedron(radius)
         ob,obme = self.createsNmesh(name,v,None,f)
         return ob,obme
+
+    def MidPoint(self, p1, p2):
+       return [(p1[0] + p2[0]) / 2.0,(p1[1] + p2[1]) / 2.0,(p1[2] + p2[2]) / 2.0];
         
+    def createUnitSphereData(self,iterations):
+        """from http://paulbourke.net/geometry/circlesphere/csource2.c"""
+        i=0
+        j=0
+        n=0
+        nstart=0
+        vertices=[]
+        p1 = self.normalize((1.0,1.0,1.0))
+        p2 = self.normalize((-1.0,-1.0,1.0))
+        p3 = self.normalize((1.0,-1.0,-1.0))
+        p4 = self.normalize((-1.0,1.0,-1.0)) 
+        vertices.extend([p1,p2,p3,p4])
+        facets=numpy.zeros((math.pow(4,iterations),3),'int')
+        facets[0] = [0,1,2]#p1; facets[0].p2 = p2; facets[0].p3 = p3;
+        facets[1] = [0,1,3]#.p1 = p2; facets[1].p2 = p1; facets[1].p3 = p4;
+        facets[2] = [1,3,2]#.p1 = p2; facets[2].p2 = p4; facets[2].p3 = p3;
+        facets[3] = [0,2,3]#.p1 = p1; facets[3].p2 = p3; facets[3].p3 = p4;
+
+        n = 4;
+        for i in range(1,iterations):# (i=1;i<iterations;i++) {
+            nstart = n
+            for j in range(nstart):# (j=0;j<nstart;j++) {
+                #/* Create initially copies for the new facets */
+                facets[n  ] = facets[j];
+                facets[n+1] = facets[j];
+                facets[n+2] = facets[j];
+
+                #/* Calculate the midpoints */
+                p1 = self.MidPoint(vertices[facets[j][0]],vertices[facets[j][1]]);
+                p2 = self.MidPoint(vertices[facets[j][1]],vertices[facets[j][2]]);
+                p3 = self.MidPoint(vertices[facets[j][2]],vertices[facets[j][0]]);
+                vertices.extend([p1,p2,p3])
+                ip1=len(vertices)-3
+                ip2=len(vertices)-2
+                ip3=len(vertices)-1
+                #/* Replace the current facet */
+                facets[j][1] = ip1;
+                facets[j][2] = ip3;
+                #/* Create the changed vertices in the new facets */
+                facets[n  ][0] = ip1;
+                facets[n  ][2] = ip2;
+                facets[n+1][0] = ip3;
+                facets[n+1][1] = ip2;
+                facets[n+2][0] = ip1;
+                facets[n+2][1] = ip2;
+                facets[n+2][2] = ip3;
+                n += 3;
+        vertices=[self.normalize(v) for v in vertices]
+        return vertices,facets;
+
+    def unitSphere(self,name,iterations,radius):   
+        """
+        Create the mesh data and the mesh object of a Icosahedron of a given radius
+        
+        @type  name: string
+        @param name: name for the spline to update        
+        @type  radius: float
+        @param radius: radius of the embeding sphere
+        
+        @rtype:   Object, Mesh
+        @return:  Icosahedron Object and Mesh      
+        """     
+        v,f = self.createUnitSphereData(iterations)
+        ob,obme = self.createsNmesh(name,numpy.array(v)*radius,None,f)
+        return ob,obme
 
     def reporthook(self,count, blockSize, totalSize):
         percent = float(count*blockSize/totalSize)
