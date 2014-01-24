@@ -1233,7 +1233,7 @@ class mayaHelper(Helper):
         return transform_node,shape
 
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=None,typ=True):
+                         scale=None,typ=True,**kw):
         #scale or directly the radius..Try the radius
         #scale is actualy the radius
 #        name = self.getObject(mesh)

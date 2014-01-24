@@ -207,7 +207,7 @@ class dejavuHelper(hostHelper.Helper):
     def getType(self,object):
         return object.__module__
 
-    def getMesh(self,m):
+    def getMesh(self,m,**kw):
         if type(m) is str:
             m = self.getCurrentScene().findGeomsByName(m)
         if m is not None :
@@ -615,7 +615,7 @@ class dejavuHelper(hostHelper.Helper):
         return [baseSphere,baseSphere]
     		              
 #    def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-#                         scale=1.):
+#                         scale=1.,**kw):
 #        mesh=self.getMesh(mesh)
 #        mesh[905]=self.FromVec([scale,scale,scale])
 #        mesh.Message(c4d.MSG_UPDATE)

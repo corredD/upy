@@ -380,25 +380,36 @@ class c4dHelper(Helper):
     def getMeshFrom(self,obj):
         return self.getMesh(obj)
 
-    def getFirstMesh (self,m):
+    def getFirstMesh (self,m,**kw):
+        im=True
+        if "instance_master" in kw :
+            im = kw["instance_master"]        
         if m is None :
             return None
-        #print ("getFirstMesh",m,m.GetType(),m.GetType() == c4d.Opolygon)
+#        print ("getFirstMesh",m,m.GetType(),im)
         if m.GetType() == c4d.Opolygon :
             return m
         elif m.GetType() == c4d.Onull :
-            return self.getFirstMesh(m.GetDown())
+            return self.getFirstMesh(m.GetDown(),instance_master=im)
         elif m.GetType() == c4d.Oinstance :
-            return self.getFirstMesh(m[c4d.INSTANCEOBJECT_LINK])
+#            print ("do instance ?",im,m)
+            if im :
+                return self.getFirstMesh(m[c4d.INSTANCEOBJECT_LINK])
+            else :
+#                print ("instance ",m)
+                return m
         else :
             #print ("what ? getFirstMesh",m,m.GetType())
             return m#can be cylinder#cself.getFirstMesh(m.GetDown())
         
-    def getMesh(self,m):
+    def getMesh(self,m,**kw):
+        im = True #go until instance master if any
+        if "instance_master" in kw :
+            im = kw["instance_master"]
         if type(m) is str:
             m = self.getCurrentScene().SearchObject(m)
         if m is not None :
-            return self.getFirstMesh(m)
+            return self.getFirstMesh(m,instance_master=im)
         else :
             return None
             
@@ -1268,9 +1279,12 @@ class c4dHelper(Helper):
         return [baseSphere,baseSphere]
                           
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=1.):
-        mesh=self.getMesh(mesh)
-#        print mesh,mesh.GetName(),scale
+                         scale=1.,**kw):
+        im=True
+        if "instance_master" in kw :
+            im = kw["instance_master"]    
+        mesh=self.getMesh(mesh,instance_master=im)
+        print mesh,mesh.GetName(),scale,im
 #        print mesh[905]
         mesh[905]=self.FromVec([scale,scale,scale])
         mesh.Message(c4d.MSG_UPDATE)

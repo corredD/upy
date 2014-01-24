@@ -868,13 +868,13 @@ class c4dHelper(Helper):
         self.addObjectToScene(self.getCurrentScene(),baseCone,parent=parent)
         return baseCone,baseCone
                           
-    def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=1.):
-        mesh=self.getMesh(mesh)
-#        print mesh,mesh.GetName(),scale
-#        print mesh[905]
-        mesh[905]=self.FromVec([scale,scale,scale])
-        mesh.Message(c4d.MSG_UPDATE)
+#    def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
+#                         scale=1.):
+#        mesh=self.getMesh(mesh)
+##        print mesh,mesh.GetName(),scale
+##        print mesh[905]
+#        mesh[905]=self.FromVec([scale,scale,scale])
+#        mesh.Message(c4d.MSG_UPDATE)
         
 #    def updateSphereObj(self,obj,coord):
 #        self.updateObjectPos(obj,coord)

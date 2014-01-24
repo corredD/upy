@@ -88,7 +88,7 @@ class blenderHelper(Helper):
         if type(mesh) == bpy.types.Mesh:
             return mesh
 #
-    def getMesh(self,name):
+    def getMesh(self,name,**kw):
         if type(name) != str :
             if type(name) == bpy.types.Object:
                 return name.data

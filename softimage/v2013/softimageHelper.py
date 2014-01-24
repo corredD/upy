@@ -198,7 +198,7 @@ class softimageHelper(Helper):
     def checkIsMesh(self,poly):
         pass
 
-    def getMesh(self,ob):
+    def getMesh(self,ob,**kw):
         mesh = None
         if type(ob) == str or type(ob) == unicode :
            ob = self.getObject(ob)
@@ -908,7 +908,7 @@ class softimageHelper(Helper):
 
 #
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=None,typ=True):
+                         scale=None,typ=True,**kw):
         mesh = self.checkName(mesh)
         mesh=self.getMesh(mesh)
         if mesh is not None :

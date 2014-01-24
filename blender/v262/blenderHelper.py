@@ -384,7 +384,7 @@ class blenderHelper(Helper):
         if type(mesh) == bpy.types.Mesh:
             return mesh
 #
-    def getMesh(self,name):
+    def getMesh(self,name,**kw):
         if type(name) != str :
             if type(name) == bpy.types.Object:
                 return name.data
@@ -1880,7 +1880,7 @@ class blenderHelper(Helper):
         return obj
         
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=None,typ=None):
+                         scale=None,typ=None,**kw):
 
         
         

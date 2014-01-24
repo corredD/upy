@@ -1482,7 +1482,7 @@ class blenderHelper(Helper):
         return obj
         
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
-                         scale=None,typ=None):
+                         scale=None,typ=None,**kw):
 
         
         
