@@ -107,13 +107,16 @@ class c4dSynchro:
             self.helper.deleteObject(self.object)
 
     def create_str_for_cb(self,):
+        c4d.helper = self.helper
         c4d.synchro = self.parentObj
         c4d.synchro_cb = self.liste_cb
         self.callback = """
 import c4d
 theObj = c4d.synchro
 theCallback = c4d.synchro_cb
+helper = c4d.helper
 def main():
+    helper.doc = doc
     t=c4d.BaseTime()
     fps = doc.GetFps()
     #getCurrent time
@@ -1377,7 +1380,7 @@ class c4dHelper(Helper):
             mat = self.retrieveColorMat(colors[0])
             if mat == None and colors[0] is not None:        
                 mat = self.addMaterial('mat_'+name,colors[0])
-        delete = True
+        delete = False
         if "delete" in kw :
             delete = kw["delete"]
         for i in range(len(centers)):
@@ -4409,7 +4412,7 @@ class c4dHelper(Helper):
 #==============================================================================
 #   obj properties
 #==============================================================================
-    def getPropertyObject(self, obj, key=["radius"]):
+    def getPropertyObject(self, obj, **key):
         """
         Return the  property "key" of the object obj
         
@@ -4892,7 +4895,16 @@ class c4dHelper(Helper):
         intersect = coll.Intersect(mat*start, mat*(end-start), length)#[, only_test=False])        
         if "count" in kw :
             return intersect,coll.GetIntersectionCount()
+        if "fnormal" in kw:
+            ray_result =coll.GetNearestIntersection()
+            n = ray_result["f_normal"].GetNormalized()
+            return intersect,self.ToVec(n)
+        if "hitpos" in kw:
+            ray_result = coll.GetNearestIntersection()
+            return intersect,self.ToVec(ray_result["hitpos"])            
         return intersect
+#        self.rc = utils.GeRayCollider()#helper ?
+#        self.rc.Init(input_mesh)
 
     def removeNormalTag(self,obj,**kw):
         obj = self.getObject(obj)

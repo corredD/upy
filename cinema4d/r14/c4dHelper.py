@@ -3372,14 +3372,14 @@ class c4dHelper(Helper):
         #uid = PS.GetPData(i, channelid)
         ids = PS.AllocParticles(N)
         if "hostmatrice" in kw and kw["hostmatrice"] is not None:
-            c4dC = [self.FromVec(c)*hostmatrice for c in coords]
+            c4dC = [self.FromVec(c)*kw["hostmatrice"] for c in coords]
         else :
             c4dC = map(self.FromVec,coords)
         map(PS.SetPosition,ids,c4dC)
         life = [c4d.BaseTime(360000.0)]*N
         map(PS.SetLife,ids,life)
         if "radius" in kw and kw["radius"] is not None:
-            map(PS.SetSize,ids,radius) #or vdwRadius?
+            map(PS.SetSize,ids,kw["radius"] ) #or vdwRadius?
         else :
             map(PS.SetSize,ids,[1.0]*N) #or vdwRadius?
         map(PS.SetMass,ids,[1.0]*N) #or atom mass?
@@ -3388,7 +3388,7 @@ class c4dHelper(Helper):
         if name != "all" or ("group_name" in kw and kw["group_name"] is not None):
             #check if already exist
             group_name = name             
-            tpg = self.checkTPG(PS,group_name)
+            tpg = self.checkTPG(PS,kw["group_name"])
             if tpg is None :
                 tpg = PS.AllocParticleGroup()
                 PS.SetPGroupHierarchy(root,tpg,c4d.TP_INSERT_UNDERLAST)

@@ -29,7 +29,39 @@ from upy import colors
 
 if sys.version_info >= (3,0,0):
     unicode = str
+    
+def vdistance(c0,c1):
+    """get the distance between two points c0 and c1"""
+    d = numpy.array(c1) - numpy.array(c0)
+    s = numpy.sum(d*d)
+    return math.sqrt(s)
+def vdiff(p1, p2):
+    # returns p1 - p2
+    x1,y1,z1 = p1
+    x2,y2,z2 = p2
+    return (x1-x2, y1-y2, z1-z2)
 
+def vcross(v1,v2):
+    x1,y1,z1 = v1
+    x2,y2,z2 = v2
+    return (y1*z2-y2*z1, z1*x2-z2*x1, x1*y2-x2*y1)
+
+def dot(v1,v2):
+    x1,y1,z1 = v1
+    x2,y2,z2 = v2
+    return ( x1 * x2 ) + ( y1 * y2 ) +  ( z1 * z2 )
+    
+from math import sqrt
+def vnorm(v1):
+    x1,y1,z1 = v1
+    n1 = 1./sqrt(x1*x1 + y1*y1 + z1*z1)
+    return (x1*n1, y1*n1, z1*n1)
+
+
+def vlen(v1):
+    x1,y1,z1 = v1
+    return sqrt(x1*x1 + y1*y1 + z1*z1)
+    
 class Helper:
     """
     The Helper abstract Object
@@ -367,6 +399,7 @@ class Helper:
         m[2][1] = sh*sa*cb + ch*sb
         m[2][2] = -sh*sa*sb + ch*cb
         return m
+
 
     def getTubeProperties(self,coord1,coord2):
         """
@@ -1142,7 +1175,7 @@ class Helper:
         if "abs" in kw :
             absolue=kw["abs"]
         if mat is not None :
-            self.setObjectMatrix(obj,mat,absolue=absolue)
+            self.setObjectMatrix(obj,mat,absolue=absolue,**kw)
         if rot is not None:
             self.rotateObj(obj,rot,absolue=absolue)
         if scale is not None:
@@ -3244,6 +3277,32 @@ class Helper:
                 ifaces.append(f)
                 indfaces.append(i)
         return indfaces,ifaces
+
+    def getFaceNormalsArea(self, vertices, faces):
+        """compute the face normal of the compartment mesh"""
+        normals = []
+        vnormals = numpy.array(vertices[:])
+        areas = [] #added by Graham
+        face = [[0,0,0],[0,0,0],[0,0,0]]
+        v = [[0,0,0],[0,0,0],[0,0,0]]        
+        for f in faces:
+            for i in range(3) :
+                face [i] = vertices[f[i]]
+            for i in range(3) :
+                v[0][i] = face[1][i]-face[0][i]
+                v[1][i] = face[2][i]-face[0][i]                
+            normal = vcross(v[0],v[1])
+            n = vlen(normal)
+            if n == 0. :
+                n1=1.
+            else :
+                n1 = 1./n
+            normals.append( (normal[0]*n1, normal[1]*n1, normal[2]*n1) )
+    #        The area of a triangle is equal to half the magnitude of the cross product of two of its edges
+            for i in range(3) :
+                vnormals[f[i]] = [normal[0]*n1, normal[1]*n1, normal[2]*n1]
+            areas.append(0.5*vlen(normal)) #added by Graham
+        return vnormals,normals, areas
         
     def FixNormals(self,v,f,vn,fn=None):
         newnormals=[]
