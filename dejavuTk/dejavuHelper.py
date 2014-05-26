@@ -2312,7 +2312,17 @@ class dejavuHelper(hostHelper.Helper):
             polygon.writeToFile(filename)
 
 
-    def raycast(self, obj, start, end, length, **kw ):
+    def raycast(self,obj,point, direction, length, **kw ):
+        intersect = False
+        if "count" in kw :
+            return intersect,0
+        if "fnormal" in kw:
+            return intersect,[0,0,0]
+        if "hitpos" in kw:
+            return intersect,[0,0,0]           
+        return intersect
+
+    def raycast_test(self, obj, start, end, length, **kw ):
         return
         from numpy import matrix
         obj = self.getObject(obj)

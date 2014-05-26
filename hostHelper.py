@@ -4707,12 +4707,17 @@ class Helper:
         f.write(aStr)
         f.close()
 #==============================================================================
-# raycasting
+# raycasting RAPID? python ?
 #==============================================================================
     def raycast(self,obj,point, direction, length, **kw ):
+        intersect = False
         if "count" in kw :
-            return False,0
-        return False
+            return intersect,0
+        if "fnormal" in kw:
+            return intersect,[0,0,0]
+        if "hitpos" in kw:
+            return intersect,[0,0,0]           
+        return intersect
         
         
         
