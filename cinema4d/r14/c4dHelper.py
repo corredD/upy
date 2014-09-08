@@ -3388,7 +3388,7 @@ class c4dHelper(Helper):
         if name != "all" or ("group_name" in kw and kw["group_name"] is not None):
             #check if already exist
             group_name = name             
-            tpg = self.checkTPG(PS,kw["group_name"])
+            tpg = self.checkTPG(PS,name)
             if tpg is None :
                 tpg = PS.AllocParticleGroup()
                 PS.SetPGroupHierarchy(root,tpg,c4d.TP_INSERT_UNDERLAST)

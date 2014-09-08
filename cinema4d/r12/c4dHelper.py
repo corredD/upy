@@ -934,6 +934,7 @@ class c4dHelper(Helper):
 
     def createTexturedMaterial(self,name,filename):
         #create the material
+        #check if material exist ? update 
         Mat = c4d.BaseMaterial(c4d.Mmaterial)
         Mat.SetName(name)
         #link the texture to the material
@@ -947,7 +948,7 @@ class c4dHelper(Helper):
         c4d.documents.GetActiveDocument().InsertMaterial(Mat)
         return Mat
 
-    def getMaterialProperty(self,material, kw):
+    def getMaterialProperty(self,material, **kw):
         """
         Change a material properties.
         
@@ -960,15 +961,19 @@ class c4dHelper(Helper):
             - ...
         """
         mat =self.getMaterial(material)
-        res = []
+        res = {}
         if mat is None :
             return
         if "specular" in kw :
-            res.append( mat[c4d.MATERIAL_USE_SPECULAR] )
+            res["specular"] = mat[c4d.MATERIAL_USE_SPECULAR]
+        if "specular_color" in kw :
+            res["specular_color"] = self.ToVec(mat[c4d.MATERIAL_SPECULAR_COLOR],pos=False)
         if "specular_width" in kw :
-            res.append( mat[c4d.MATERIAL_SPECULAR_WIDTH])
+            res["specular_width"] = mat[c4d.MATERIAL_SPECULAR_WIDTH]
         if "color" in kw :
-            res.append( self.ToVec(mat[2100],pos=False))
+            res["color"] = self.ToVec(mat[c4d.MATERIAL_COLOR_COLOR],pos=False)
+        if "diffuse" in kw :
+            res["diffuse"] = self.ToVec(mat[c4d.MATERIAL_COLOR_COLOR],pos=False)
         return res
             
     def changeMaterialProperty(self,material, **kw):
@@ -4772,6 +4777,15 @@ class c4dHelper(Helper):
                M.off = trans
             return M        
 
+    def zToMat(self,m):
+        if type(m) != c4d.Matrix :
+            return m       
+        M = numpy.identity(4)
+        M[0,:3] = self.ToVec(m.v1,pos=False)
+        M[1,:3] = self.ToVec(m.v2,pos=False)
+        M[2,:3] = self.ToVec(m.v3,pos=False)
+        M[3,:3] = self.ToVec(m.off,pos=False)
+        return M         
             
     def ToMat(self,m,transpose=True):
         if type(m) != c4d.Matrix :
@@ -4884,6 +4898,103 @@ class c4dHelper(Helper):
             newdoc = c4d.documents.IsolateObjects(doc, listObj)
             c4d.documents.SaveDocument(newdoc, filename, c4d.SAVEDOCUMENTFLAGS_0, format)
 
+    def ObjectToColladaNode(self,o):
+        #conver C4D ob and child to a collada node that can be used by instance_node
+        pass
+
+    def writeCollada(self,collada_xml,filename,**kw):
+        collada_xml.write(filename)
+        
+    def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**kw):
+        try :
+            from upy.transformation import decompose_matrix
+            from collada import Collada
+            from collada import material
+            from collada import source
+            from collada import geometry
+            from collada import scene
+        except :
+            return            
+        inst_parent=parent_object#self.getCurrentSelection()[0]
+        ch=self.getChilds(inst_parent)
+        #instance master
+        inst_master = self.getMasterInstance(ch[0])
+        #grabb v,f,n of inst_master
+        f,v,vn = self.DecomposeMesh(inst_master,edit=False,copy=False,tri=True,
+                                    transform=True)
+
+        iname  = self.getName( inst_master )       
+        pname  = self.getName( inst_parent ) 
+        if collada_xml is None:
+            collada_xml = Collada()
+            collada_xml.assetInfo.unitname="centimeter"
+            collada_xml.assetInfo.unitmeter=0.01
+        mat = self.getMaterialObject(inst_master)
+        if len(mat) :
+            mat = mat[0]
+        props = self.getMaterialProperty(mat,diffuse=1,specular_color=1)
+        effect = material.Effect("effect"+iname, [], "phong", 
+                                 diffuse=props["diffuse"],
+                                 specular = props["specular_color"])
+        mat = material.Material("material"+iname, iname+"_material", effect)
+        matnode = scene.MaterialNode("material"+iname, mat, inputs=[])
+        collada_xml.effects.append(effect)
+        collada_xml.materials.append(mat)
+        #the geom
+        #invert Z 
+        vertzyx = numpy.array(v)# * numpy.array([1,1,-1])
+        z,y,x=vertzyx.transpose()
+        vertxyz = numpy.vstack([x,y,z]).transpose()* numpy.array([1,1,-1])
+        vert_src = source.FloatSource(iname+"_verts-array", vertxyz.flatten(), ('X', 'Y', 'Z'))
+        norzyx=numpy.array(vn)
+        nz,ny,nx=norzyx.transpose()
+        norxyz = numpy.vstack([nx,ny,nz]).transpose()* numpy.array([1,1,-1])
+        normal_src = source.FloatSource(iname+"_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
+        geom = geometry.Geometry(collada_xml, "geometry"+iname, iname, [vert_src, normal_src])
+        input_list = source.InputList()
+        input_list.addInput(0, 'VERTEX', "#"+iname+"_verts-array")
+        input_list.addInput(0, 'NORMAL', "#"+iname+"_normals-array")
+        #invert all the face 
+        fi=numpy.array(f,int)#[:,::-1]
+        triset = geom.createTriangleSet(fi.flatten(), input_list, iname+"materialref")
+        geom.primitives.append(triset)
+        collada_xml.geometries.append(geom)
+        #the  noe
+        #instance here ?
+        #creae the instance maser node :
+        if instance_node:
+            master_geomnode = scene.GeometryNode(geom, [matnode])
+            master_node = scene.Node("node_"+iname, children=[master_geomnode,])#,transforms=[tr,rz,ry,rx,s])
+        g=[]
+        for c in ch :
+            #collada.scene.NodeNode
+            if instance_node:
+                geomnode = scene.NodeNode(master_node)
+            else :
+                geomnode = scene.GeometryNode(geom, [matnode])
+            matrix = self.zToMat(self.getTransformation(c))#.transpose()#.flatten() 
+            scale, shear, euler, translate, perspective=decompose_matrix(matrix.transpose())
+            scale = self.getScale(c)
+            p=translate#matrix[3,:3]/100.0#unit problem
+            tr=scene.TranslateTransform(p[0],p[1],-p[2])
+            rx=scene.RotateTransform(-1,0,0,numpy.degrees(euler[0]))
+            ry=scene.RotateTransform(0,-1,0,numpy.degrees(euler[1]))
+            rz=scene.RotateTransform(0,0,1,numpy.degrees(euler[2]))
+            s=scene.ScaleTransform(scale[0],scale[1],scale[2])
+            #n = scene.NodeNode(master_node,transforms=[tr,rz,ry,rx,s])
+            n = scene.Node(self.getName(c), children=[geomnode,],transforms=[tr,rz,ry,rx,s]) #scene.MatrixTransform(matrix)
+            g.append(n)
+        node = scene.Node(pname, children=g)#,transforms=[scene.RotateTransform(0,1,0,90.0)])
+        if not len(collada_xml.scenes) :
+            myscene = scene.Scene("myscene", [node])
+            collada_xml.scenes.append(myscene)
+            collada_xml.scene = myscene
+        else :
+            collada_xml.scene.nodes.append(node)
+        if instance_node:
+            collada_xml.nodes.append(master_node)
+        return collada_xml
+        
     def raycast(self, obj, start, end, length, **kw ):
         obj = self.getObject(obj)
         mat = self.getTransformation(obj).__invert__()
@@ -4892,7 +5003,9 @@ class c4dHelper(Helper):
         start = self.FromVec(start)
         end = self.FromVec(end)
 #        print start,end,end-start
-        intersect = coll.Intersect(mat*start, mat*(end-start), length)#[, only_test=False])        
+        intersect = coll.Intersect(mat*start, mat*(end-start), length)#[, only_test=False])
+        if not intersect :
+            return intersect,0
         if "count" in kw :
             return intersect,coll.GetIntersectionCount()
         if "fnormal" in kw:

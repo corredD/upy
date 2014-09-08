@@ -106,8 +106,10 @@ def getUClass(host,pref=None):
             from upy.blender.v257.blenderUI import blenderUIDialog as adaptor
         elif blender_version >= (2,60,0) and blender_version < (2,63,0): #2.62
             from upy.blender.v262.blenderUI import blenderUIDialog as adaptor
-        elif blender_version >= (2,63,0): #2.63 and more
+        elif blender_version >= (2,63,0) and blender_version < (2,71,0): #2.63 and more
             from upy.blender.v263.blenderUI import blenderUIDialog as adaptor
+        elif blender_version >= (2,71,0): #2.63 and more
+            from upy.blender.v271.blenderUI import blenderUIDialog as adaptor
         else :
             print (blender_version,blender_version < (2,60,0))
     elif host=='c4d':
@@ -172,8 +174,10 @@ def getHClass(host):
             from upy.blender.v257.blenderHelper import blenderHelper as helper
         elif blender_version >= (2,60,0) and blender_version < (2,63,0): #2.62
             from upy.blender.v262.blenderHelper import blenderHelper as helper
-        elif blender_version >= (2,63,0): #2.62
+        elif blender_version >= (2,63,0) and blender_version < (2,71,0): #2.62
             from upy.blender.v263.blenderHelper import blenderHelper as helper
+        elif blender_version >= (2,71,0): #2.62
+            from upy.blender.v271.blenderHelper import blenderHelper as helper
         else :
             print (blender_version,blender_version < (2,60,0))
     elif host=='c4d':
@@ -285,8 +289,10 @@ def getPClass(host):
             from upy.blender.v257 import blenderPlugin as plugClass
         elif blender_version >= (2,60,0) and blender_version < (2,63,0): #2.62
             from upy.blender.v262 import blenderPlugin as plugClass
-        elif blender_version >= (2,63,0): #2.63
+        elif blender_version >= (2,63,0) and blender_version < (2,71,0): #2.63
             from upy.blender.v263 import blenderPlugin as plugClass
+        elif blender_version >= (2,63,0): #2.63
+            from upy.blender.v271 import blenderPlugin as plugClass
         else :
             print (blender_version,blender_version < (2,60,0))
     elif host=='c4d':
