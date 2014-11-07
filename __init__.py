@@ -134,7 +134,8 @@ def getUClass(host,pref=None):
             #from upy.softimage.v2013.softimageUI import softimageUIDialog as adaptor
             from upy.pythonUI.qtUI import qtUIDialog as adaptor          
     elif host=='3dsmax':
-        from upy.autodesk3dsmax.v2013.maxUI import maxUIDialog as adaptor
+        #from upy.autodesk3dsmax.v2013.maxUI import maxUIDialog as adaptor
+        from upy.autodesk3dsmax.v2015.maxUI import maxUI as adaptor
     elif host=='dejavu':
         from upy.dejavuTk.dejavuUI import dejavuUIDialog as adaptor
 #        print ("ok",adaptor)
@@ -201,7 +202,7 @@ def getHClass(host):
         if v >= (11,0,525,0):
             from upy.softimage.v2013.softimageHelper import softimageHelper as helper
     elif host=='3dsmax':
-        from upy.autodesk3dsmax.v2013.maxHelper import maxHelper as helper
+        from upy.autodesk3dsmax.v2015.maxHelper import maxHelper as helper
     elif host=='dejavu':
         from upy.dejavuTk.dejavuHelper import dejavuHelper as helper
     elif host == 'chimera':
@@ -316,7 +317,7 @@ def getPClass(host):
         if v >= (11,0,525,0) :
             from upy.softimage.v2013 import softimagePlugin as plugClass
     elif host=='3dsmax':
-        from upy.autodesk3dsmax.v2013 import maxPlugin as plugClass
+        from upy.autodesk3dsmax.v2015 import maxPlugin as plugClass
     elif host=='dejavu':
         from upy.dejavuTk import dejavuPlugin as plugClass
     elif host == 'chimera':

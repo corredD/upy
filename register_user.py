@@ -125,10 +125,11 @@ class Register_User:
         #print (params)
         #self.label_message.configure(text = 'Please Wait', fg = 'Red')
         headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
-        conn = httplib.HTTPConnection("www.scripps.edu:80")
-        #conn = httplib.HTTPConnection("mgldev.scripps.edu:80")
+        #conn = httplib.HTTPConnection("www.scripps.edu:80")
+        conn = httplib.HTTPConnection("mgldev.scripps.edu:80")
         try:
-            conn.request("POST", "/cgi-bin/sanner/register_mgltools.py", params, headers)
+            #conn.request("POST", "/cgi-bin/sanner/register_mgltools.py", params, headers)
+            conn.request("POST", "/cgi-bin/register_mgltools.py", params, headers)
             response = conn.getresponse()
         except :
 #            from traceback import print_exc

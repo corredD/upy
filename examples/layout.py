@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Dec 29 13:09:18 2010
 
@@ -262,6 +261,8 @@ class LayoutUI(uiadaptor):
         i=self.getLong(self.COMB_BOX["menu2"])
         print(i,self.COMB_BOX["menu2"]["value"][i])
 
+
+print ("uiadaptor host is ",uiadaptor.host)
 if uiadaptor.host == "tk":
     #from DejaVu import Viewer
     #vi = Viewer()    
@@ -294,3 +295,4 @@ mygui.display()
 if uiadaptor.host == "qt": app.exec_()#work without it ?
 
 ##execfile("/Users/ludo/DEV/upy/trunk/upy/examples/layout.py")
+##in Max python.executeFile  "upy/examples/layout.py"
