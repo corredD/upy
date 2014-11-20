@@ -70,7 +70,7 @@ class maxHelper(Helper):
     POLYGON = "TriObj"#TriObj
     MESH = "mesh"
 
-    EMPTY = "dummy"
+    EMPTY = "Dummy"
     
     BONES="kJoint"
     PARTICULE = "kParticle"
@@ -109,7 +109,7 @@ class maxHelper(Helper):
                       "hedra":MaxPlus.ClassIds.Hedra ,
                       ###########ComplexeGeom######################
                       "bool":MaxPlus.ClassIds.Boolean2,
-                      "loft":MaxPlus.ClassIds.LoftObject,
+                      "loftOb":MaxPlus.ClassIds.LoftObject,
                       ###########CAM and Light######################
                       "simple_camera":MaxPlus.ClassIds.Freecamera,
                       "camera":MaxPlus.ClassIds.Freecamera,
@@ -177,10 +177,10 @@ class maxHelper(Helper):
                         #'utility':MaxPlus.Factory.CreateUtility,
                         'worldmod':MaxPlus.Factory.CreateWorldSpaceModifier,
                         }
-  
+        self.modclassname = {"smooth" : "SmoothMod"}
         self.progress_started = False
         self._usenumpy = hostHelper.usenumpy
-        self.hext = "fbx"#"max" is for scene, how do i read a scene ?
+        self.hext = "dae"#"fbx"#"max" is for scene, how do i read a scene ?
         
     def getCurrentScene(self):
         return None
@@ -234,11 +234,13 @@ class maxHelper(Helper):
         #MaxPlus.ViewportManager.ResetAllViews()
         pass#MaxPlus.Core.Interface.ForceCompleteRedraw(True)
 
-    def getObjectFromNode(self,node):
+    def getObjectFromNode(self,node,baseo=False):
         node = self.getObject(node)
         if node is None:
             return None
-        return node.GetObject()
+        if baseo :
+            return node.GetBaseObject()
+        return node.GetObject()#or GetBaseObject ?
 
     def setCurrentSelection(self,obj):
         #obj should be  a node
@@ -294,6 +296,20 @@ class maxHelper(Helper):
         #self.setCurrentSelection(obj)
         #MaxPlus.Core.Interface.AddModToSelection(mod)
 
+    def getMod(self,node,modType="smooth"):
+        node = self.getObject(node)
+        nmod = node.GetNumModifiers()
+        for i in range(nmod):
+            m=node.GetModifier(i)
+            if m.GetClassName() == self.modclassname[modType]:
+                return m
+        return None
+    
+    def toggle_smooth (self,node,toggle):
+        mod = self.getMod(node,modType="smooth")
+        if not toggle : mod.DisableMod()
+        else : mod.EnableMod()
+        
     def mesh_autosmooth(self,mesh):
         mod = self.addMod(mesh,modType="smooth")
         params = mod.ParameterBlock
@@ -390,26 +406,69 @@ class maxHelper(Helper):
     def checkIsMesh(self,poly):
         pass
 
+    def convertToPoly(self,oname):
+        cmd="clearSelection()\n"
+        cmd+="select $'"+oname+"'\n"
+        cmd+="convertTo $ PolyMeshObject\n"
+        print cmd
+        MaxPlus.Core.EvalMAXScript(cmd)
+        
+    def convertToMesh(self,oname):
+        cmd="clearSelection()\n"
+        cmd+="select $'"+oname+"'\n"
+        cmd+="convertTo $ TriMeshGeometry\n"
+        print cmd
+        MaxPlus.Core.EvalMAXScript(cmd)
+        
     def getMesh(self,o):
         if type(o) == str :
            o = self.getObject(o)
         print "getMesh",o,type(o),self.getName(o),isinstance(o, MaxPlus.TriObject)
+        name = self.getName(o)
         if isinstance(o, MaxPlus.Mesh) :
             return o
         if self.getName(o) == 'Mesh' or isinstance(o, MaxPlus.TriObject) :
             return o.GetMesh()
-        ob = self.getObjectFromNode(o)
-        #print "getObjectFromNode",ob,o
-        try :
-            tri = ob.AsTriObject(MaxPlus.Core.GetCurrentTime())
-        except :
-            print ("can't cast to AsTriObject")
+        ob = self.getObjectFromNode(o,baseo=True)
+        obtype = ob.GetClassName()
+        print "getObjectFromNode",ob,type(ob),obtype        
+        if obtype == self.EMPTY :
+            #get first child
+            ch = self.getChilds(o)
+            tri = self.getMesh(ch[0])#take first children
+        elif obtype =="TriObject" :
+            tri = ob.AsTriObject(MaxPlus.Core.GetCurrentTime()).GetMesh()
+            #self.convertToPoly(name)
+            #self.convertToMesh(name)
+            #tri = self.getMesh(self.getName(o))
+            #node = self.getObject(name)
+            #ob = self.getObjectFromNode(node)
+            #tri = ob.AsTriObject(MaxPlus.Core.GetCurrentTime())
+            #return tri.GetMesh()
+        elif obtype == "Editable Poly":
+            #convert to Editable Mesh and GetMesh()
+            self.convertToMesh(self.getName(o))
+            tri = self.getMesh(self.getName(o))
+        elif obtype == "Editable Mesh" :#or obtype == "Editable Poly":
+            try :
+                tri = ob.AsTriObject(MaxPlus.Core.GetCurrentTime())
+                print "tri",tri
+                tri = tri.GetMesh()
+                print "tri",tri
+            except :
+                print ("can't cast to AsTriObject")
+                tri = None
+        elif obtype == "DerivedObject":
+            #modifier are applied on the object
+            pass
+        else :
             tri = None
         if tri is None :
             return ob
+        print "triobject is ",tri,type(tri),hasattr(tri,"GetMesh"),hasattr(tri,"GetFace")
         #if not tri._IsValidWrapper():
         #    return None
-        return tri.GetMesh()
+        return tri
   
     def getMeshFrom(self,obj):
         if type(obj) != str :
@@ -531,7 +590,7 @@ class maxHelper(Helper):
             matrices = hmatrices
             hm = True
         if matrices == None : return None
-        if mesh == None : return None
+        if type(mesh) == type(None) : return None
         instance = []
         #print len(matrices)#4,4 mats       
         for i,mat in enumerate(matrices):
@@ -938,10 +997,9 @@ class maxHelper(Helper):
         #node.SetShadeCVerts(1)
         #shaded ?
         mesh = self.getMesh(node)
-       
         if  mesh is None:
             return
-
+        #inactivate smooth if any
         #self.addMod(meshnode,modType="smooth")
         #print "mesh is",mesh,name,node
         nv = mesh.GetNumVertices()
@@ -1197,7 +1255,7 @@ class maxHelper(Helper):
            colors = [colors,]        
         #print "change color"+str(type(mesh))
         #print (mesh)
-            
+        self.toggle_smooth(self.getObject(mesh),False)# the node     
         res = self.color_mesh_perVertex(mesh,colors,perVertex=perVertex,
                                   facesSelection=facesSelection,
                                   faceMaterial=faceMaterial)
@@ -1213,7 +1271,7 @@ class maxHelper(Helper):
                                        'lambert', mesh)
             else :
                 self.colorMaterial(mats[0],colors[0])
-
+        self.toggle_smooth(self.getObject(mesh),True)
 
     ###################Meshs and Objects#####################################################################################                                                                        
     def Sphere(self,name,res=16.,radius=1.0,pos=None,color=None,
@@ -1828,7 +1886,7 @@ class maxHelper(Helper):
 #  
 #==============================================================================
 
-    def PointCloudObject(self,name,vertices=None,**kw):
+    def PointCloudObject(self,name,vertices=None,smooth=False,**kw):
         #print "cloud", len(coords)
         coords=vertices
         node,mesh = self.createsNmesh(name,coords,None,None,**kw)
@@ -1903,43 +1961,20 @@ class maxHelper(Helper):
         #they can be position relatively or globally
         bones=[]
         #we are going to use MaxScript here.
-        MaxPlus.Core.EvalMAXScript("print #Build Armature")
+        #MaxPlus.Core.EvalMAXScript("print #Build Armature")
         #MaxPlus.Core.EvalMAXScript(oneBone())
         for j in range(0,len(coords)-1):
             parent = None
             pos1=coords[j]
             pos2=coords[j+1]
             name=basename+"bone"+str(j)
-            if i>0 :
+            if j>0 :
                 parent = basename+"bone"+str(j-1)
-            MaxPlus.Core.EvalMAXScript(oneBone(name,pos1,pos2, [0,0,1],parent=parent))
+            MaxPlus.Core.EvalMAXScript(self.oneBone(name,pos1,pos2, [0,0,1],parent=parent))
             bones.append(name)
         return bones[0],bones
             
-    def armature1(self,basename,coords,scn=None,root=None,**kw):
-        #bones are called joint in maya
-        #they can be position relatively or globally
-        bones=[]
-#        center = self.getCenter(coords)
-#        parent = self.newEmpty(basename)#this s the root
-        p=Application.ActiveSceneRoot
-        if "parent" in kw :
-            p=self.getObject(kw["parent"])
-        if type == "nurb" :
-            obj = p.AddGeometry("Grid", "NurbsSurface")
-        root = p.Add3dChain()
-        root.name =basename
-        self.setTranslation(root,coords[0])
-        root.Effector.name = basename+"_effector"
-        for j in range(1,len(coords)):    
-            pos=coords[j]
-            #bones.append(c4d.BaseObject(BONE))
-            relativePos=[pos[0],pos[1],pos[2]]
-            bone = root.AddBone(relativePos,Constant.siChainBonePin,basename+"bone"+str(j))
-            bones.append(bone)
-        self.setTranslation(root.Effector,coords[-1])
-        return root,bones
-    
+
 #    def bindGeom2Bones(self,listeObject,bones):
 #        """
 #        Make a skinning. Namely bind the given bones to the given list of geometry.
@@ -2103,9 +2138,12 @@ class maxHelper(Helper):
 #            cmds.parent( name, parent)
 #        return name,None
 
+    def makeLoft(self,name,shape,**kw):
+        node,obj = helper.createObjectWithNode(u"geom", u"loft", unicode("testLoft"))
+
     def extrudeSpline(self,spline,**kw):
         #select $Shape001
-        #
+        #Loft - superclass: GeometryClass; super-superclass:node - classID:#(6553, 0) 
         extruder = None
         shape = None
         spline_clone = None
@@ -2124,8 +2162,9 @@ class maxHelper(Helper):
         shapename = self.getName(shape)        
         if "extruder" in kw:
             extruder = kw["extruder"]
-#        if extruder is None :
-#            extruder=self.sweepnurbs("ex_"+spline.GetName())    
+        if extruder is None :
+            extruder=self.makeLoft("ex_"+spline.GetName(),shapename)
+        return
 #        extrudedmesh = Application.Selection(0)
         if "clone" in kw and kw["clone"] :
             #clon / copy the curve
@@ -2404,7 +2443,7 @@ class maxHelper(Helper):
         node = self.createNode(obj,name)
         if faces == None or len(faces) == 0 or len(faces[0]) < 3 :
             print node,type(node),obj,type(obj),tri,type(tri)
-            print (hasattr("VertTicks",node),hasattr("VertTicks",obj),hasattr("VertTicks",tri))
+            #print (hasattr("VertTicks",node),hasattr("VertTicks",obj),hasattr("VertTicks",tri))
             node.VertTicks(1)#this will show the vertices of the mesh
         #if color is not None and len(color) > 1:
         #    self.color_mesh_perVertex(mesh,color)
@@ -2424,7 +2463,7 @@ class maxHelper(Helper):
             self.reParent(node,parent)
         #ad the smooth mod
         if smooth:
-            pass#self.addMod(node)
+            self.mesh_autosmooth(node)
         return node,tri#,outputMesh
     
     def updatePoly(self,obj,vertices=None,faces=None):
@@ -2451,6 +2490,7 @@ class maxHelper(Helper):
             name = self.getName(meshnode)
         #if type(meshnode) is str or type(meshnode) is unicode:            
         #    meshnode = self.getObject(meshnode)
+        if type(obj) != type(None): self.toggle_smooth(obj,False)
         mesh = self.getMesh(node)
         #n = node.GetNumModifiers()
         #for i in range(n):
@@ -2513,6 +2553,7 @@ class maxHelper(Helper):
         #NotifyInputChanged
         #for i in range(n):
         #    mod = node.GetModifier(i).EnableMod()
+        if type(obj) != type(None): self.toggle_smooth(obj,True)
         self.update()
         
     def ToVec(self,v,pos=True):
@@ -2552,7 +2593,16 @@ class maxHelper(Helper):
 #        pass
 #
     def triangulate(self,poly):
-        pass
+        return
+        name = self.getName(poly)
+        cmd = "select $"+str(name)
+        cmd+="""
+modPanel.addModToSelection (Turn_to_Poly ()) ui:on
+$.modifiers[#Turn_to_Poly].limitPolySize = on
+$.modifiers[#Turn_to_Poly].maxPolySize = 3
+maxOps.CollapseNode $ off
+"""
+        MaxPlus.Core.EvalMAXScript(cmd)
 #        #select poly
 #        doc = self.getCurrentScene()
 #        mesh = self.getMShape(poly)
@@ -2574,15 +2624,20 @@ class maxHelper(Helper):
 #GetFaceVertices
 
     def getMeshVertices(self,poly,transform=False,selected = False):
-        if type(poly) is str or type(poly) is unicode:
-            name = poly
-            poly = self.getObject(mesh)
+        #what if already a mesh
+        if not isinstance(poly, MaxPlus.Mesh) :
+            if type(poly) is str or type(poly) is unicode:
+                name = poly
+                #poly = self.getObject(name)
+            else :
+                name = self.getName(poly) 
+            node = self.getObject(name)
+            #shaded ?
+            mesh = self.getMesh(node)
+            print "getMeshVertice ",name,poly,node,mesh
+            m = node.GetWorldTM()
         else :
-            name = self.getName(poly)
-        node = self.getObject(name)
-        #shaded ?
-        mesh = self.getMesh(poly)
-        m = node.GetWorldTM()
+            mesh = poly
         #print "updateMesh mesh", mesh,type(mesh)
         if  mesh is None:
             return
@@ -2626,16 +2681,19 @@ class maxHelper(Helper):
 #
 
     def getMeshNormales(self,poly,transform=False,selected = False):
-        if type(poly) is str or type(poly) is unicode:
-            name = poly
-            poly = self.getObject(mesh)
+        if not isinstance(poly, MaxPlus.Mesh) :
+            if type(poly) is str or type(poly) is unicode:
+                name = poly
+                poly = self.getObject(mesh)
+            else :
+                name = self.getName(poly)
+            node = self.getObject(name)
+            m = node.GetWorldTM()
+            #shaded ?
+            mesh = self.getMesh(node)
         else :
-            name = self.getName(poly)
-        node = self.getObject(name)
-        #shaded ?
-        mesh = self.getMesh(poly)
+            mesh = poly
         mesh.BuildNormals()#ensure normal are not 0,0,0
-        m = node.GetWorldTM()
         #print "updateMesh mesh", mesh,type(mesh)
         if  mesh is None:
             return
@@ -2650,15 +2708,19 @@ class maxHelper(Helper):
         return normals
 
     def getMeshFaceNormales(self,poly,selected = False,transform=False):
-        if type(poly) is str or type(poly) is unicode:
-            name = poly
-            poly = self.getObject(mesh)
+        if not isinstance(poly, MaxPlus.Mesh) :
+            if type(poly) is str or type(poly) is unicode:
+                name = poly
+                poly = self.getObject(mesh)
+            else :
+                name = self.getName(poly)
+            node = self.getObject(name)
+            #shaded ?
+            mesh = self.getMesh(node)
+            m = node.GetWorldTM()
         else :
-            name = self.getName(poly)
-        node = self.getObject(name)
-        #shaded ?
-        mesh = self.getMesh(poly)
-        m = node.GetWorldTM()
+            mesh = poly
+
         if  mesh is None:
             return
         nv = mesh.GetNumVertices()
@@ -2692,15 +2754,22 @@ class maxHelper(Helper):
 #
 
     def getMeshFaces(self,poly,selected = False):
-        if type(poly) is str or type(poly) is unicode:
-            name = poly
-            poly = self.getObject(mesh)
+        print "poly is ",poly,type(poly)
+        if not isinstance(poly, MaxPlus.Mesh) :
+            if type(poly) is str or type(poly) is unicode:
+                name = poly
+                poly = self.getObject(mesh)
+            else :
+                name = self.getName(poly)
+            print " name ", name,poly,type(poly)
+            node = self.getObject(name)
+            print "node ",node,type(node)
+            #shaded ?
+            mesh = self.getMesh(node)
+            print "updateMesh mesh", mesh,type(mesh)
         else :
-            name = self.getName(poly)
-        node = self.getObject(name)
-        #shaded ?
-        mesh = self.getMesh(poly)
-        #print "updateMesh mesh", mesh,type(mesh)
+            mesh = poly
+        
         if  mesh is None:
             return
 
@@ -2734,17 +2803,19 @@ class maxHelper(Helper):
 ##        else :
 ##            #have to a object shape node or dagpath
 ##            meshnode = poly
-
-        if type(meshnode) is str or type(meshnode) is unicode:            
-            meshnode = self.getObject(meshnode)
-        mesh = self.getMesh(meshnode)
-        if meshnode is None or mesh is None:
-            return
-
-
-        nv = mesh.GetNumVertices()
-        nf = mesh.GetNumFaces()
-
+        #if not isinstance(meshnode, MaxPlus.Mesh) :
+        #    if type(meshnode) is str or type(meshnode) is unicode:            
+        #        meshnode = self.getObject(meshnode)
+        #    mesh = self.getMesh(meshnode)
+        #    if meshnode is None or mesh is None:
+        #        return
+        #else :
+        #    mesh = meshnode
+        #nv = mesh.GetNumVertices()
+        #nf = mesh.GetNumFaces()
+        #transform=False
+        #if tri:
+        #    self.triangulate(meshnode)
         if self._usenumpy :
             faces = numpy.array(self.getMeshFaces(meshnode))
             vertices = numpy.array(self.getMeshVertices(meshnode,transform=transform))
