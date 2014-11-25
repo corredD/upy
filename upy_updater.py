@@ -61,7 +61,7 @@ class Updater:
         tmpFileName = "update_notes_"+self.host+".json"
 #        if not os.path.isfile(tmpFileName):
         urllib.urlcleanup()
-        if checkURL(URI) :
+        if checkURL(URI) :  
             urllib.urlretrieve(URI, tmpFileName)#,reporthook=self.helper.reporthook)
             #geturl(URI, tmpFileName)
         else :
@@ -223,7 +223,34 @@ class Updater:
             f=self.local_path+os.sep+plug+"_"+self.typeUpdate+"_"+h+".zip"
             if os.path.isfile(f) :
                 os.remove(f)
+            #need to remove some files for autopack
+            if plug == "autopack":
+                if os.path.exists(self.liste_plugin[plug]["path"]+"/Patches"):
+                    shutil.rmtree(self.liste_plugin[plug]["path"]+"/Patches")
             os.system("cd "+d+"/..;zip -r "+f+" "+plug+"/  >logx")
+
+def get_current_version():
+#        set afversion=`svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 `
+#        set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk | grep "Revision:" | cut -d: -f2 `
+#        set upyversion=`svn info https://github.com/corredD/upy/trunk | grep "Revision:" | cut -d: -f2 `
+#    output = os.system('svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 ')    
+    import subprocess    
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/gj210/autoPACK/trunk/autopack'], 
+                            stdout=subprocess.PIPE,
+                            )
+    svn_info = svn.stdout.readlines()
+    afversion = int(svn_info[4].split("Revision: ")[1])
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/ePMV/trunk'], 
+                            stdout=subprocess.PIPE,
+                            )
+    svn_info = svn.stdout.readlines()
+    epmvversion = int(svn_info[4].split("Revision: ")[1])
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/upy/trunk'], 
+                            stdout=subprocess.PIPE,
+                            )
+    svn_info = svn.stdout.readlines()
+    upyversion = int(svn_info[4].split("Revision: ")[1])
+    return afversion,epmvversion,upyversion
     
 if __name__ == "__main__":  
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
@@ -232,19 +259,24 @@ if __name__ == "__main__":
     do_json=True
     do_update=True
     if do_json : 
-        upyv="0.6.425"
-        apv="0.5.709"
-        epmv="0.5.166"
+        #current version?
+        afversion,epmvversion,upyversion = get_current_version()
+        upyv="0.7."+str(upyversion)
+        apv="0.6."+str(afversion)
+        epmv="0.6."+str(epmvversion)
         liste_plugin={"upy":{"version_current":upyv,"version_std":upyv,"version_dev":upyv,"host":["all"]},
-                      "AutoFill":{"version_current":apv,"version_std":apv,"version_dev":apv,"host":["all"]},
+                      "autopack":{"version_current":apv,"version_std":apv,"version_dev":apv,"host":["all"]},
                         "ePMV":{"version_current":epmv,"version_std":epmv,"version_dev":epmv,"host":["all"]}}
         #from upy.upy_updater import Updater
         up = Updater(host=["all"],liste_plugin=liste_plugin)
         up.writeUpdateNote(notes="blabla")
     if do_update:
-        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://subversion.assembla.com/svn/upy/trunk/upy","major":"0.6"},
-                      "AutoFill":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/AutoFill","svn":"https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean","major":"0.5"},
-                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://subversion.assembla.com/svn/epmv/trunk/","major":"0.5"}}
+        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://github.com/corredD/upy/trunk","major":"0.7"},
+                      "autopack":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/autopack","svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.6"},
+                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://github.com/corredD/ePMV/trunk","major":"0.6"}}
+#        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://subversion.assembla.com/svn/upy/trunk/upy","major":"0.6"},
+#                      "AutoFill":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/AutoFill","svn":"https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean","major":"0.5"},
+#                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://subversion.assembla.com/svn/epmv/trunk/","major":"0.5"}}
         #from upy.upy_updater import Updater
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="std")
         up.update_svn_export(host=up.list_host)
@@ -262,7 +294,4 @@ if __name__ == "__main__":
 #        up.update_svn_export()
         #this willl create an update just for maya
         #so shoul we have udpate_note per host
-        #commit the change ?
-        #upload the zip to google ? =>stable?
-        
-        
+            
