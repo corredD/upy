@@ -76,7 +76,6 @@ class mayaHelper(Helper):
     pb = False
     pbinited = False
     host = "maya"
-    LIGHT_OPTIONS = {"Area" : cmds.ambientLight,"Sun" : cmds.directionalLight,"Spot":cmds.spotLight}
     
     def __init__(self,master=None,**kw):
         Helper.__init__(self)
@@ -90,6 +89,9 @@ class mayaHelper(Helper):
         self.pb = True
         self.hext = "ma"
         self.timeline_cb={}
+        self.LIGHT_OPTIONS = {"Area" : maya.cmds.ambientLight,
+                     "Sun" : maya.cmds.directionalLight,
+                     "Spot":maya.cmds.spotLight}
         
     def fit_view3D(self):
         pass#
@@ -1201,6 +1203,36 @@ class mayaHelper(Helper):
             else :
                 self.colorMaterial(mats[0],colors[0])
 
+    def getMaterialProperty(self,material, **kw):
+        """
+        Change a material properties.
+        
+        * overwrited by children class for each host
+        
+        @type  material: string/Material
+        @param material: the material to modify
+            - color
+            - specular
+            - ...
+        """
+        mat =self.getMaterial(material)
+        if len(mat)==1:
+            mat=mat[0]
+        res = {}
+        if mat is None :
+            return
+        if "specular" in kw :
+            res["specular"] = True#mat[c4d.MATERIAL_USE_SPECULAR]
+        if "specular_color" in kw :
+            res["specular_color"] = [0,0,0]#self.ToVec(mat[c4d.MATERIAL_SPECULAR_COLOR],pos=False)
+        if "specular_width" in kw :
+            res["specular_width"] = 0#mat[c4d.MATERIAL_SPECULAR_WIDTH]
+        if "color" in kw :
+            res["color"] = cmds.getAttr( str(mat)+".color")[0]
+        if "diffuse" in kw :
+            res["diffuse"] = cmds.getAttr( str(mat)+".diffuse")[0]
+        return res
+    
     ###################Meshs and Objects#####################################################################################                                                                        
     def Sphere(self,name,res=16.,radius=1.0,pos=None,color=None,
                mat=None,parent=None,type="nurb"):
@@ -2723,7 +2755,7 @@ class mayaHelper(Helper):
             import maya.mel as mel
             #mel.eval('FBXImportMode -v exmerge;')
             filename = filename.replace("\\","\\\\")
-            mel.eval('FBXImport -f "%s";' % filename)#FBXGetTakeName ?
+            mel.eval('FBXImport -f "%s" -t 0;' % filename)#FBXGetTakeName ?
         else :
             print ("not supported by uPy, contact us!")
             return

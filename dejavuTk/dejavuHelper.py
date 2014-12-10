@@ -31,7 +31,7 @@ import string
 import types
 import math
 from math import *
-from types import StringType, ListType
+#from types import StringType, ListType
 
 #from DejaVu import Viewer
            
@@ -46,7 +46,7 @@ try :
     import collada
 except :
     collada = None
-    print "can't import pycollada "
+    print ("can't import pycollada ")
 
 #Problem instance doesnt really exist as its. Or its instance of mesh/sphere/cylinder directly.
 #check autofill display
@@ -2142,8 +2142,8 @@ class dejavuHelper(hostHelper.Helper):
 #        print "pname",name
         if name is None :
             name = parentxmlnode.get("id")
-        print "transformNode parent",name
-        print "transformNode type", type(node)
+#        print "transformNode parent",name
+#        print "transformNode type", type(node)
         if (type(node)==collada.scene.GeometryNode):
             pass
         elif (type(node)==collada.scene.ExtraNode):
@@ -2252,7 +2252,7 @@ class dejavuHelper(hostHelper.Helper):
     def read(self,filename,**kw):
         fileName, fileExtension = os.path.splitext(filename)
 #        import collada
-        print "load ",filename
+#        print "load ",filename
         if fileExtension == ".dae" :
             col = collada.Collada(filename)#, ignore=[collada.DaeUnsupportedError,
                                             #collada.DaeBrokenRefError])

@@ -4985,12 +4985,16 @@ class c4dHelper(Helper):
             n = scene.Node(self.getName(c), children=[geomnode,],transforms=[tr,rz,ry,rx,s]) #scene.MatrixTransform(matrix)
             g.append(n)
         node = scene.Node(pname, children=g)#,transforms=[scene.RotateTransform(0,1,0,90.0)])
+        if "parent_node" in kw :
+            kw["parent_node"].children.append(node)
+            node = kw["parent_node"]
         if not len(collada_xml.scenes) :
             myscene = scene.Scene("myscene", [node])
             collada_xml.scenes.append(myscene)
             collada_xml.scene = myscene
         else :
-            collada_xml.scene.nodes.append(node)
+            if "parent_node" not in kw :
+                collada_xml.scene.nodes.append(node)
         if instance_node:
             collada_xml.nodes.append(master_node)
         return collada_xml

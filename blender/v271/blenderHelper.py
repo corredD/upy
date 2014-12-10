@@ -47,7 +47,39 @@ class blenderHelper(Helper):
         give access to the basic function need for create and edit a host 3d object and scene.
     """
     
-
+    def setViewport(self,**kw):
+        """
+        set the property of the viewport
+        
+        * overwrited by children class for each host
+        >>>helper.setViewport(clipstart=0,clipend=diag,shader="GLSL")
+        
+        @type  kw: dictionary
+        @param kw: the list of parameter and their value to change   
+        """  
+        print (kw)
+        sv3d = self.getSpaceView3D()
+        #if "center" in kw :
+        #    if kw["center"] :
+        #        bpy.ops.view3d.view_all(center=False)
+        if "clipstart" in kw :
+            if kw["clipstart"] == 0 :
+                kw["clipstart"]= 0.001
+            sv3d.clip_start = kw["clipstart"]
+            print ("clipstart ",kw["clipstart"])
+        if "clipend" in kw :
+            sv3d.clip_end = kw["clipend"]
+            print ("clipend ",kw["clipend"])
+        if "shader" in kw :
+            engine = bpy.context.scene.render.engine
+            if engine == 'CYCLE':
+                sv3d.viewport_shade = self.vshade[kw["shader"]]
+                sv3d.show_textured_solid = True
+            else :
+                sv3d.viewport_shade = self.vshade["solid"]
+                sv3d.show_textured_solid = True
+            print ("shader ",kw["shader"],self.vshade[kw["shader"]])
+            
 
     def getObjectFromMesh(self,mesh):
         #what if mesh is already an object
@@ -65,50 +97,89 @@ class blenderHelper(Helper):
             return
         if type(obj) == bpy.types.Mesh:
             return obj
-#        obj = self.getObject(obj)
-        obj.select = True
-        self.getCurrentScene().objects.active = obj
-        mesh = obj.data
-        return mesh
-
-##
-#    def checkIsMesh(self,mesh):
-#        #verify that we are not in editModes
-##        o=mesh
-##        mods = o.modifiers
-##        if mods:
-##            print("Attention: Modifiers on ", mesh)
-##            try:
-##                mesh = Blender.Mesh.Get('container')
-##            except:
-##                mesh = Blender.Mesh.New('container')
-##            mesh.getFromObject(o)
-##            return mesh
-##        print (mesh,type(mesh))
-#        if type(mesh) is str :
-#            return self.getMesh(mesh)
-#        if type(mesh) == bpy.types.Object:
-#            return self.getMeshFrom(mesh) 
-#        if type(mesh) == bpy.types.Mesh:
-#            return mesh
-##
-    def getMesh(self,name,**kw):
-        print ("getMesh for",name,type(name))
-        if type(name) != str :
-            if type(name) == bpy.types.Object:
-                return name.data
-            elif type(name) == bpy.types.Mesh:
-                return name
         else :
-            #name of the mesh or the object?
+            return self.getMesh(obj)
+#        obj = self.getObject(obj)
+#        obj.select = True
+#        self.getCurrentScene().objects.active = obj
+#        mesh = obj.data
+#        return mesh
+
+    def checkIsMesh(self,mesh):
+        #verify that we are not in editModes
+#        o=mesh
+#        mods = o.modifiers
+#        if mods:
+#            print("Attention: Modifiers on ", mesh)
+#            try:
+#                mesh = Blender.Mesh.Get('container')
+#            except:
+#                mesh = Blender.Mesh.New('container')
+#            mesh.getFromObject(o)
+#            return mesh
+        print ("checkIsMesh",mesh,type(mesh))
+        if type(mesh) is str :
+            return self.getMesh(mesh)
+        if type(mesh) == bpy.types.Object:
+            print ("object of type",mesh.type)
+            return self.getMeshFrom(mesh) 
+        if type(mesh) == bpy.types.Mesh:
+            print ("its a mesh")
+            return mesh
+
+    def getFirstMesh (self,m,**kw):
+        im=True
+        if "instance_master" in kw :
+            im = kw["instance_master"]        
+        if m is None :
+            return None
+        print ("getFirstMesh",m,type(m),im)
+        if type(m)  == bpy.types.Mesh :
+            return m
+        elif type(m) == bpy.types.Object :
+            #what kind
+            print ("type of m is ",type(m),m.type)
+            if m.type == self.EMPTY :
+                n=self.getChilds(m)[0] 
+                return self.getFirstMesh(n,instance_master=im)
+            else :
+                return m.data 
+        #elif type(m) == c4d.Oinstance :
+#       #     print ("do instance ?",im,m)
+        #    if im :
+        #        return self.getFirstMesh(m[c4d.INSTANCEOBJECT_LINK])
+        #    else :
+#       #         print ("instance ",m)
+        #        return m
+        else :
+            #print ("what ? getFirstMesh",m,m.GetType())
+            return m#can be cylinder#cself.getFirstMesh(m.GetDown())
+
+
+
+    def getMesh(self,name,**kw):
+        im = True #go until instance master if any
+        if "instance_master" in kw :
+            im = kw["instance_master"]
+        print ("getMesh of ",name,type(name))
+        if type(name) is str:
             mesh = bpy.data.meshes.get(name)
             if mesh is None : 
+                print ("mesh is none")
                 obj = bpy.data.objects.get(name)
                 if obj is not None :
-                    return obj.data
+                    print ("whats the data",obj,type(obj),obj.type)
+                    return self.getFirstMesh(obj,instance_master=im)
+        elif type(name) != str :
+            if type(name) == bpy.types.Object:
+                if name.data is not None :
+                    print ("whats the name data",name.data,type(name.data))
+                    return name.data
                 else :
-                    return None
-            return mesh
+                    return self.getFirstMesh(name,instance_master=im)
+            elif type(name) == bpy.types.Mesh:
+                return name
+        return None
 
 ##
 #    def getObjectMatrix(self,obj):
@@ -792,10 +863,13 @@ class blenderHelper(Helper):
 #        self.restoreEditMode(editmode)
 
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
-        print ("what is poly",poly)
+        print ("what is the poly",poly)
+        if poly is None :
+            return [],[],[]
         ob = self.getObject(poly)
         print ("Decompos Mesh",poly,ob)
         mesh = self.getMeshFrom(ob)
+        print ("Found mesh ",mesh)
         vertices = self.getMeshVertices(mesh)
         faces = self.getMeshFaces(mesh)
         vnormals = self.getMeshNormales(mesh)
