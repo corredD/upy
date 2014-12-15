@@ -2214,101 +2214,101 @@ class c4dHelper(Helper):
         return polygon
 
             
-    def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,
-                     material=None,proxyCol=False,color=[[1,0,0],],**kw):
-        """
-        This is the main function that create a polygonal mesh.
-        
-        @type  name: string
-        @param name: name of the pointCloud
-        @type  vertices: array
-        @param vertices: list of x,y,z vertices points
-        @type  vnormals: array
-        @param vnormals: list of x,y,z vertex normals vector
-        @type  faces: array
-        @param faces: list of i,j,k indice of vertex by face
-        @type  smooth: boolean
-        @param smooth: smooth the mesh
-        @type  material: hostApp obj
-        @param material: material to apply to the mesh    
-        @type  proxyCol: booelan
-        @param proxyCol: do we need a special object for color by vertex (ie C4D)
-        @type  color: array
-        @param color: r,g,b value to color the mesh
-    
-        @rtype:   hostApp obj
-        @return:  the polygon object
-        """
-        if len(color) == 3 :
-            if type(color[0]) is not list :
-                color = [color,]
-        PDBgeometry = self.polygons(name, vertices=vertices,normals=vnormals,
-                                      faces=faces,material=material,color=color,
-                                      smooth=smooth,proxyCol=proxyCol)
-        parent = None
-        if "parent" in kw:
-            parent = kw["parent"]
-        self.addObjectToScene(None,PDBgeometry,parent=parent)
-        return [PDBgeometry,PDBgeometry]
-    
-    def instancePolygon(self,name, matrices=None,hmatrices=None, mesh=None,parent=None,
-                        transpose=False,globalT=True,**kw):
-        if hmatrices is not None :
-            matrices = hmatrices
-        if matrices == None : return None
-        if mesh == None : return None
-        instance = []
-        #print len(matrices)#4,4 mats
-        for i,mat in enumerate(matrices):
-            inst = self.getObject(name+str(i))
-            if inst is None :
-                inst = c4d.BaseObject(c4d.Oinstance)
-                inst.SetName(name+str(i))
-                self.AddObject(inst,parent=parent)
-            instance.append(inst)
-            instance[-1][1001]=mesh
-            if hmatrices is not None :
-                mx = mat            
-            elif matrices is not None :
-                if type(mat) != c4d.Matrix:
-                    mx = self.matrix2c4dMat(mat,transpose=transpose)
-                else :
-                    mx = mat 
-            if globalT :
-                instance[-1].SetMg(mx)
-            else :
-                instance[-1].SetMl(mx)
-            #instance[-1].MakeTag(c4d.Ttexture)
-        return instance
+#    def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,
+#                     material=None,proxyCol=False,color=[[1,0,0],],**kw):
+#        """
+#        This is the main function that create a polygonal mesh.
+#        
+#        @type  name: string
+#        @param name: name of the pointCloud
+#        @type  vertices: array
+#        @param vertices: list of x,y,z vertices points
+#        @type  vnormals: array
+#        @param vnormals: list of x,y,z vertex normals vector
+#        @type  faces: array
+#        @param faces: list of i,j,k indice of vertex by face
+#        @type  smooth: boolean
+#        @param smooth: smooth the mesh
+#        @type  material: hostApp obj
+#        @param material: material to apply to the mesh    
+#        @type  proxyCol: booelan
+#        @param proxyCol: do we need a special object for color by vertex (ie C4D)
+#        @type  color: array
+#        @param color: r,g,b value to color the mesh
+#    
+#        @rtype:   hostApp obj
+#        @return:  the polygon object
+#        """
+#        if len(color) == 3 :
+#            if type(color[0]) is not list :
+#                color = [color,]
+#        PDBgeometry = self.polygons(name, vertices=vertices,normals=vnormals,
+#                                      faces=faces,material=material,color=color,
+#                                      smooth=smooth,proxyCol=proxyCol)
+#        parent = None
+#        if "parent" in kw:
+#            parent = kw["parent"]
+#        self.addObjectToScene(None,PDBgeometry,parent=parent)
+#        return [PDBgeometry,PDBgeometry]
+##    
+#    def instancePolygon(self,name, matrices=None,hmatrices=None, mesh=None,parent=None,
+#                        transpose=False,globalT=True,**kw):
+#        if hmatrices is not None :
+#            matrices = hmatrices
+#        if matrices == None : return None
+#        if mesh == None : return None
+#        instance = []
+#        #print len(matrices)#4,4 mats
+#        for i,mat in enumerate(matrices):
+#            inst = self.getObject(name+str(i))
+#            if inst is None :
+#                inst = c4d.BaseObject(c4d.Oinstance)
+#                inst.SetName(name+str(i))
+#                self.AddObject(inst,parent=parent)
+#            instance.append(inst)
+#            instance[-1][1001]=mesh
+#            if hmatrices is not None :
+#                mx = mat            
+#            elif matrices is not None :
+#                if type(mat) != c4d.Matrix:
+#                    mx = self.matrix2c4dMat(mat,transpose=transpose)
+#                else :
+#                    mx = mat 
+#            if globalT :
+#                instance[-1].SetMg(mx)
+#            else :
+#                instance[-1].SetMl(mx)
+#            #instance[-1].MakeTag(c4d.Ttexture)
+#        return instance
 
-    def updateInstancePolygon(self,name,instance, matrices=None,hmatrices=None,mesh=None,
-                              parent=None,transpose=False,globalT=True):
-        if matrices == None : return None
-        if mesh == None : return None
-        #instance = []      
-        #print len(matrices)#4,4 mats
-        if instance is None:
-            instance = []
-        if hmatrices is not None :
-            matrices = hmatrices
-        for i,mat in enumerate(matrices):
-            inst = self.getObject(name+str(i))
-            if i > len(instance) or inst is None:
-                inst = c4d.BaseObject(c4d.Oinstance)
-                inst.SetName(name+str(i))
-                self.AddObject(inst,parent=parent)
-                instance.append(inst)
-            inst[1001]=mesh
-            if hmatrices is not None :
-                mx = mat            
-            elif matrices is not None :
-                mx = self.matrix2c4dMat(mat,transpose=transpose)
-            if globalT :
-                inst.SetMg(mx)
-            else :
-                inst.SetMl(mx)
-            #instance[-1].MakeTag(c4d.Ttexture)
-        return instance
+#    def updateInstancePolygon(self,name,instance, matrices=None,hmatrices=None,mesh=None,
+#                              parent=None,transpose=False,globalT=True):
+#        if matrices == None : return None
+#        if mesh == None : return None
+#        #instance = []      
+#        #print len(matrices)#4,4 mats
+#        if instance is None:
+#            instance = []
+#        if hmatrices is not None :
+#            matrices = hmatrices
+#        for i,mat in enumerate(matrices):
+#            inst = self.getObject(name+str(i))
+#            if i > len(instance) or inst is None:
+#                inst = c4d.BaseObject(c4d.Oinstance)
+#                inst.SetName(name+str(i))
+#                self.AddObject(inst,parent=parent)
+#                instance.append(inst)
+#            inst[1001]=mesh
+#            if hmatrices is not None :
+#                mx = mat            
+#            elif matrices is not None :
+#                mx = self.matrix2c4dMat(mat,transpose=transpose)
+#            if globalT :
+#                inst.SetMg(mx)
+#            else :
+#                inst.SetMl(mx)
+#            #instance[-1].MakeTag(c4d.Ttexture)
+#        return instance
         
     def setVColor(self,j,ncolor):
         _colsc = 1.0

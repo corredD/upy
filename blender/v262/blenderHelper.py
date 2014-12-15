@@ -75,6 +75,7 @@ class blenderHelper(Helper):
         self.Points = self.PointCloudObject 
         self.hext = "blend"
         self.editmode = False
+        self.instance_dupliFace = True
         self.track_axis_dic = {
             "NEG_Z" : [0.,0.,-1],
             "POS_Z" : [0.,0.,1],
@@ -83,7 +84,16 @@ class blenderHelper(Helper):
             "NEG_X" : [-1.,0.,0.],
             "POS_X" : [1.,0.,0.],        
         }
-        
+        self.quad={"+Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+                   "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+                   "+X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+                   "-Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+                   "-Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+                   "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+#                   "-Z" :[[-1,1,0],[-1,-1,0],[1,-1,0], [1,1,0]],#XY
+#                   "-Y" :[[-1,0,1],[-1,0,-1],[1,0,-1], [1,0,1]],#XZ
+#                   "-X" :[[0,-1,1],[0,-1,-1],[0,1,-1], [0,1,1]],#YZ
+                  }
         
         self.noise_type ={
               "boxNoise":noise.types.BLENDER,
@@ -444,6 +454,17 @@ class blenderHelper(Helper):
                 return a
         return "POS_Z"
 
+    def transposeMatrix(self,matrice):
+        if matrice is not None :
+            if isinstance(matrice,numpy.ndarray) :
+#                mat = matrice.tolist()
+                mat = matrice.transpose().tolist()
+                return mat
+            blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
+            blender_mat.transpose()        
+            return blender_mat
+        return matrice
+        
     def getObjectMatrix(self,obj):
         t = obj.location
         s = obj.scale
@@ -764,14 +785,40 @@ class blenderHelper(Helper):
 #            matrices = matrices.tolist()
 #        if isinstance(matrices[0],numpy.ndarray) :
 #            matrices = numpy.array(matrices).tolist()
-        if self.dupliVert:
+        print (self.instance_dupliFace)
+        if self.instance_dupliFace:
             v=[0.,1.,0.]
             if "axis" in kw and kw["axis"] is not None:
                 v=kw["axis"]
             print ("axis",v)
             o = self.getObject(name) 
             if o is None :
-                o,m=self.matrixToVNMesh(name,matrices,vector=v)
+#                o,m=self.matrixToVNMesh(name,matrices,vector=v)
+                o,m=self.matrixToFacesMesh(name,matrices,vector=v,transpose=transpose)
+                if parent is not None :
+                    o.parent = parent
+                #put the object to be instanced child of it
+                mesh.parent = o
+                #mesh need to be in main layer
+    #            self.setLayers(mesh,[0])
+                instance=[o]
+                o.dupli_type = "FACES"
+#                o.use_dupli_vertices_rotation = True
+#                kw = {"track_axis":self.getTrackAxis(v)}
+#                self.applyToRec(mesh,self.setPropertyObject,**kw)
+                
+            else :
+                #update
+                pass
+            #rotation checkbox->use normal
+        elif self.dupliVert:
+            v=[0.,1.,0.]
+            if "axis" in kw and kw["axis"] is not None:
+                v=kw["axis"]
+            print ("axis",v)
+            o = self.getObject(name) 
+            if o is None :
+                o,m=self.matrixToVNMesh(name,matrices,vector=v,transpose=transpose)
                 if parent is not None :
                     o.parent = parent
                 #put the object to be instanced child of it
@@ -2005,7 +2052,7 @@ class blenderHelper(Helper):
             obj.parent = parent
         return obj,me
 
-    def matrixToVNMesh(self,name,matrices,vector=[0.,1.,0.],**kw):#edge size ?
+    def matrixToVNMesh(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
         #blender user verex normal for rotated the instance
         pt1=[0.,0.,0.]#pos
         pt2=vector#[0.,1.,0.]#normal should be given ?
@@ -2020,6 +2067,8 @@ class blenderHelper(Helper):
 #            p1=m[:3, 3]
 #            m[:3, 3]=[0.,0.,0.]
             #p1,p2=self.ApplyMatrix([pt1,pt2],m)
+            if transpose :
+                m =self.transposeMatrix(m)
             p1=self.ApplyMatrix([pt1],m)[0]            
             mr=m[:]
             mr[:3,:3]=[0.,0.,0.]
@@ -2048,7 +2097,40 @@ class blenderHelper(Helper):
             obj.parent = parent
         return obj,me
 
-
+    def matrixToFacesMesh(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        #blender user verex normal for rotated the instance
+        #quad up vector should use the inpu vector
+        axe=self.rerieveAxis(vector)
+        #axe="+Y"
+        quad=numpy.array(self.quad[axe])#*10.0
+        print ("matrixToFacesMesh",axe,vector,quad)
+#        f=[0,1,2,3]
+        v=[]
+        f=[]
+        e=[]
+        n=[]        
+        vi=0
+        for i,m in enumerate(matrices):
+            if transpose :
+                m =self.transposeMatrix(m)
+            new_quad=self.ApplyMatrix(quad,m)            
+            v.extend(new_quad)
+            f.append([i*4+0,i*4+1,i*4+2,i*4+3])
+        res = bpy.ops.object.add(type='MESH')
+        obj = bpy.context.object
+        obj.name = name+"ds"
+        me = obj.data
+        me.name = name
+        me.from_pydata(v, [], f)
+#        points = me.vertices
+        me.update()
+#        me.calc_normals()
+#        for i,v in enumerate(points) :
+#            v.normal = self.FromVec(n[i])
+        if 'parent' in kw and kw['parent'] is not None: 
+            parent = self.getObject(kw['parent'])
+            obj.parent = parent
+        return obj,me
             
 #    def updateCloudObject(self,name,coords):
 #        #print "updateMesh ",geom,geom.mesh
@@ -3035,7 +3117,7 @@ class blenderHelper(Helper):
     
         """
         if self._usenumpy:
-            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
+            return Helper.rotation_matrix(self,angle, direction, point=point,trans=trans)
         else :            
             direction = self.FromVec(direction[:3])
             direction.normalize()

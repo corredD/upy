@@ -134,7 +134,14 @@ class Helper:
              }
         self.usenumpy = self._usenumpy
         self.nogui = False
-
+        self.instance_dupliFace = False
+        self.quad={"+Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+                   "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+                   "+X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+                   "-Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+                   "-Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+                   "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+                   }
 #==============================================================================
 # some helper for treading and asynchrone stuff
 #==============================================================================
@@ -1642,7 +1649,7 @@ class Helper:
         dic = {"+X":[1.,0.,0.],"-X":[-1.,0.,0.],"+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
                     "+Z":[0.,0.,1.],"-Z":[0.,0.,-1.]}
         for k in dic :
-            if list(axis) == dic[k]:
+            if [int(axis[0]),int(axis[1]),int(axis[2])] == dic[k]:
                 return k
 
     def CylinderHeadTails(self,cylinder,**kw):
@@ -3320,6 +3327,14 @@ class Helper:
 #            print nn
             newnormals.append(nn)
         return newnormals
+
+    def matrixToVNMesh(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        """convert liste of matrix (rotation/position) to point mesh in order to use cloner / dupliVert"""
+        pass
+
+    def matrixToFacesMesh(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        """convert liste of matrix (rotation/position) to quad mesh in order to use cloner / dupliFace"""
+        pass
        
     def toggle(self,variable,value):
         variable = value

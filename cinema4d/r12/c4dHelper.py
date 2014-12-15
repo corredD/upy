@@ -196,6 +196,7 @@ class c4dHelper(Helper):
     DESELECTALL = 12113
     SELCHILDREN = 16388
     FITTOVIEW = 430000774
+    REVERSE_NORMAL = 14041
     #need an axis dictionary
     
     #PARTICULE DATA DIC
@@ -269,7 +270,13 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
-        #
+#        self.quad={"+Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+#                   "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+#                   "+X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+#                   "-Z" :[[-1,-1,0],[1,-1,0],[1,1,0],[-1,1,0] ],#XY
+#                   "-Y" :[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1] ],#XZ
+#                   "-X" :[[0,1,1],[0,-1,1], [0,-1,-1],[0,1,-1]],#YZ
+#                   }
              
     def start_thread(self,job):
         thread = UserThread()
@@ -2465,6 +2472,7 @@ class c4dHelper(Helper):
 #                else : #need to update
 #                    updateLines(lines, chains=ch)
 
+
     def matrixToEdgeMesh(self,name,matrices,**kw):#edge size ?
         pt1=[0.,-5.,0.]
         pt2=[0.,5.,0.]#edgelength
@@ -2537,6 +2545,79 @@ class c4dHelper(Helper):
             obj.parent = parent
         return obj,me
 
+    def transposeMatrix(self,matrice):
+        if matrice is not None :
+            matrice = numpy.array(matrice)
+            if isinstance(matrice,numpy.ndarray) :
+                mat = matrice.transpose().tolist()
+                return mat
+            else :
+                return matrice#  = mat#numpy.array(matrice)
+#            blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
+#            blender_mat.transpose()        
+#            return blender_mat
+        return matrice
+
+    def matrixToFaces(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        av=[vector[0],vector[1],vector[2]]
+#        av=[vector[2],vector[1],vector[0]]
+        axe=self.rerieveAxis(av)
+        #axe="+Y"
+        eq={"+X":self.track_axis_dic["+Y"][1],
+            "+Y":self.track_axis_dic["-Z"][1],
+            "+Z":self.track_axis_dic["+X"][1],
+            "-X":self.track_axis_dic["-Y"][1],
+            "-Y":self.track_axis_dic["+Z"][1],
+            "-Z":self.track_axis_dic["-X"][1]}
+        quad=numpy.array(self.quad[axe])*10.0
+        mX=self.rotation_matrix(-math.pi/2.0,eq[axe])
+        quad=self.ApplyMatrix(quad,mX)
+#        av=self.rotatePoint(av,[0.,0.,0.],[1.0,0.0,0.0,math.pi/2.0]) 
+        #rotate the quad onlong cross.
+#        av=self.rotatePoint([vector[2],vector[1],vector[0]],[0.,0.,0.],[0.0,1.0,0.0,-math.pi/2.0]) 
+        print ("matrixToFacesMesh",axe,av,vector,quad)
+        rnorm = False
+        if axe[0]=="-":
+            rnorm = True
+#        f=[0,1,2,3]
+        v=[]
+        f=[]
+        e=[]
+        n=[]        
+        vi=0
+        for i,m in enumerate(matrices):
+            if transpose :
+                m =self.transposeMatrix(m)
+            new_quad=self.ApplyMatrix(quad,m)           
+            v.extend(new_quad)
+            f.append([i*4+0,i*4+1,i*4+2,i*4+3])
+        return v,f,rnorm
+        
+    def matrixToFacesMesh(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        #blender user verex normal for rotated the instance
+        #quad up vector should use the inpu vector
+        #from Vector ?
+        #quad local axis is X-Y->-Z,should rotate 
+        v,f,rnorm=self.matrixToFaces(name,matrices,vector=vector,transpose=transpose,**kw)
+        polygon = c4d.PolygonObject(len(v), len(f))
+        polygon.SetName(name+"_me")      
+        [polygon.SetPoint(k, self.FromVec(vv)) for k,vv in enumerate(v)]
+        [polygon.SetPolygon(k, self.FromFace(ff)) for k,ff in enumerate(f)]
+        
+        polygon.Message(c4d.MSG_UPDATE)
+        c4d.EventAdd()
+        self.addObjectToScene(None,polygon)
+        self.toggleDisplay(polygon,False)
+        if 'parent' in kw and kw['parent'] is not None: 
+            self.reParent(polygon,kw['parent'])
+        if rnorm == True:
+            #select it
+            self.setCurrentSelection([polygon])
+            c4d.CallCommand(self.REVERSE_NORMAL)           
+            polygon.Message(c4d.MSG_UPDATE)
+            c4d.EventAdd()
+        return polygon,polygon
+            
                     
     def PointCloudObject(self,name,**kw):
         #need to add the AtomArray modifier....
@@ -2812,8 +2893,33 @@ class c4dHelper(Helper):
         if matrices == None : return None
         if mesh == None : return None
         instance = []
-        self.dupliVert = False
-        if self.dupliVert:
+#        self.dupliVert = False
+        if self.instance_dupliFace:
+            v=[0.,1.,0.]
+            if "axis" in kw and kw["axis"] is not None:
+                v=kw["axis"]
+            print ("axis",v)
+            o = self.getObject(name+"ds")
+            if o is None :
+                o,m=self.matrixToFacesMesh(name,matrices,vector=v,transpose=transpose,
+                                           parent=parent)
+                #create cloner Object
+                cloner = c4d.BaseObject(self.CLONER)
+                cloner[c4d.ID_BASELIST_NAME] = name+"ds"
+                cloner[c4d.ID_MG_MOTIONGENERATOR_MODE] = 0#object
+                self.addObjectToScene(None,cloner,parent=parent)
+                cloner[c4d.MG_OBJECT_LINK] = o
+                cloner[c4d.MG_POLY_MODE_] = 2 #Face is 2
+                #self._render_instance
+                cloner[c4d.MGCLONER_VOLUMEINSTANCES]=int(self._render_instance)               
+#                cloner[c4d.MG_POLY_UPVECTOR]=self.getTrackAxis(v)
+                self.reParent(mesh,cloner)
+                instance=[o]
+            else :
+                #update
+                pass
+            #rotation checkbox->use normal
+        elif self.dupliVert:
             v=[0.,1.,0.]
             if "axis" in kw :
                 v=kw["axis"]
@@ -2868,23 +2974,36 @@ class c4dHelper(Helper):
             instance = []
         if hmatrices is not None :
             matrices = hmatrices
-        for i,mat in enumerate(matrices):
-            inst = self.getObject(name+str(i))
-            if i > len(instance) or inst is None:
-                inst = c4d.BaseObject(c4d.Oinstance)
-                inst.SetName(name+str(i))
-                self.AddObject(inst,parent=parent)
-                instance.append(inst)
-            inst[1001]=mesh
-            if hmatrices is not None :
-                mx = mat            
-            elif matrices is not None :
-                mx = self.matrix2c4dMat(mat,transpose=transpose)
-            if globalT :
-                inst.SetMg(mx)
-            else :
-                inst.SetMl(mx)
-            #instance[-1].MakeTag(c4d.Ttexture)
+        if self.instance_dupliFace:
+            o = self.getObject(name+"_me")
+            v,f,rnorm=self.matrixToFaces(name,matrices,vector=vector,transpose=transpose,**kw)
+            self.updatePoly(o,faces=f,vertices=v)
+            if rnorm == True:
+                #select it
+                self.setCurrentSelection([o])
+                c4d.CallCommand(self.REVERSE_NORMAL)           
+                polygon.Message(c4d.MSG_UPDATE)
+                c4d.EventAdd()            
+        elif self.dupliVert:
+            pass
+        else :
+            for i,mat in enumerate(matrices):
+                inst = self.getObject(name+str(i))
+                if i > len(instance) or inst is None:
+                    inst = c4d.BaseObject(c4d.Oinstance)
+                    inst.SetName(name+str(i))
+                    self.AddObject(inst,parent=parent)
+                    instance.append(inst)
+                inst[1001]=mesh
+                if hmatrices is not None :
+                    mx = mat            
+                elif matrices is not None :
+                    mx = self.matrix2c4dMat(mat,transpose=transpose)
+                if globalT :
+                    inst.SetMg(mx)
+                else :
+                    inst.SetMl(mx)
+                #instance[-1].MakeTag(c4d.Ttexture)
         return instance
         
     def setVColor(self,j,ncolor):
@@ -4647,25 +4766,6 @@ class c4dHelper(Helper):
                 v_3 = self.FromVec(matrice[0][:3])
                 offset = self.FromVec(matrice[3][:3])                
             mx = c4d.Matrix(offset,v_1, v_2, v_3) 
-#            
-#            if transpose :
-#                mat = numpy.array(matrice).transpose().reshape(16,)
-#            else :
-#                mat = numpy.array(matrice).reshape(16,)
-#            r,t,s = self.Decompose4x4(mat)    
-#    #        print s
-#            #Order of euler angles: heading first, then attitude/pan, then bank
-#            axis = self.ApplyMatrix(numpy.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),r.reshape(4,4))
-#            #r = numpy.identity(4).astype('f')
-#            #M = matrix(matr)
-#            #euler = C.matrixToEuler(mat[0:3,0:3])
-#            #mx=c4d.tools.hpb_to_matrix(c4d.Vector(euler[0],euler[1]+(3.14/2),euler[2]), c4d.tools.ROT_HPB)
-#            v_1 = self.FromVec(r.reshape(4,4)[2,:3])
-#            v_2 = self.FromVec(r.reshape(4,4)[1,:3])
-#            v_3 = self.FromVec(r.reshape(4,4)[0,:3])
-#            offset = self.FromVec(t)
-#            mx = c4d.Matrix(offset,v_1, v_2, v_3)
-#            #mx.off = offset
             return mx            
         
 
