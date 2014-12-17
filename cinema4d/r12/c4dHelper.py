@@ -2918,6 +2918,7 @@ class c4dHelper(Helper):
             else :
                 #update
                 pass
+            return o
             #rotation checkbox->use normal
         elif self.dupliVert:
             v=[0.,1.,0.]

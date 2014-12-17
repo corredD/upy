@@ -14,6 +14,7 @@ from maya import cmds,mel,utils
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 import maya.OpenMayaFX as omfx
+import pymel.core as pm
 
 #base helper class
 from upy import hostHelper
@@ -27,6 +28,8 @@ lefthand =[[ 1, 0, 0, 0],
 [0, 1, 0, 0],
 [0, 0, -1, 0],
 [0, 0, 0, 1]]
+
+from upy.transformation import decompose_matrix
 
 class MayaSynchro:
     #period problem
@@ -547,6 +550,62 @@ class mayaHelper(Helper):
     #alias
     setInstance = newInstance
 
+    def matrixToParticles(self,name,matrices,vector=[0.,1.,0.],transpose=True,**kw):#edge size ?
+        #blender user verex normal for rotated the instance
+        #quad up vector should use the inpu vector
+        axe=self.rerieveAxis(vector)
+        #axe="+Y"
+        quad=numpy.array(self.quad[axe])#*10.0
+        print ("matrixToParticles",axe,vector,quad)
+#        f=[0,1,2,3]
+        v=[]
+        f=[]
+        e=[]
+        n=[]        
+        vi=0
+        #one mat is 
+        #rot[3][:3] tr
+        # rot[:3,:3] rot
+        #create particle system
+#        obj = self.checkName(obj)
+#        partO=self.getMShape(obj) #shape..
+#        fnP = omfx.MFnParticleSystem(partO)
+#        oriPsType = fnP.renderType()
+        rot=om.MVectorArray()#fnP.count())
+        pos=om.MVectorArray()#fnP.count())
+        tr=[]
+        #set position and rotation
+        for i,m in enumerate(matrices):
+            mat = numpy.array(m)
+            if transpose :
+                mat = numpy.array(m).transpose()
+#                t = m[3][:3]
+#                rot = m[:3,:3]
+            scale, shear, euler, translate, perspective=decompose_matrix(mat)
+            tr.append(translate.tolist())
+            #need euler angle
+#            e=self.FromMat(rot).rotation().asEulerRotation()
+            p = om.MVector( float(translate[0]),float(translate[1]),float(translate[2]) )
+            pos.append(p)
+            r = om.MVector( float(euler[0]),float(euler[1]),float(euler[2]) )/(math.pi) *180
+            rot.append(r)
+#        fnP.setPerParticleAttribute("rotationPP",rot)
+#        fnP.setPerParticleAttribute("position",pos)
+        part,partShape= pm.nParticle(n=name+"_ps",position = tr)
+#        part,partShape=cmds.particle(n=name+"_ps",p=list(tr))
+        pm.setAttr('nucleus1.gravity', 0.0)#?
+#        cmds.setAttr(partShape+'.computeRotation',1)
+        partShape.computeRotation.set(True)
+        pm.addAttr(partShape, ln = 'rotationPP', dt = 'vectorArray')
+        pm.addAttr(partShape, ln = 'rotationPP0', dt = 'vectorArray')
+        particle_fn = omfx.MFnParticleSystem(partShape.__apimobject__())
+        particle_fn.setPerParticleAttribute('rotationPP', rot)
+        particle_fn.setPerParticleAttribute('rotationPP0', rot)        
+        if 'parent' in kw and kw['parent'] is not None: 
+            parent = self.getObject(kw['parent'])
+            self.reParent(name+"_ps",parent)
+        return part,partShape
+            
     #particleInstancer  -addObject 
     #-object locator1 -cycle None -cycleStep 1 -cycleStepUnits Frames 
     #-levelOfDetail Geometry -rotationUnits Degrees 
@@ -561,18 +620,49 @@ class mayaHelper(Helper):
         if mesh == None : return None
         instance = []
         #print len(matrices)#4,4 mats
-        for i,mat in enumerate(matrices):
-            inst = self.getObject(name+str(i))
-            if inst is None :
-                #Minstance?
-                if hm : 
-                    inst=self.newInstance(name+str(i),mesh,hostmatrice=mat,
-                                      parent=parent,globalT=globalT)
-                else :
-                    inst=self.newInstance(name+str(i),mesh,matrice=mat,
-                                      parent=parent,globalT=globalT)
-            instance.append(inst)
-        return instance
+        if self.instance_dupliFace:
+            v=[0.,1.,0.]
+            if "axis" in kw and kw["axis"] is not None:
+                v=kw["axis"]
+            print ("axis",v)
+            o = self.getObject(name+"_pis") 
+            if o is None :
+#                o,m=self.matrixToVNMesh(name,matrices,vector=v)
+                particle,partShape=self.matrixToParticles(name,matrices,vector=v,
+                                        transpose=transpose,parent=parent)
+                p_instancer = pm.PyNode(pm.particleInstancer(
+                    partShape, addObject=True, object=pm.ls(mesh),name=name+"_pis",
+                    cycle='None', cycleStep=1, cycleStepUnits='Frames',
+                    levelOfDetail='Geometry', rotationUnits='Degrees',
+                    rotationOrder='XYZ', position='worldPosition', age='age'))
+                pm.particleInstancer(partShape, name = p_instancer, edit = True, rotation = "rotationPP")
+                if parent is not None :
+                    self.reParent(name+"_pis",parent)
+#                cmds.particleInstancer(
+#                    partShape, addObject=True, object=self.getMShape(mesh),
+#                    cycle='None', cycleStep=1, cycleStepUnits='Frames',
+#                    levelOfDetail='Geometry', rotationUnits='Degrees',
+#                    rotationOrder='XYZ', position='worldPosition', age='age')        
+#                cmds.particleInstancer(partShape, name = "p_instancer", 
+#                                       edit = True, rotation = "rotationPP")
+            else :
+                #update
+                pass
+            return name+"_pis"
+            #rotation checkbox->use normal
+        else :
+            for i,mat in enumerate(matrices):
+                inst = self.getObject(name+str(i))
+                if inst is None :
+                    #Minstance?
+                    if hm : 
+                        inst=self.newInstance(name+str(i),mesh,hostmatrice=mat,
+                                          parent=parent,globalT=globalT)
+                    else :
+                        inst=self.newInstance(name+str(i),mesh,matrice=mat,
+                                          parent=parent,globalT=globalT)
+                instance.append(inst)
+            return instance
 
     def resetTransformation(self,name):
         m= [1.,0.,0.,0.,

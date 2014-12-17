@@ -791,7 +791,7 @@ class blenderHelper(Helper):
             if "axis" in kw and kw["axis"] is not None:
                 v=kw["axis"]
             print ("axis",v)
-            o = self.getObject(name) 
+            o = self.getObject(name+"ds") 
             if o is None :
 #                o,m=self.matrixToVNMesh(name,matrices,vector=v)
                 o,m=self.matrixToFacesMesh(name,matrices,vector=v,transpose=transpose)
@@ -806,10 +806,10 @@ class blenderHelper(Helper):
 #                o.use_dupli_vertices_rotation = True
 #                kw = {"track_axis":self.getTrackAxis(v)}
 #                self.applyToRec(mesh,self.setPropertyObject,**kw)
-                
             else :
                 #update
                 pass
+            return o
             #rotation checkbox->use normal
         elif self.dupliVert:
             v=[0.,1.,0.]
@@ -1915,7 +1915,7 @@ class blenderHelper(Helper):
         obj.rotation_euler[2] = wsz
         self.scaleObj(obj,[radius,radius,float(laenge)])
         if material != None :
-            mat = self.getMaterial(material)  
+            mat = self.getMaterial(material)
             self.setOneMaterial(obj,mat,objmode=True)
         elif color is not None :
             mats = self.getMaterialObject(obj)

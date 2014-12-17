@@ -301,6 +301,18 @@ class Helper:
         return [x,y,z]
 
 
+    def transposeMatrix(self,matrice):
+        if matrice is not None :
+            matrice = numpy.array(matrice)
+            if isinstance(matrice,numpy.ndarray) :
+                mat = matrice.transpose().tolist()
+                return mat
+            else :
+                return matrice#  = mat#numpy.array(matrice)
+#            blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
+#            blender_mat.transpose()        
+#            return blender_mat
+        return matrice
 
     def rotatePoint(self,pt,m,ax):
         """ 
