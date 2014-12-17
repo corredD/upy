@@ -4620,7 +4620,8 @@ class Helper:
             else :
                 f = [fa + len(vertices) for fa in f ]
             vertices.extend(v)
-            vnormal.extend(vn)
+            if vn != None:
+                vnormal.extend(vn)
         return vertices,vnormal,faces
 
     

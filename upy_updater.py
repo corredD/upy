@@ -11,8 +11,10 @@ try :
     import urllib.request as urllib# , urllib.parse, urllib.error
 except :
     import urllib
-import json
-#import upy
+try :
+    import simplejson as json
+except:    
+    import json
 
 def checkURL(URL):
     try :
@@ -170,7 +172,7 @@ class Updater:
         if filename is not None:
             f=filename
         with open(f, 'w') as fp :
-            json.dump(result_json,fp,indent=4, separators=(',', ': '))#,indent=4, separators=(',', ': ')
+            json.dump(result_json,fp,indent=1, separators=(',', ': '))#,indent=4, separators=(',', ': ')
         
     def readUpdateNote(self,):
         URI=self.url
@@ -202,6 +204,7 @@ class Updater:
         if host is None:
             host=self.host
         for plug in self.liste_plugin:
+             print self.liste_plugin[plug]["svn"],self.liste_plugin[plug]["path"]
              self.update_svn_export_one_plug(plug,host)   
              
     def update_svn_export_one_plug(self,plug,host):
@@ -212,8 +215,10 @@ class Updater:
         os.system("tail -1 "+self.liste_plugin[plug]["path"]+"log > "+self.liste_plugin[plug]["path"]+"version")
         f = open(self.liste_plugin[plug]["path"]+"version","r")
         lines = f.readline().split(" ")
+        print lines
         lines = lines[-1][:-2].replace(" ","")
         f.close()
+        print ("new v ",self.liste_plugin[plug]["major"]+"."+lines)
         f=open(self.liste_plugin[plug]["path"]+os.sep+"version.txt","w")
         f.write(self.liste_plugin[plug]["major"]+"."+lines)
         f.close()
@@ -253,11 +258,16 @@ def get_current_version():
     return afversion,epmvversion,upyversion
     
 if __name__ == "__main__":  
+    #cd ~/DEV/git_upy;python -i upy_updater.py
+    #cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
+    #
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
 #    set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk/ | grep "Revision:" | cut -d: -f2 `
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
     do_json=True
     do_update=True
+    print get_current_version()
+#    sys.exit()
     if do_json : 
         #current version?
         afversion,epmvversion,upyversion = get_current_version()
@@ -268,6 +278,7 @@ if __name__ == "__main__":
                       "autopack":{"version_current":apv,"version_std":apv,"version_dev":apv,"host":["all"]},
                         "ePMV":{"version_current":epmv,"version_std":epmv,"version_dev":epmv,"host":["all"]}}
         #from upy.upy_updater import Updater
+        print (liste_plugin)
         up = Updater(host=["all"],liste_plugin=liste_plugin)
         up.writeUpdateNote(notes="blabla")
     if do_update:
@@ -294,4 +305,5 @@ if __name__ == "__main__":
 #        up.update_svn_export()
         #this willl create an update just for maya
         #so shoul we have udpate_note per host
+
             
