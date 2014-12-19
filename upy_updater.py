@@ -42,8 +42,9 @@ class Updater:
         self.gui = None
         if "gui" in kw:
             self.gui = kw["gui"]
-        self.server = "https://upy.googlecode.com/svn/branches/updates/"#could be google
-        self.url = self.server+"update_notes_"+self.host+".json"
+        #sourceforge
+        self.server = "http://sourceforge.net/projects/upyplugins/files/Updates/"#could be google
+        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json"
         self.local_path = "/Users/ludo/DEV/upy_google_svn/branches/updates"
         self.result_json={}
         self.update_notes=""
@@ -258,8 +259,7 @@ def get_current_version():
     return afversion,epmvversion,upyversion
     
 if __name__ == "__main__":  
-    #cd ~/DEV/git_upy;python -i upy_updater.py
-    #cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
+    #cd ~/DEV/git_upy;python -i upy_updater.py;cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
     #
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
 #    set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk/ | grep "Revision:" | cut -d: -f2 `
@@ -300,6 +300,10 @@ if __name__ == "__main__":
         up.merge_list_plug()
         for name in up.list_host:
             up.writeUpdateNote(filename="/Users/ludo/DEV/upy_google_svn/branches/updates/update_notes_"+name+".json",notes="new update systems")
+        #upload to sourceforge
+#        os.system(cd /Users/ludo/DEV/upy_google_svn/branches/updates;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
+#        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
+#        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
         #for host specific 
 #        up = Updater(host=["maya"],liste_plugin=liste_plugin,typeUpdate="std")
 #        up.update_svn_export()
