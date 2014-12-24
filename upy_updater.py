@@ -205,7 +205,7 @@ class Updater:
         if host is None:
             host=self.host
         for plug in self.liste_plugin:
-             print self.liste_plugin[plug]["svn"],self.liste_plugin[plug]["path"]
+#             print self.liste_plugin[plug]["svn"],self.liste_plugin[plug]["path"]
              self.update_svn_export_one_plug(plug,host)   
              
     def update_svn_export_one_plug(self,plug,host):
@@ -216,7 +216,7 @@ class Updater:
         os.system("tail -1 "+self.liste_plugin[plug]["path"]+"log > "+self.liste_plugin[plug]["path"]+"version")
         f = open(self.liste_plugin[plug]["path"]+"version","r")
         lines = f.readline().split(" ")
-        print lines
+#        print lines
         lines = lines[-1][:-2].replace(" ","")
         f.close()
         print ("new v ",self.liste_plugin[plug]["major"]+"."+lines)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
     do_json=True
     do_update=True
-    print get_current_version()
+    print (get_current_version())
 #    sys.exit()
     if do_json : 
         #current version?
