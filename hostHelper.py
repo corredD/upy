@@ -1660,8 +1660,9 @@ class Helper:
         """            
         dic = {"+X":[1.,0.,0.],"-X":[-1.,0.,0.],"+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
                     "+Z":[0.,0.,1.],"-Z":[0.,0.,-1.]}
+        axis=[float(int(axis[0])),float(int(axis[1])),float(int(axis[2]))]
         for k in dic :
-            if [int(axis[0]),int(axis[1]),int(axis[2])] == dic[k]:
+            if list(axis) == dic[k]:
                 return k
 
     def CylinderHeadTails(self,cylinder,**kw):

@@ -260,7 +260,7 @@ def get_current_version():
     
 if __name__ == "__main__":  
     #cd ~/DEV/git_upy;python -i upy_updater.py;cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
-    #
+    #scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
 #    set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk/ | grep "Revision:" | cut -d: -f2 `
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
@@ -290,12 +290,12 @@ if __name__ == "__main__":
 #                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://subversion.assembla.com/svn/epmv/trunk/","major":"0.5"}}
         #from upy.upy_updater import Updater
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="std")
-        up.update_svn_export(host=up.list_host)
+        up.update_svn_export(host=["all"])
 #        up.readUpdateNote()
 #        up.merge_list_plug()
 #        up.writeUpdateNote(filename="/Users/ludo/DEV/upy_googlesvn/branches/updates/update_notes_all.json",notes="new update systems")
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="dev")
-        up.update_svn_export(host=up.list_host)
+        up.update_svn_export(host=["all"])#up.list_host)
         up.readUpdateNote()
         up.merge_list_plug()
         for name in up.list_host:

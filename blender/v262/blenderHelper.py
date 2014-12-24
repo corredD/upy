@@ -1785,7 +1785,7 @@ class blenderHelper(Helper):
 
         if pos != None : obj.location = (float(pos[0]),float(pos[1]),float(pos[2]))
         if parent is not None:
-            obj.parent = parent
+            obj.parent = self.getObject(parent)
         return obj,mesh
 #    
 #    """
@@ -3117,7 +3117,7 @@ class blenderHelper(Helper):
     
         """
         if self._usenumpy:
-            return Helper.rotation_matrix(self,angle, direction, point=point,trans=trans)
+            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
         else :            
             direction = self.FromVec(direction[:3])
             direction.normalize()

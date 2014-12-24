@@ -20,7 +20,7 @@ from DejaVu.Cylinders import Cylinders
 from DejaVu.Box import Box
 from DejaVu.glfLabels import GlfLabels as Labels
 from DejaVu.IndexedPolygons import IndexedPolygons
-from DejaVu.Polylines import Polylines
+from DejaVu.Polylines import Polylines as dejavuPolylines
 from DejaVu.Texture import Texture
 from DejaVu import Viewer
 #standardmodule
@@ -144,7 +144,7 @@ class dejavuHelper(hostHelper.Helper):
         return self.box(*args,**kw)
     
     def Polylines(self,*args,**kw):
-        return Polylines(*args,**kw) 
+        return dejavuPolylines(*args,**kw) 
 
     def Spheres(self,*args,**kw):
         return Spheres(*args,**kw)
@@ -907,7 +907,7 @@ class dejavuHelper(hostHelper.Helper):
 #    
     def spline(self,name, points,close=0,type=1,scene=None,parent=None):
         f=[[x,x+1] for x in range(len(points))]
-        spline=self.Polylines(name, vertices=points,faces=f)
+        spline=self.Polylines(name, vertices=points)#,faces=f)
         self.AddObject(spline, parent=parent)
         return spline,None
 
@@ -1991,16 +1991,35 @@ class dejavuHelper(hostHelper.Helper):
         mesh = self.checkIsMesh(poly)
         return mesh.getFaces()
 
+
+    def grabAllIndexedPolyonginHierarchy(self,poly,all_mesh=[]):
+        if not isinstance(poly,IndexedPolygons):
+            if isinstance(poly,Geom) :
+                for child in self.getChilds(poly):
+                    all_mesh = self.grabAllIndexedPolyonginHierarchy(child,all_mesh)
+        else :
+            all_mesh.append(poly)
+        return all_mesh
+                    
+    def isIndexedPolyon(self,obj):
+        if not hasattr(obj,"getFaces"):
+            for child in self.getChilds(obj):        
+                c,ipoly= self.isIndexedPolyon(child)
+                if ipoly : 
+                    return c,True
+            return None,False
+        else :
+            return obj,True
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
         #get infos
         if not isinstance(poly,IndexedPolygons):
             if isinstance(poly,Cylinders):
                 poly = poly.asIndexedPolygons()
             elif isinstance(poly,Geom) :
-                #getfirst child
+                #getfirst child mesh recursively
                 child = self.getChilds(poly)
                 if len(child):
-                    poly=child[0]
+                    poly,isit=self.isIndexedPolyon(poly)
                 elif isinstance(poly,Cylinders):
                     poly = poly.asIndexedPolygons()
                 else :
@@ -2234,31 +2253,37 @@ class dejavuHelper(hostHelper.Helper):
     def buildGeometries(self,col):
         dicgeoms={}
         geoms=col.geometries
+        meshDic={}
         for g in geoms:
+            meshDic[g.id]={}
             dicgeoms[g.id]={}
             dicgeoms[g.id]["id"]=g.id
-            if self.nogui:
-                v,vn,f = self.decomposeColladaGeom(g,col)
+            v,vn,f = self.decomposeColladaGeom(g,col)
+            if self.nogui:                
                 dicgeoms[g.id]["node"]=None
                 dicgeoms[g.id]["mesh"]=v,vn,f
             else :
                 onode,mesh = self.oneColladaGeom(g,col)
                 dicgeoms[g.id]["node"]=onode
                 dicgeoms[g.id]["mesh"]=mesh
+            meshDic[g.id]["mesh"]=v,vn,f
             dicgeoms[g.id]["instances"]=[]
             dicgeoms[g.id]["parentmesh"]=None
-        return dicgeoms 
+        return dicgeoms,meshDic
                 
     def read(self,filename,**kw):
         fileName, fileExtension = os.path.splitext(filename)
 #        import collada
 #        print "load ",filename
         if fileExtension == ".dae" :
+            daeDic=None
             col = collada.Collada(filename)#, ignore=[collada.DaeUnsupportedError,
                                             #collada.DaeBrokenRefError])
-            dicgeoms =  self.buildGeometries(col)
+            dicgeoms,daeDic =  self.buildGeometries(col)
+            
             if self.nogui : 
                 return dicgeoms
+
             boundgeoms = list(col.scene.objects('geometry'))
             for bg in boundgeoms:
                 if bg.original.id in dicgeoms:
@@ -2271,7 +2296,8 @@ class dejavuHelper(hostHelper.Helper):
                 uniq = True
             for i,node in enumerate(col.scene.nodes) : 
                 #node,i,col,nodexml,parentxml=None,parent=None,dicgeoms=None
-                dicgeoms=self.nodeToGeom(node,i,col,col.scene.xmlnode[i],parentxml=None,dicgeoms=dicgeoms,uniq =uniq)
+                dicgeoms=self.nodeToGeom(node,i,col,col.scene.xmlnode[i],
+                                         parentxml=None,dicgeoms=dicgeoms,uniq =uniq)
             for g in dicgeoms :
                 node = dicgeoms[g]["node"]
                 i = dicgeoms[g]["instances"]
@@ -2280,7 +2306,7 @@ class dejavuHelper(hostHelper.Helper):
                     if dicgeoms[g]["parentmesh"]  is not None :
                         self.reParent(node, dicgeoms[g]["parentmesh"] )
                         node.Set(instanceMatrices = i)
-            return boundgeoms,dicgeoms,col
+            return boundgeoms,dicgeoms,col,daeDic
 #            for i,node in enumerate(col.scene.nodes) : 
 #                self.transformNode(node,i,col,col.scene.xmlnode[i])
         else :

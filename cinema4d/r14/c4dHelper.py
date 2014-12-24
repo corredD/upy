@@ -2171,47 +2171,47 @@ class c4dHelper(Helper):
         polygon.SetPolygon(id=g, polygon=poly)
         return [A,B,C,D]
     
-    def polygons(self,name,proxyCol=False,smooth=False,color=[[1,0,0],], material=None, **kw):
-        import time
-        t1 = time.time()
-        vertices = kw["vertices"]
-        faces = kw["faces"]
-        normals = kw["normals"]
-        frontPolyMode='fill'
-        if kw.has_key("frontPolyMode"):      
-            frontPolyMode = kw["frontPolyMode"]
-        if kw.has_key("shading") :  
-            shading=kw["shading"]#'flat'
-#          if frontPolyMode == "line" : #wire mode
-#              material = self.getCurrentScene().SearchMaterial("wire")
-#              if material == None:
-#                  material = self.addMaterial("wire",(0.5,0.5,0.5))                                              
-        polygon = c4d.PolygonObject(len(vertices), len(faces))
-        polygon.SetName(name)      
-        k=0
-
-        [polygon.SetPoint(k, self.FromVec(v)) for k,v in enumerate(vertices)]
-        [polygon.SetPolygon(k, self.FromFace(f)) for k,f in enumerate(faces)]
-
-        t2=time.time()
-        polygon.MakeTag(c4d.Tphong) #shading ?
-          # create a texture tag on the PDBgeometry object
-        doMaterial = True
-        if type(material) is bool or not proxyCol:
-            doMaterial = material
-        elif material is None :
-            doMaterial = False
-        if not proxyCol :#and doMaterial:
-            texture = polygon.MakeTag(c4d.Ttexture)
-              #create the dedicayed material
-            if material == None :
-                texture[1010] = self.addMaterial("mat_"+name,color[0])
-            else : texture[1010] = material
-#          else :
-#            if color is not None:
-#                self.changeColor(polygon,color,proxyObject=True)
-        polygon.Message(c4d.MSG_UPDATE)
-        return polygon
+#    def polygons(self,name,proxyCol=False,smooth=False,color=[[1,0,0],], material=None, **kw):
+#        import time
+#        t1 = time.time()
+#        vertices = kw["vertices"]
+#        faces = kw["faces"]
+#        normals = kw["normals"]
+#        frontPolyMode='fill'
+#        if kw.has_key("frontPolyMode"):      
+#            frontPolyMode = kw["frontPolyMode"]
+#        if kw.has_key("shading") :  
+#            shading=kw["shading"]#'flat'
+##          if frontPolyMode == "line" : #wire mode
+##              material = self.getCurrentScene().SearchMaterial("wire")
+##              if material == None:
+##                  material = self.addMaterial("wire",(0.5,0.5,0.5))                                              
+#        polygon = c4d.PolygonObject(len(vertices), len(faces))
+#        polygon.SetName(name)      
+#        k=0
+#
+#        [polygon.SetPoint(k, self.FromVec(v)) for k,v in enumerate(vertices)]
+#        [polygon.SetPolygon(k, self.FromFace(f)) for k,f in enumerate(faces)]
+#
+#        t2=time.time()
+#        polygon.MakeTag(c4d.Tphong) #shading ?
+#          # create a texture tag on the PDBgeometry object
+#        doMaterial = True
+#        if type(material) is bool or not proxyCol:
+#            doMaterial = material
+#        elif material is None :
+#            doMaterial = False
+#        if not proxyCol :#and doMaterial:
+#            texture = polygon.MakeTag(c4d.Ttexture)
+#              #create the dedicayed material
+#            if material == None :
+#                texture[1010] = self.addMaterial("mat_"+name,color[0])
+#            else : texture[1010] = material
+##          else :
+##            if color is not None:
+##                self.changeColor(polygon,color,proxyObject=True)
+#        polygon.Message(c4d.MSG_UPDATE)
+#        return polygon
 
             
 #    def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,

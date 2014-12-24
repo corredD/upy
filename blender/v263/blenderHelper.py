@@ -182,7 +182,7 @@ class blenderHelper(Helper):
 
         if pos != None : obj.location = (float(pos[0]),float(pos[1]),float(pos[2]))
         if parent is not None:
-            obj.parent = parent
+            obj.parent = self.getObject(parent)
         return obj,mesh
 
     
@@ -827,24 +827,24 @@ class blenderHelper(Helper):
         else :            
             return [self.FromVec(c)*mat for c in coords]
 
-    def rotation_matrix(self,angle, direction, point=None,trans=None):
-        """
-        Return matrix to rotate about axis defined by point and direction.
-    
-        """
-        if self._usenumpy:
-            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
-        else :            
-            direction = self.FromVec(direction[:3])
-            direction.normalize()
-            m = mathutils.Matrix.Rotation(angle,4,direction)
-            M = m.copy()
-            if point is not None:
-               point = self.FromVec(point[:3]) 
-               M.translation = point - (point * m)
-            if trans is not None :
-               M.translation = trans
-            return M        
+#    def rotation_matrix(self,angle, direction, point=None,trans=None):
+#        """
+#        Return matrix to rotate about axis defined by point and direction.
+#    
+#        """
+#        if self._usenumpy:
+#            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
+#        else :            
+#            direction = self.FromVec(direction[:3])
+#            direction.normalize()
+#            m = mathutils.Matrix.Rotation(angle,4,direction)
+#            M = m.copy()
+#            if point is not None:
+#               point = self.FromVec(point[:3]) 
+#               M.translation = point - (point * m)
+#            if trans is not None :
+#               M.translation = trans
+#            return M        
         
     def triangulate(self,poly):
         #select poly
