@@ -399,10 +399,12 @@ class dejavuHelper(hostHelper.Helper):
         parent = self.getObject(parent)
         if parent is None :
             return
+	
         if type(obj) == list or type(obj) == tuple:
             [vi.ReparentObject(self.getObject(o),parent,objectRetainsCurrentPosition=True) for o in obj]
         else :
             obj = self.getObject(obj)
+            if obj is None : return
             if obj.viewer is None :
                 obj.viewer = vi            
             vi.ReparentObject(obj,parent,objectRetainsCurrentPosition=True)
@@ -2260,8 +2262,11 @@ class dejavuHelper(hostHelper.Helper):
             dicgeoms[g.id]["id"]=g.id
             v,vn,f = self.decomposeColladaGeom(g,col)
             if self.nogui:                
+		#apply transformation from boundGeom
                 dicgeoms[g.id]["node"]=None
                 dicgeoms[g.id]["mesh"]=v,vn,f
+		mat = self.getColladaMaterial(g,col)
+		dicgeoms[g.id]["color"]=mat.effect.diffuse[0:3]
             else :
                 onode,mesh = self.oneColladaGeom(g,col)
                 dicgeoms[g.id]["node"]=onode
@@ -2280,15 +2285,16 @@ class dejavuHelper(hostHelper.Helper):
             col = collada.Collada(filename)#, ignore=[collada.DaeUnsupportedError,
                                             #collada.DaeBrokenRefError])
             dicgeoms,daeDic =  self.buildGeometries(col)
-            
-            if self.nogui : 
-                return dicgeoms
-
             boundgeoms = list(col.scene.objects('geometry'))
             for bg in boundgeoms:
                 if bg.original.id in dicgeoms:
                     node = dicgeoms[bg.original.id]["node"]
                     dicgeoms[bg.original.id]["instances"].append(bg.matrix)
+            
+            if self.nogui : 
+                return dicgeoms
+
+
             #for each nodein the scene creae an empty 
             #for each primtive in the scene create an indeedPolygins-
             uniq = False

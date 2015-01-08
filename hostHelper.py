@@ -4609,7 +4609,7 @@ class Helper:
 #==============================================================================
 # IO / read/write 3D object, cene file etc
 #==============================================================================
-    def combineDaeMeshData(self,data):
+    def combineDaeMeshData(self,data,transform=True):
         vertices=[]
         faces=[]
         vnormal=[]
@@ -4620,6 +4620,8 @@ class Helper:
                 faces.extend((f+len(vertices)).tolist())
             else :
                 f = [fa + len(vertices) for fa in f ]
+            if transform and len(data[i]['instances']):
+		v=self.ApplyMatrix(v,data[i]['instances'][0])
             vertices.extend(v)
             if vn != None:
                 vnormal.extend(vn)
