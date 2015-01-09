@@ -4621,7 +4621,7 @@ class Helper:
             else :
                 f = [fa + len(vertices) for fa in f ]
             if transform and len(data[i]['instances']):
-		v=self.ApplyMatrix(v,data[i]['instances'][0])
+                v=self.ApplyMatrix(v,data[i]['instances'][0])
             vertices.extend(v)
             if vn != None:
                 vnormal.extend(vn)

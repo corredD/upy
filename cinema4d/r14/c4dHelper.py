@@ -161,6 +161,7 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
+        self.convertion="-Z" #or XZ
         
     def fit_view3D(self):
         c4d.CallCommand(self.FITTOVIEW)
@@ -1218,7 +1219,10 @@ class c4dHelper(Helper):
         if not pos :
             return c4d.Vector(float(points[0]),float(points[1]),float(points[2]))
         else :
-            return c4d.Vector(float(points[2]),float(points[1]),float(points[0]))
+            if self.convertion=="-Z":
+                return c4d.Vector(float(points[0]),float(points[1]),-float(points[2]))
+            else :                
+                return c4d.Vector(float(points[2]),float(points[1]),float(points[0]))
         #return c4d.Vector(float(points[0]),float(points[1]),float(points[2]))
     
     def ToVec(self,v,pos=True):
@@ -1227,7 +1231,10 @@ class c4dHelper(Helper):
         if not pos :
             return [v.x,v.y,v.z]
         else:
-            return [v.z,v.y,v.x]
+            if self.convertion=="-Z":
+                return [v.x,v.y,-v.z]
+            else :
+                return [v.z,v.y,v.x]
         
     def getCoordinateMatrix(self,pos,direction):
       offset=pos
@@ -3931,10 +3938,16 @@ class c4dHelper(Helper):
             #M = matrix(matr)
             #euler = C.matrixToEuler(mat[0:3,0:3])
             #mx=c4d.tools.hpb_to_matrix(c4d.Vector(euler[0],euler[1]+(3.14/2),euler[2]), c4d.tools.ROT_HPB)
-            v_1 = self.FromVec(r.reshape(4,4)[2,:3])
-            v_2 = self.FromVec(r.reshape(4,4)[1,:3])
-            v_3 = self.FromVec(r.reshape(4,4)[0,:3])
-            offset = self.FromVec(t)
+            if self.convertion=="-Z":
+                v_1 = self.FromVec(r.reshape(4,4)[0,:3])
+                v_2 = self.FromVec(r.reshape(4,4)[1,:3])
+                v_3 = self.FromVec(r.reshape(4,4)[2,:3]*-1.)
+                offset = self.FromVec(t)
+            else :
+                v_1 = self.FromVec(r.reshape(4,4)[2,:3])
+                v_2 = self.FromVec(r.reshape(4,4)[1,:3])
+                v_3 = self.FromVec(r.reshape(4,4)[0,:3])
+                offset = self.FromVec(t)
             mx = c4d.Matrix(offset,v_1, v_2, v_3)
             #mx.off = offset
             return mx
@@ -3943,16 +3956,29 @@ class c4dHelper(Helper):
 #            import numpy
             #Scale Problem, but shouldnt as I decompose???
             #why do I transpose ?? => fortran matrix ..
-            if self._usenumpy :            
-                v_1 = self.FromVec(matrice[2,:3])
-                v_2 = self.FromVec(matrice[1,:3])
-                v_3 = self.FromVec(matrice[0,:3])
-                offset = self.FromVec(matrice[3,:3])
+
+            if self.convertion=="-Z":
+                if self._usenumpy :            
+                    v_1 = self.FromVec(matrice[0,:3])
+                    v_2 = self.FromVec(matrice[1,:3])
+                    v_3 = self.FromVec(matrice[2,:3]*-1)
+                    offset = self.FromVec(matrice[3,:3])
+                else :
+                    v_1 = self.FromVec(matrice[0][:3])
+                    v_2 = self.FromVec(matrice[1][:3])
+                    v_3 = self.FromVec(matrice[2][:3]*-1)
+                    offset = self.FromVec(matrice[3][:3])                    
             else :
-                v_1 = self.FromVec(matrice[2][:3])
-                v_2 = self.FromVec(matrice[1][:3])
-                v_3 = self.FromVec(matrice[0][:3])
-                offset = self.FromVec(matrice[3][:3])                
+                if self._usenumpy :            
+                    v_1 = self.FromVec(matrice[2,:3])
+                    v_2 = self.FromVec(matrice[1,:3])
+                    v_3 = self.FromVec(matrice[0,:3])
+                    offset = self.FromVec(matrice[3,:3])
+                else :
+                    v_1 = self.FromVec(matrice[2][:3])
+                    v_2 = self.FromVec(matrice[1][:3])
+                    v_3 = self.FromVec(matrice[0][:3])
+                    offset = self.FromVec(matrice[3][:3])                
             mx = c4d.Matrix(offset,v_1, v_2, v_3) 
 #            
 #            if transpose :
@@ -4063,10 +4089,16 @@ class c4dHelper(Helper):
            [0.0,1.,0.0,0.0],
            [0.0,0.,1.0,0.0],
            [0.0,0.,0.0,1.0]]
-        M[2][:3]=self.ToVec(m.v1)
-        M[1][:3]=self.ToVec(m.v2)
-        M[0][:3]=self.ToVec(m.v3)
-        M[3][:3]=self.ToVec(m.off)
+        if self.convertion=="-Z":
+            M[0][:3]=self.ToVec(m.v1)
+            M[1][:3]=self.ToVec(m.v2)
+            M[2][:3]=self.ToVec(m.v3*-1.0)
+            M[3][:3]=self.ToVec(m.off)
+        else :
+            M[2][:3]=self.ToVec(m.v1)
+            M[1][:3]=self.ToVec(m.v2)
+            M[0][:3]=self.ToVec(m.v3)
+            M[3][:3]=self.ToVec(m.off)
         if transpose : 
             return M#.transpose()
         else :
@@ -4084,10 +4116,16 @@ class c4dHelper(Helper):
         #print "ok convertMAtrix"
         from numpy import matrix
         M = numpy.identity(4)
-        M[2,:3]=self.ToVec(c4dmat.v1)
-        M[1,:3]=self.ToVec(c4dmat.v2)
-        M[0,:3]=self.ToVec(c4dmat.v3)
-        trans = self.ToVec(c4dmat.off)
+        if self.convertion=="-Z":
+            M[0,:3]=self.ToVec(c4dmat.v1)
+            M[1,:3]=self.ToVec(c4dmat.v2)
+            M[2,:3]=self.ToVec(c4dmat.v3*-1.0)
+            trans = self.ToVec(c4dmat.off)
+        else :
+            M[2,:3]=self.ToVec(c4dmat.v1)
+            M[1,:3]=self.ToVec(c4dmat.v2)
+            M[0,:3]=self.ToVec(c4dmat.v3)
+            trans = self.ToVec(c4dmat.off)
         if center != None :
             for i in range(3):
                 trans[i] = trans[i] - center[i]

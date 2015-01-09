@@ -46,7 +46,16 @@ class blenderHelper(Helper):
         This is the blend er helper Object. The helper 
         give access to the basic function need for create and edit a host 3d object and scene.
     """
-    
+
+    def __init__(self,master=None,**kw):
+        Helper.__init__(self,**kw)
+        #setup metric unit to centimeter?
+        sc=bpy.context.scene
+        sc.unit_settings.system = 'METRIC'
+        sc.unit_settings.scale_length = 0.01 #centimeter
+        print ("blender unit setup")
+        
+        
     def setViewport(self,**kw):
         """
         set the property of the viewport

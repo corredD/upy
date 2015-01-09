@@ -180,7 +180,7 @@ def getHClass(host):
         elif blender_version >= (2,71,0): #2.62
             from upy.blender.v271.blenderHelper import blenderHelper as helper
         else :
-            print (blender_version,blender_version < (2,60,0))
+            print (blender_version)
     elif host=='c4d':
         import c4d
         c4d_version = c4d.GetC4DVersion()
