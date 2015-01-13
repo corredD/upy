@@ -142,6 +142,8 @@ class Helper:
                    "-Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
                    "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
                    }
+        self.axis_dic = {"+X":[1.,0.,0.],"-X":[-1.,0.,0.],"+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
+                    "+Z":[0.,0.,1.],"-Z":[0.,0.,-1.]}
 #==============================================================================
 # some helper for treading and asynchrone stuff
 #==============================================================================
@@ -4623,7 +4625,7 @@ class Helper:
             if transform and len(data[i]['instances']):
                 v=self.ApplyMatrix(v,data[i]['instances'][0])
             vertices.extend(v)
-            if vn != None:
+            if type(vn) != type(None):
                 vnormal.extend(vn)
         return vertices,vnormal,faces
 

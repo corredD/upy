@@ -84,15 +84,15 @@ class blenderHelper(Helper):
             "NEG_X" : [-1.,0.,0.],
             "POS_X" : [1.,0.,0.],        
         }
-        self.quad={"+Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+        self.quad={"-Z" :[[1,1,0],[1,-1,0], [-1,-1,0],[-1,1,0]],#XY
                    "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
-                   "+X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
-                   "-Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
-                   "-Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
                    "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
-#                   "-Z" :[[-1,1,0],[-1,-1,0],[1,-1,0], [1,1,0]],#XY
-#                   "-Y" :[[-1,0,1],[-1,0,-1],[1,0,-1], [1,0,1]],#XZ
-#                   "-X" :[[0,-1,1],[0,-1,-1],[0,1,-1], [0,1,1]],#YZ
+#                   "-Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
+#                   "-Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+#                   "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+                   "+Z" :[[-1,-1,0],[1,-1,0], [1,1,0],[-1,1,0]],#XY
+                   "-Y" :[[-1,0,1],[-1,0,-1],[1,0,-1], [1,0,1]],#XZ
+                   "+X" :[[0,-1,1],[0,-1,-1],[0,1,-1], [0,1,1]],#YZ
                   }
         
         self.noise_type ={
@@ -2107,9 +2107,19 @@ class blenderHelper(Helper):
         #blender user verex normal for rotated the instance
         #quad up vector should use the inpu vector
         axe=self.rerieveAxis(vector)
-        #axe="+Y"
-        quad=numpy.array(self.quad[axe])#*10.0
-        print ("matrixToFacesMesh",axe,vector,quad)
+        #axe="+Y"??
+        #so far I did +X and +Y
+        #need all the other
+        eq={"+X":"+Z",
+            "+Y":"+X",
+            "+Z":"+X",
+            "-X":"+Z",
+            "-Y":"-X",
+            "-Z":"-X"}
+        quad=numpy.array(self.quad[eq[axe]])#*50.0
+#        mX=self.rotation_matrix(-math.pi/2.0,eq[axe])#why that ?
+#        quad=self.ApplyMatrix(quad,mX)
+        print ("matrixToFacesMesh",axe,vector,quad,eq)
 #        f=[0,1,2,3]
         v=[]
         f=[]
