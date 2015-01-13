@@ -1356,6 +1356,12 @@ class blenderHelper(Helper):
         res = shapedic[type]["obj"]()
         shape = bpy.context.object
         shape.name = name
+        #whats the current unit?
+        shape.scale *= bpy.context.scene.unit_settings.scale_length
+        shape.scale *= dopts[0]
+#        [bpy.context.scene.unit_settings.scale_length,
+#                       bpy.context.scene.unit_settings.scale_length,
+#                       bpy.context.scene.unit_settings.scale_length]
         return shape,None
         
     def extrudeSpline(self,spline,**kw):
@@ -1554,7 +1560,7 @@ class blenderHelper(Helper):
     def oneMetaBall(self,metab,rad,coord):
         #add one ball
         me=metab.elements.new()
-        me.radius=float(rad) *3.  
+        me.radius=float(rad) *3. # 
         me.co = (coord[0], coord[1], coord[2])  
     
     def metaballs(self,name,listePt,listeR,scn=None,root=None,**kw):
@@ -1939,7 +1945,7 @@ class blenderHelper(Helper):
         if verts is None :
             if basemesh is not None :
                 baseobj = self.getObjectFromMesh(basemesh)
-#                print (baseobj,basemesh)
+                print ("updateSphereMesh",baseobj,basemesh)
                 bpy.context.scene.objects.active = baseobj
                 verts = self.getMeshVertices(baseobj.data)
                 faces = self.getMeshFaces(baseobj.data)

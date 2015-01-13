@@ -179,6 +179,8 @@ class blenderHelper(Helper):
                 if obj is not None :
                     print ("whats the data",obj,type(obj),obj.type)
                     return self.getFirstMesh(obj,instance_master=im)
+            else :
+                return mesh
         elif type(name) != str :
             if type(name) == bpy.types.Object:
                 if name.data is not None :
