@@ -270,14 +270,13 @@ class c4dHelper(Helper):
               "wavyTurbulence":c4d.NOISE_WAVY_TURB,
               "zada":c4d.NOISE_ZADA,       
              }
-#        self.quad={"+Z" :[[-1,1,0],[1,1,0],[1,-1,0], [-1,-1,0]],#XY
-#                   "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
-#                   "+X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
-#                   "-Z" :[[-1,-1,0],[1,-1,0],[1,1,0],[-1,1,0] ],#XY
-#                   "-Y" :[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1] ],#XZ
-#                   "-X" :[[0,1,1],[0,-1,1], [0,-1,-1],[0,1,-1]],#YZ
-#                   }
-             
+        self.quad={"-Z" :[[1,1,0],[1,-1,0], [-1,-1,0],[-1,1,0]],#XY
+                   "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
+                   "-X" :[[0,-1,1],[0,1,1],[0,1,-1], [0,-1,-1]],#YZ
+                   "+Z" :[[-1,-1,0],[1,-1,0], [1,1,0],[-1,1,0]],#XY
+                   "-Y" :[[-1,0,1],[-1,0,-1],[1,0,-1], [1,0,1]],#XZ
+                   "+X" :[[0,-1,1],[0,-1,-1],[0,1,-1], [0,1,1]],#YZ
+                  }             
     def start_thread(self,job):
         thread = UserThread()
         thread.Start()
@@ -1675,7 +1674,7 @@ class c4dHelper(Helper):
         elif len(f)==4 : 
             C = int(f[2])
             D = int(f[3])
-            return c4d.CPolygon( D,C, B, A)
+            return c4d.CPolygon( D,C, B, A)#why not A,B,C,D?
 
     def FromVec(self,points,pos=True):
         if type(points) == c4d.Vector:
@@ -2563,22 +2562,22 @@ class c4dHelper(Helper):
 #        av=[vector[2],vector[1],vector[0]]
         axe=self.rerieveAxis(av)
         #axe="+Y"
-        eq={"+X":self.track_axis_dic["+Y"][1],
-            "+Y":self.track_axis_dic["-Z"][1],
-            "+Z":self.track_axis_dic["+X"][1],
-            "-X":self.track_axis_dic["-Y"][1],
-            "-Y":self.track_axis_dic["+Z"][1],
-            "-Z":self.track_axis_dic["-X"][1]}
-        quad=numpy.array(self.quad[axe])*10.0
-        mX=self.rotation_matrix(-math.pi/2.0,eq[axe])
-        quad=self.ApplyMatrix(quad,mX)
+        eq={"+X":"+X",
+            "+Y":"+Y",
+            "+Z":"+Z",
+            "-X":"-X",
+            "-Y":"-Y",
+            "-Z":"-Z"}
+        quad=numpy.array(self.quad[eq[axe]])*10.0
+#        mX=self.rotation_matrix(-math.pi/2.0,eq[axe])
+#        quad=self.ApplyMatrix(quad,mX)
 #        av=self.rotatePoint(av,[0.,0.,0.],[1.0,0.0,0.0,math.pi/2.0]) 
         #rotate the quad onlong cross.
 #        av=self.rotatePoint([vector[2],vector[1],vector[0]],[0.,0.,0.],[0.0,1.0,0.0,-math.pi/2.0]) 
         print ("matrixToFacesMesh",axe,av,vector,quad)
         rnorm = False
-        if axe[0]=="-":
-            rnorm = True
+#        if axe[0]=="-":
+#            rnorm = True
 #        f=[0,1,2,3]
         v=[]
         f=[]
@@ -2916,8 +2915,8 @@ class c4dHelper(Helper):
                 self.reParent(mesh,cloner)
                 instance=[o]
             else :
-                #update
-                pass
+                v,f,rnorm=self.matrixToFaces(name,matrices,vector=vector,transpose=transpose,**kw)
+                self.updatePoly(o,faces=f,vertices=v)
             return o
             #rotation checkbox->use normal
         elif self.dupliVert:
