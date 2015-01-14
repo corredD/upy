@@ -2112,14 +2112,14 @@ class blenderHelper(Helper):
         #need all the other
         eq={"+X":"+Z",
             "+Y":"+X",
-            "+Z":"+X",
+            "+Z":"+Z",
             "-X":"+Z",
             "-Y":"-X",
-            "-Z":"-X"}
+            "-Z":"+Z"}
         quad=numpy.array(self.quad[eq[axe]])#*50.0
 #        mX=self.rotation_matrix(-math.pi/2.0,eq[axe])#why that ?
 #        quad=self.ApplyMatrix(quad,mX)
-        print ("matrixToFacesMesh",axe,vector,quad,eq)
+        print ("matrixToFacesMesh",axe,vector,quad,eq[axe])
 #        f=[0,1,2,3]
         v=[]
         f=[]
