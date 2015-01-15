@@ -289,6 +289,7 @@ class c4dHelper(Helper):
 #            "-X":"+Z",
 #            "-Y":"-X",
 #            "-Z":"+Z"}             
+
     def start_thread(self,job):
         thread = UserThread()
         thread.Start()
@@ -4774,9 +4775,6 @@ class c4dHelper(Helper):
                 offset = self.FromVec(matrice[3][:3])                
             mx = c4d.Matrix(offset,v_1, v_2, v_3) 
             return mx            
-        
-
-
   
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,fn=False):
         #make it editable

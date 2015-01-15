@@ -4680,7 +4680,7 @@ class Helper:
         collada_xml.effects.append(effect)
         collada_xml.materials.append(mat)
         #the geom
-        #invert Z 
+        #invert Z ? for C4D?
         vertzyx = numpy.array(v)# * numpy.array([1,1,-1])
         z,y,x=vertzyx.transpose()
         vertxyz = numpy.vstack([x,y,z]).transpose()* numpy.array([1,1,-1])
@@ -4724,7 +4724,7 @@ class Helper:
             s=scene.ScaleTransform(scale[0],scale[1],scale[2])
             #n = scene.NodeNode(master_node,transforms=[tr,rz,ry,rx,s])
 #            gnode = scene.Node(self.getName(c)+"_inst", children=[geomnode,])
-            n = scene.Node(self.getName(c), children=[gnode,],transforms=[tr,rz,ry,rx,s]) #scene.MatrixTransform(matrix)[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]
+            n = scene.Node(self.getName(c), children=[geomnode,],transforms=[tr,rz,ry,rx,s]) #scene.MatrixTransform(matrix)[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]
 #            n = scene.Node(self.getName(c), children=[geomnode,],
 #                           transforms=[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]) #scene.MatrixTransform(matrix)[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]
             g.append(n)
@@ -4741,7 +4741,7 @@ class Helper:
             if "parent_node" not in kw :
                 collada_xml.scene.nodes.append(node)
         if instance_node:
-            collada_xml.scene.append(master_node)
+            collada_xml.node.append(master_node)
         return collada_xml
         
     #DejaVu.indexedPolygon have also this function
