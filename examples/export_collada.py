@@ -7,6 +7,7 @@ Created on Wed Dec  3 22:08:01 2014
 MAYA=False
 import sys
 import numpy
+import math
 if MAYA:
     sys.path.append("/Users/ludo/Library/Preferences/Autodesk/maya/2015-x64/plug-ins/MGLToolsPckgs")
     sys.path.append("/Users/ludo/Library/Preferences/Autodesk/maya/2015-x64/plug-ins/MGLToolsPckgs/PIL")
@@ -49,7 +50,10 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
         f,v,vn = self.DecomposeMesh(inst_master,edit=False,copy=False,tri=True,
                                 transform=False)
         #special case when come from x-z swap 
-        v=[[vv[2],vv[1],vv[0]] for vv in v] # go back to regular
+#        v=[[vv[2],vv[1],vv[0]] for vv in v] # go back to regular
+        #-90degree rotation onY 
+        mry90 = self.rotation_matrix(-math.pi/2.0, [0.0,1.0,0.0])#?
+        v=self.ApplyMatrix(v,mry90)
     iname  = self.getName( inst_master )       
     pname  = self.getName( inst_parent ) 
     if collada_xml is None:
@@ -70,18 +74,18 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
     matnode = scene.MaterialNode(iname+"material"+"ref", mat, inputs=[])    
     #the geom
     #invert Z ? for C4D?
-    vertzyx = numpy.array(v)# * numpy.array([1,1,-1])
+    vertzyx = numpy.array(v)#* numpy.array([1,1,-1])
     z,y,x=vertzyx.transpose()
     vertxyz = numpy.vstack([x,y,z]).transpose()#* numpy.array([1,1,-1])
     vert_src = source.FloatSource(iname+"_verts-array", vertxyz.flatten(), ('X', 'Y', 'Z'))
-    norzyx=numpy.array(vn)
-    nz,ny,nx=norzyx.transpose()
-    norxyz = numpy.vstack([nx,ny,nz]).transpose()#* numpy.array([1,1,-1])
-    normal_src = source.FloatSource(iname+"_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
-    geom = geometry.Geometry(collada_xml, "geometry"+iname, iname, [vert_src, normal_src])
+#    norzyx=numpy.array(vn)
+#    nz,ny,nx=norzyx.transpose()
+#    norxyz = numpy.vstack([nx,ny,nz]).transpose()* numpy.array([1,1,-1])
+#    normal_src = source.FloatSource(iname+"_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
+    geom = geometry.Geometry(collada_xml, "geometry"+iname, iname, [vert_src,])# normal_src])
     input_list = source.InputList()
     input_list.addInput(0, 'VERTEX', "#"+iname+"_verts-array")
-    input_list.addInput(0, 'NORMAL', "#"+iname+"_normals-array")
+#    input_list.addInput(0, 'NORMAL', "#"+iname+"_normals-array")
     #invert all the face 
     fi=numpy.array(f,int)#[:,::-1]
     triset = geom.createTriangleSet(fi.flatten(), input_list, iname+"materialref")
@@ -106,13 +110,13 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
         scale, shear, euler, translate, perspective=decompose_matrix(matrix)
         scale = self.getScale(c)
         p=translate#matrix[3,:3]/100.0#unit problem
-        tr=scene.TranslateTransform(p[0],p[1],-p[2])
-#        rx=scene.RotateTransform(1,0,0,numpy.degrees(euler[0]))
-#        ry=scene.RotateTransform(0,1,0,numpy.degrees(euler[1]))
-#        rz=scene.RotateTransform(0,0,1,numpy.degrees(euler[2]))
-        rx=scene.RotateTransform(-1,0,0,numpy.degrees(euler[0]))
-        ry=scene.RotateTransform(0,-1,0,numpy.degrees(euler[1]))
+        tr=scene.TranslateTransform(p[0],p[1],p[2])
+        rx=scene.RotateTransform(1,0,0,numpy.degrees(euler[0]))
+        ry=scene.RotateTransform(0,1,0,numpy.degrees(euler[1]))
         rz=scene.RotateTransform(0,0,1,numpy.degrees(euler[2]))
+#        rx=scene.RotateTransform(-1,0,0,numpy.degrees(euler[0]))
+#        ry=scene.RotateTransform(0,-1,0,numpy.degrees(euler[1]))
+#        rz=scene.RotateTransform(0,0,1,numpy.degrees(euler[2]))
         s=scene.ScaleTransform(scale[0],scale[1],scale[2])
         #n = scene.NodeNode(master_node,transforms=[tr,rz,ry,rx,s])
 #            gnode = scene.Node(self.getName(c)+"_inst", children=[geomnode,])
@@ -157,6 +161,7 @@ collada_xml=instancesToCollada(helper,parent_object,collada_xml=collada_xml,
                                       mesh=mesh,transpose=False)
 #collada_xml.scene.nodes
 collada_xml.write("/Users/ludo/DEV/autopack_git/autoPACK_database_1.0.0/geometries/HIV1_capside_3j3q_Rep_Med_0_2_1.dae")
+collada_xml.write("/Users/ludo/DEV/cellPACK_data/cellPACK_database_1.1.0/geometries/HIV1_capside_3j3q_Rep_Med_0_2_1.dae")
 #execfile("/Users/ludo/DEV/git_upy/examples/export_collada.py")
 #import upy
 #helper = upy.getHelperClass()()
