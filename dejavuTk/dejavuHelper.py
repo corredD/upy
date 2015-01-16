@@ -2119,7 +2119,7 @@ class dejavuHelper(hostHelper.Helper):
                 dicgeoms[g.id]["parentmesh"]=None
                 if parentxml is not None :
                     dicgeoms[gname]["parentmesh"]= self.getObject(parentxml.get("id"))                
-        else :
+        else : #collada.scene.Node
 #            print "else ",len(node.children)
 #            print "instance_geometry",nodexml.get("instance_geometry")
             #create an empty
@@ -2141,8 +2141,18 @@ class dejavuHelper(hostHelper.Helper):
                         if parent is not None and onode is not None:
                             self.reParent(onode, parent )
                         onode.Set(translation = trans)
-                        onode.Set(rotation = rot)#.reshape(4,4).transpose())                
+                        onode.Set(rotation = rot)#.reshape(4,4).transpose()) 
+                        onode.Set(scale=scale)
                         dicgeoms[gname]["parentmesh"]=onode
+            elif len(node.children) == 1 and (type(node.children[0])==collada.scene.NodeNode):
+                    #this is an instance do nothing. we are going to use instanceFortrans matrix
+                    gname = node.children[0].node.children[0].geometry.id
+                    if parentxml is not None :
+                        if gname in dicgeoms.keys():
+#                            print dicgeoms[gname]["parentmesh"]
+                            if dicgeoms[gname]["parentmesh"] is None :
+                                dicgeoms[gname]["parentmesh"]= self.getObject(pname)
+#                            print dicgeoms[gname]["parentmesh"]
             else :
                 onode = self.newEmpty(name)
 #                print "ok new empty name",onode, name
@@ -2151,6 +2161,7 @@ class dejavuHelper(hostHelper.Helper):
                     self.reParent(onode, parent )
                 onode.Set(translation = trans)
                 onode.Set(rotation = rot)#.reshape(4,4).transpose())                
+                onode.Set(scale=scale)                
             if hasattr(node, 'children') and len(node.children) :
                 for j,ch in enumerate(node.children) :
     #                print "children ",ch.xmlnode.get("name")
@@ -2184,6 +2195,7 @@ class dejavuHelper(hostHelper.Helper):
 #                onode.Set(translation = trans)#, rotation=rot*0,scale=scale)
                 onode.Set(translation = trans)
                 onode.Set(rotation = rot)#.reshape(4,4).transpose())
+                onode.Set(scale=scale)
 #                onode.ConcatRotation(rot)
 #                onode.ConcatTranslation(trans)
 #                onode.Set(matrix)
@@ -2207,7 +2219,9 @@ class dejavuHelper(hostHelper.Helper):
             f=g.primitives[0].vertex_index[:(nf/3*3)].reshape((nf/3,3))
         n=g.primitives[0].normal
         ni = g.primitives[0].normal_index
-        vn = self.getNormals(f,v,n,ni)            
+        vn=[]
+        if ni is not None :
+            vn = self.getNormals(f,v,n,ni)            
         return v,vn,f.tolist()
 
     def oneColladaGeom(self,g,col):
@@ -2223,7 +2237,9 @@ class dejavuHelper(hostHelper.Helper):
             f=g.primitives[0].vertex_index.reshape((nf/3,3))
         n=g.primitives[0].normal
         ni = g.primitives[0].normal_index
-        vn = self.getNormals(f,v,n,ni)            
+        vn=[]
+        if ni is not None :
+            vn = self.getNormals(f,v,n,ni)            
         onode,mesh = self.createsNmesh(name,v,vn,f.tolist(),smooth=True)
         mesh.inheritMaterial = False
         color = [1.,1.,1.]                
