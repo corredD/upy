@@ -164,8 +164,6 @@ class blenderHelper(Helper):
             #print ("what ? getFirstMesh",m,m.GetType())
             return m#can be cylinder#cself.getFirstMesh(m.GetDown())
 
-
-
     def getMesh(self,name,**kw):
         im = True #go until instance master if any
         if "instance_master" in kw :
