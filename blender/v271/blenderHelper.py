@@ -192,6 +192,17 @@ class blenderHelper(Helper):
                 return name
         return None
 
+    def newEmpty(self,name,location=(0.,0.,0.),visible=0,**kw):
+        res = bpy.ops.object.add(type='EMPTY',location=location)
+        obj = bpy.context.object
+        obj.name = name
+        parent = None
+        if "parent" in kw :
+            parent = kw["parent"]
+        self.addObjectToScene(self.getCurrentScene(),obj,parent=parent)
+        obj.empty_draw_size = 1.0
+        return obj
+
 ##
 #    def getObjectMatrix(self,obj):
 #        t = obj.location
