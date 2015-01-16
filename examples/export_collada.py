@@ -53,7 +53,8 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
 #        v=[[vv[2],vv[1],vv[0]] for vv in v] # go back to regular
         #-90degree rotation onY 
         mry90 = self.rotation_matrix(-math.pi/2.0, [0.0,1.0,0.0])#?
-        v=self.ApplyMatrix(v,mry90)
+        v=self.ApplyMatrix(v,mry90)#same for the normal?
+        vn=self.ApplyMatrix(vn,mry90)#same for the normal?
     iname  = self.getName( inst_master )       
     pname  = self.getName( inst_parent ) 
     if collada_xml is None:
@@ -66,7 +67,7 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
     props = self.getMaterialProperty(mat,color=1)#,specular_color=1)
     print "colors is ",props
     effect = material.Effect("effect"+iname, [], "phong", 
-                             diffuse=props["color"])
+                             diffuse=[props["color"][0],props["color"][1],props["color"][2],1.0])
 #                                 specular = props["specular_color"])
     mat = material.Material("material"+iname, iname+"material", effect)
     collada_xml.effects.append(effect)
@@ -78,14 +79,14 @@ def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**
     z,y,x=vertzyx.transpose()
     vertxyz = numpy.vstack([x,y,z]).transpose()#* numpy.array([1,1,-1])
     vert_src = source.FloatSource(iname+"_verts-array", vertxyz.flatten(), ('X', 'Y', 'Z'))
-#    norzyx=numpy.array(vn)
-#    nz,ny,nx=norzyx.transpose()
-#    norxyz = numpy.vstack([nx,ny,nz]).transpose()* numpy.array([1,1,-1])
-#    normal_src = source.FloatSource(iname+"_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
-    geom = geometry.Geometry(collada_xml, "geometry"+iname, iname, [vert_src,])# normal_src])
+    norzyx=numpy.array(vn)
+    nz,ny,nx=norzyx.transpose()
+    norxyz = numpy.vstack([nx,ny,nz]).transpose()* numpy.array([1,1,-1])
+    normal_src = source.FloatSource(iname+"_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
+    geom = geometry.Geometry(collada_xml, "geometry"+iname, iname, [vert_src,normal_src])# normal_src])
     input_list = source.InputList()
     input_list.addInput(0, 'VERTEX', "#"+iname+"_verts-array")
-#    input_list.addInput(0, 'NORMAL', "#"+iname+"_normals-array")
+    input_list.addInput(0, 'NORMAL', "#"+iname+"_normals-array")
     #invert all the face 
     fi=numpy.array(f,int)#[:,::-1]
     triset = geom.createTriangleSet(fi.flatten(), input_list, iname+"materialref")
@@ -160,7 +161,7 @@ collada_xml=instancesToCollada(helper,parent_object,collada_xml=collada_xml,
                                       instance_node=True,parent_node=node,
                                       mesh=mesh,transpose=False)
 #collada_xml.scene.nodes
-collada_xml.write("/Users/ludo/DEV/autopack_git/autoPACK_database_1.0.0/geometries/HIV1_capside_3j3q_Rep_Med_0_2_1.dae")
+#collada_xml.write("/Users/ludo/DEV/autopack_git/autoPACK_database_1.0.0/geometries/HIV1_capside_3j3q_Rep_Med_0_2_1.dae")
 collada_xml.write("/Users/ludo/DEV/cellPACK_data/cellPACK_database_1.1.0/geometries/HIV1_capside_3j3q_Rep_Med_0_2_1.dae")
 #execfile("/Users/ludo/DEV/git_upy/examples/export_collada.py")
 #import upy
