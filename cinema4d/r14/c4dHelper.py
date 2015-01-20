@@ -783,7 +783,9 @@ class c4dHelper(Helper):
 
     def oneCylinder(self,name,head,tail,radius=None,instance=None,material=None,
                     parent = None,color=None):
-        laenge,mx=self.getTubeProperties(head,tail)
+#        laenge,mx=self.getTubeProperties(head,tail)
+        laenge,ma=self.getTubePropertiesMatrix(head,tail)
+        mx=self.FromMat(ma.transpose())
         if instance is None:
             stick = self.Cylinder(name,parent=parent)[0]
         else :
@@ -810,7 +812,9 @@ class c4dHelper(Helper):
         return stick
 
     def updateOneCylinder(self,name,head,tail,radius=None,material=None,color=None):
-        laenge,mx=self.getTubeProperties(head,tail)
+#        laenge,mx=self.getTubeProperties(head,tail)
+        laenge,ma=self.getTubePropertiesMatrix(head,tail)
+        mx=self.FromMat(ma.transpose())        
         stick = self.getObject(name)
         stick.SetMg(mx)
         axe = self.getCylinderAxis(stick)
