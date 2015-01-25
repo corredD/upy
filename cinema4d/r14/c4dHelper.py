@@ -2714,7 +2714,7 @@ class c4dHelper(Helper):
             for i in range(3):
                 center[i]=(cornerPoints[0][i]+cornerPoints[1][i])/2.
         box.SetAbsPos(self.FromVec(center))
-        box[1100] = self.FromVec(size)
+        box[1100] = self.FromVec(size,pos=False)
         #aMat=addMaterial("wire")
         texture = box.MakeTag(c4d.Ttexture)
         if mat == None:
@@ -2738,7 +2738,7 @@ class c4dHelper(Helper):
             for i in range(3):
                 center[i]=(cornerPoints[0][i]+cornerPoints[1][i])/2.
         box.SetAbsPos(self.FromVec(center))
-        box[1100] = self.FromVec(size)
+        box[1100] = self.FromVec(size,pos=False)
         #aMat=addMaterial("wire")
 #        texture = box.MakeTag(c4d.Ttexture)
 #        if mat == None:

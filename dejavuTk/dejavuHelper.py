@@ -849,7 +849,7 @@ class dejavuHelper(hostHelper.Helper):
     def FromVec(self,points,pos=True):
         return numpy.array(points)#numpy.array(float(points[0]),float(points[1]),float(points[2]))
 #    
-    def ToVec(self,v):
+    def ToVec(self,v,pos=True):
         return v
 #    
 #    def getCoordinateMatrix(self,pos,direction):

@@ -2377,7 +2377,7 @@ class mayaHelper(Helper):
         result = meshnode.createInPlace(numVertices, numFaces, points, faceCounts, faceConnects)
         meshnode.updateSurface()
 
-    def ToVec(self,v):
+    def ToVec(self,v,**kw):
         if hasattr(v,"x") :
             return [v.x,v.y,v.z]
         else :
@@ -2395,7 +2395,7 @@ class mayaHelper(Helper):
 #        vec = om.MVector( doubleArrayPtr )
 #        return vec
 
-    def FromVec(self,v):
+    def FromVec(self,v,pos=True):
         if isinstance(v,om.MVector):
             return v
         else :

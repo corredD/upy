@@ -1823,7 +1823,7 @@ class Helper:
         @rtype:   array 2x3
         @return:  the upper-left and bottom right corner point coordinates
         """    
-        size = self.ToVec(self.getBoxSize(obj))
+        size = self.ToVec(self.getBoxSize(obj),pos=False)
 #        try :
 #            size = self.ToVec(obj[1100])#this will broke other host!
 #        except :
@@ -2511,7 +2511,7 @@ class Helper:
         """
         return mat
     
-    def ToVec(self,v):
+    def ToVec(self,v,pos=False):
         """
         Return a python xyz array from a host xyz array/vector
     
