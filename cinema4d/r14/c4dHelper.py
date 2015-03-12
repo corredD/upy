@@ -484,10 +484,10 @@ class c4dHelper(Helper):
             mx.off = pmx.off + self.FromVec(position)
             obj.SetMg(mx)
     
-    def scaleObj(self,obj,sc):
-        if type(sc) is float :
-            sc = [sc,sc,sc]
-        obj.SetAbsScale(self.FromVec(sc))
+#    def scaleObj(self,obj,sc):
+#        if type(sc) is float :
+#            sc = [sc,sc,sc]
+#        obj.SetAbsScale(self.FromVec(sc))
     
 #    def rotateObj(self,obj,rot):
 #        #take radians, give degrees
@@ -504,7 +504,7 @@ class c4dHelper(Helper):
         return obj[1100]
 
     def getScale(self,obj):
-        return self.ToVec(self.getObject(obj).GetAbsScale())
+        return self.ToVec(self.getObject(obj).GetAbsScale(),pos=False)
  
     def toggleDisplay(self,obj,display,**kw):
         obj = self.getObject(obj)

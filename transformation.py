@@ -1925,6 +1925,25 @@ def unbiasedRotationXYZ(ex,ey,ez):
     M[2,2] = M33 = ((ex*ex)+(ey*ey)*math.cos(e)+(ez*ez))/(e*e)
     return M
 
+def ApplyMatrix(coords,mat):
+    """
+    Apply the 4x4 transformation matrix to the given list of 3d points.
+
+    @type  coords: array
+    @param coords: the list of point to transform.
+    @type  mat: 4x4array
+    @param mat: the matrix to apply to the 3d points
+
+    @rtype:   array
+    @return:  the transformed list of 3d points
+    """
+
+    #4x4matrix"
+    mat = numpy.array(mat)
+    coords = numpy.array(coords)
+    one = numpy.ones( (coords.shape[0], 1), coords.dtype.char )
+    c = numpy.concatenate( (coords, one), 1 )
+    return numpy.dot(c, numpy.transpose(mat))[:, :3]
 #def _import_module(name, package=None, warn=True, prefix='_py_', ignore='_'):
 #    """Try import all public attributes from module into global namespace.
 #

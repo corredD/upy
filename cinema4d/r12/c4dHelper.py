@@ -836,7 +836,7 @@ class c4dHelper(Helper):
     def scaleObj(self,obj,sc):
         if type(sc) is float :
             sc = [sc,sc,sc]
-        obj.SetAbsScale(self.FromVec(sc))
+        obj.SetAbsScale(self.FromVec(sc,pos=False))
     
     def rotateObj(self,obj,rot,**kw):
         #take radians, give degrees
@@ -858,7 +858,7 @@ class c4dHelper(Helper):
         return obj[1100]
 
     def getScale(self,obj):
-        return self.ToVec(self.getObject(obj).GetAbsScale())
+        return self.ToVec(self.getObject(obj).GetAbsScale(),pos=False)
  
     def toggleDisplay(self,obj,display,**kw):
         obj = self.getObject(obj)
@@ -1313,7 +1313,7 @@ class c4dHelper(Helper):
         mesh=self.getMesh(mesh,instance_master=im)
         print mesh,mesh.GetName(),scale,im
 #        print mesh[905]
-        mesh[905]=self.FromVec([scale,scale,scale])
+        mesh[905]=self.FromVec([scale,scale,scale],pos=False)
         mesh.Message(c4d.MSG_UPDATE)
         
     def updateSphereObj(self,obj,coord):
@@ -4562,7 +4562,7 @@ class c4dHelper(Helper):
         if "pos" in key :
             res.append(self.ToVec(self.getTranslation(obj)))
         if "scale" in key :
-            res.append(self.ToVec(self.getScale(obj)))
+            res.append(self.ToVec(self.getScale(obj),pos=False))
 
         if "rotation" in key :
             mo = self.getTransformation(obj)
