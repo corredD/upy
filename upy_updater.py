@@ -44,7 +44,8 @@ class Updater:
             self.gui = kw["gui"]
         #sourceforge
         self.server = "http://sourceforge.net/projects/upyplugins/files/Updates/"#could be google
-        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json"
+#        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json" #sourceforge?
+        self.url = "http://mgldev.scripps.edu/projects/ePMV/updates/updates/update_notes_"+self.host+".json" #sourceforge?
         self.local_path = "/usr/local/www/projects/ePMV/updates/"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
         self.result_json={}
         self.update_notes=""
