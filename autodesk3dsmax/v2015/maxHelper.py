@@ -91,6 +91,7 @@ class maxHelper(Helper):
         self.IndexedPolygons = self.polygons
         self.Points = self.PointCloudObject
         self.host = "3dsmax"
+        self.instance_dupliFace=False
         self.dicClassId = {
                       ###########GEOM######################
                       "cylinder":MaxPlus.ClassIds.Cylinder,
@@ -123,6 +124,7 @@ class maxHelper(Helper):
                       "nurbs":MaxPlus.ClassIds.NURBSSurf,
                       ###########SHAPE######################
                       "loft":MaxPlus.ClassIds.Loft,
+                      "scatter":MaxPlus.ClassIds.Scatter,
                       "text":MaxPlus.ClassIds.text,
                       "shape":MaxPlus.ClassIds.Simple_Shape,
                       "ecurve":MaxPlus.ClassIds.CV_Curve,
@@ -181,6 +183,7 @@ class maxHelper(Helper):
         self.progress_started = False
         self._usenumpy = hostHelper.usenumpy
         self.hext = "dae"#"fbx"#"max" is for scene, how do i read a scene ?
+        self.instance_dupliFace = False
         
     def getCurrentScene(self):
         return None
@@ -197,6 +200,8 @@ class maxHelper(Helper):
         """reset the Progress Bar, using value"""
         #MaxPlus.Core.Interface.ProgressEnd()
         self.progress_started = False
+        #progressEnd() 
+        MaxPlus.Core.EvalMAXScript("progressEnd() ")
         
     def progressBar(self,progress=None,label=None):
         """ update the progress bar status by progress value and label string
@@ -205,15 +210,18 @@ class maxHelper(Helper):
         @type  label: string
         @param label: the new message to put in the progress status
         """ 
-        return               
+        #return               
+        #progressStart "caption" 
         if not self.progress_started :
-            MaxPlus.Core.Interface.ProgressStart(u"Progress",True)#,None,None)
+#            MaxPlus.Core.EvalMAXScript('progressStart "Progress"')
+            MaxPlus.StatusPanel.ProgressStart(u"Progress",True)#,None,None)
         self.progress_started = True
         if progress is not None :
             if label is not None :
-                MaxPlus.Core.Interface.ProgressUpdate(int(progress),False, unicode(label))
+#                MaxPlus.Core.EvalMAXScript("progressUpdate" 
+                 MaxPlus.StatusPanel.ProgressUpdate(int(progress),False, unicode(label))
             else :
-                MaxPlus.Core.Interface.ProgressUpdate(int(progress),True)
+                 MaxPlus.StatusPanel.ProgressUpdate(int(progress),True)
             
     def output(self,aStr):
         """ 3DsMax use his own console/stdout"""
@@ -435,7 +443,11 @@ class maxHelper(Helper):
         if obtype == self.EMPTY :
             #get first child
             ch = self.getChilds(o)
-            tri = self.getMesh(ch[0])#take first children
+            if len(ch):
+                tri = self.getMesh(ch[0])#take first children
+            else :
+                print ("no child ? ",o,ch,self.getName(o))
+                return None
         elif obtype =="TriObject" :
             tri = ob.AsTriObject(MaxPlus.Core.GetCurrentTime()).GetMesh()
             #self.convertToPoly(name)
@@ -538,30 +550,26 @@ class maxHelper(Helper):
         #the object used for insace is placed in a model.
         instance = None
         node = self.getObject(obj)
-        #print "get ",node,obj
+#        print ("get ",node,obj,name)
+        if type(node) is type(None) :
+            print ("problem getting",obj)
+            return None
         object = node.GetObject()#this should be a triObj or primitive ..
         #print "instance ",obj,node,object
         master_mat = node.GetWorldTM()
         #print "newInstance from ",self.getName(object)
         if self.getName(object) == "Dummy" :
-            #node tree
-            #instance = self.instance_nodeTree(name, node)
-            #try :
             instance = node.CreateTreeInstance()
-            #except :
-            #    print "CreateTreeInstance is not working "
-            #    instance = self.instance_nodeTree(name, node)
             instance.SetName(unicode(name))
-            #unhide
         else :
             if object._IsValidWrapper():
                instance = MaxPlus.Factory.CreateNode(object)
                instance.SetName(unicode(name))
         #rint "ok for instance",name
-        if parent is not None:
+        if type(parent) is not type(None):
             self.reParent(instance,parent)
-        if instance is None :
-            print "ERROR for instance",name
+        if type(instance) is  type(None) :
+            print ("ERROR for instance",name)
             return
         transpose = False
         if "transpose" in kw :
@@ -569,15 +577,16 @@ class maxHelper(Helper):
         #master_mat = node.GetWorldTM()
         #print "will apply ",name, master_mat
         #should actually multyply by the matrice of the instancemaster
-        #print "transform instance",name
-        self.setObjectMatrix(instance,matrice,hostmatrice=hostmatrice,transpose=transpose,composanteMat=master_mat)
         if node.IsObjectHidden() :
             self.toggleDisplay(instance,True)
         if "material" in kw :
             self.assignMaterial(instance,kw["material"])
+#        print ("transform instance",name)        
         if location != None :
             #set the position of instance with location
             self.setTranslation(instance,location )
+        else :
+            self.setObjectMatrix(instance,matrice,hostmatrice=hostmatrice,transpose=transpose,composanteMat=master_mat)
         #print "return instance",name
         return instance
 
@@ -589,21 +598,25 @@ class maxHelper(Helper):
         if hmatrices is not None :
             matrices = hmatrices
             hm = True
-        if matrices == None : return None
-        if type(mesh) == type(None) : return None
+        if matrices == None : return []
+        if type(mesh) == type(None) : return []
         instance = []
-        #print len(matrices)#4,4 mats       
+        #print len(matrices)#4,4 mats     
+        self.resetProgressBar()
+        self.progressBar(label="start instance "+name)
         for i,mat in enumerate(matrices):
+            #super slow
+            self.progressBar(progress=int((float(i)/len(matrices))*100),label="instance "+str(i)+"/"+str(len(matrices))+" "+name)
             inst = self.getObject(name+str(i))
-            if inst is None :
-                if hm : 
-                    inst=self.newInstance(name+str(i),mesh,hostmatrice=mat,
-                                      parent=parent,globalT=globalT,
-                                          transpose=transpose,**kw)
-                else :
-                    inst=self.newInstance(name+str(i),mesh,matrice=mat,
-                                      parent=parent,globalT=globalT,
-                                          transpose=transpose,**kw)
+#            if inst is None :
+            if hm : 
+                inst=self.newInstance(name+str(i),mesh,hostmatrice=mat,
+                                  parent=parent,globalT=globalT,
+                                      transpose=transpose,**kw)
+            else :
+                inst=self.newInstance(name+str(i),mesh,matrice=mat,
+                                  parent=parent,globalT=globalT,
+                                      transpose=transpose,**kw)
             instance.append(inst)
         return instance
 
@@ -637,17 +650,17 @@ class maxHelper(Helper):
         try :
             compm=(composanteMat != None )
         except :
-            print "issue compmatrice == None"
+            pass#print "compmatrice == None"
         hmat=True
         try :
             hmat=(hostmatrice != None )
         except :
-            print "issue hmatrice == None"
+            pass#print "hmatrice == None"
         amat=True
         try :
             amat=(mat != None )
         except :
-            print "issue amatrice == None" 
+            pass#print "amatrice == None" 
         if hmat :
             if compm :
                 hostmatrice = hostmatrice * composanteMat
@@ -669,6 +682,8 @@ class maxHelper(Helper):
             object.SetWorldTM(hostmatrice)
         elif compm:
             object.SetWorldTM(composanteMat)
+        else :
+            pass#print ("matrice provided")
 
     def addObject(self,obj,parent=None,**kw):
         #its just namely put the object under a parent
@@ -709,7 +724,7 @@ class maxHelper(Helper):
         parent = self.getObject(parent)
         if isinstance(obj, MaxPlus.TriObject) :
             return
-        if obj is None or parent is None :
+        if type(obj) == type(None) or type(parent) == type(None) :
             return
         if type(obj) is list or type(obj) is tuple :
             obj = obj[0]
@@ -721,11 +736,11 @@ class maxHelper(Helper):
         
     def reParent(self,obj,parent,instance=False):
         try :
-            if parent == None : return
+            if type(parent) == type(None) : return
         except :
             print "problem parent type",type(parent),type(parent)==MaxPlus.INode
             if type(parent)==MaxPlus.INode :
-                print "OK"
+                print ("OK inode")
         if type(obj) is not list and type(obj) is not tuple :
             obj = [obj,]
         #print len(obj)
@@ -2139,7 +2154,7 @@ class maxHelper(Helper):
 #        return name,None
 
     def makeLoft(self,name,shape,**kw):
-        node,obj = helper.createObjectWithNode(u"geom", u"loft", unicode("testLoft"))
+        node,obj = self.createObjectWithNode(u"geom", u"loft", unicode("testLoft"))
 
     def extrudeSpline(self,spline,**kw):
         #select $Shape001
@@ -2625,22 +2640,22 @@ maxOps.CollapseNode $ off
 
     def getMeshVertices(self,poly,transform=False,selected = False):
         #what if already a mesh
-        if not isinstance(poly, MaxPlus.Mesh) :
-            if type(poly) is str or type(poly) is unicode:
-                name = poly
-                #poly = self.getObject(name)
-            else :
-                name = self.getName(poly) 
-            node = self.getObject(name)
+        if type(poly) is str or type(poly) is unicode:
+            name = poly
+            #poly = self.getObject(name)
+        else :
+            name = self.getName(poly) 
+        node = self.getObject(name)
+        m = node.GetWorldTM()
+        if not isinstance(poly, MaxPlus.Mesh) :            
             #shaded ?
             mesh = self.getMesh(node)
-            print "getMeshVertice ",name,poly,node,mesh
-            m = node.GetWorldTM()
+            print "getMeshVertice ",name,poly,node,mesh           
         else :
             mesh = poly
         #print "updateMesh mesh", mesh,type(mesh)
         if  mesh is None:
-            return
+            return []
         nv = mesh.GetNumVertices()
         vertices=[]
         for i in xrange(nv):
@@ -2684,7 +2699,7 @@ maxOps.CollapseNode $ off
         if not isinstance(poly, MaxPlus.Mesh) :
             if type(poly) is str or type(poly) is unicode:
                 name = poly
-                poly = self.getObject(mesh)
+                poly = self.getObject(poly)
             else :
                 name = self.getName(poly)
             node = self.getObject(name)
@@ -2693,6 +2708,8 @@ maxOps.CollapseNode $ off
             mesh = self.getMesh(node)
         else :
             mesh = poly
+        if  mesh is None:
+            return []
         mesh.BuildNormals()#ensure normal are not 0,0,0
         #print "updateMesh mesh", mesh,type(mesh)
         if  mesh is None:
@@ -2722,7 +2739,7 @@ maxOps.CollapseNode $ off
             mesh = poly
 
         if  mesh is None:
-            return
+            return []
         nv = mesh.GetNumVertices()
         faces = self.getMeshFaces(poly)
         normals=[[],]*len(faces)
@@ -2758,7 +2775,7 @@ maxOps.CollapseNode $ off
         if not isinstance(poly, MaxPlus.Mesh) :
             if type(poly) is str or type(poly) is unicode:
                 name = poly
-                poly = self.getObject(mesh)
+                poly = self.getObject(poly)
             else :
                 name = self.getName(poly)
             print " name ", name,poly,type(poly)
@@ -2771,7 +2788,7 @@ maxOps.CollapseNode $ off
             mesh = poly
         
         if  mesh is None:
-            return
+            return []
 
         nf = mesh.GetNumFaces()
         faces=[]
