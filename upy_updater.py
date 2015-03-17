@@ -45,7 +45,7 @@ class Updater:
         #sourceforge
         self.server = "http://sourceforge.net/projects/upyplugins/files/Updates/"#could be google
         self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json"
-        self.local_path = "/Users/ludo/DEV/upy_google_svn/branches/updates"
+        self.local_path = "/usr/local/www/projects/ePMV/updates/"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
         self.result_json={}
         self.update_notes=""
         self.typeUpdate="std"
@@ -212,6 +212,8 @@ class Updater:
         d = self.liste_plugin[plug]["path"] #"/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
         if os.path.exists(d):
             shutil.rmtree(d)            
+        os.system("rm "+self.liste_plugin[plug]["path"]+"log")
+        os.system("rm "+self.liste_plugin[plug]["path"]+"version")            
         os.system("svn export "+self.liste_plugin[plug]["svn"]+" "+self.liste_plugin[plug]["path"]+" > "+self.liste_plugin[plug]["path"]+"log")
         os.system("tail -1 "+self.liste_plugin[plug]["path"]+"log > "+self.liste_plugin[plug]["path"]+"version")
         f = open(self.liste_plugin[plug]["path"]+"version","r")
@@ -264,6 +266,12 @@ if __name__ == "__main__":
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
 #    set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk/ | grep "Revision:" | cut -d: -f2 `
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
+    update_path="/Users/ludo/DEV/upy_google_svn/branches/updates/"
+#    update_path="/virtual/local/www/projects/uPy/Distribs/Updates"
+    depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
+    dupy="/usr/local/www/projects/uPy/export/upy"
+    dautopack="/usr/local/www/projects/AF/Sources/export/autopack"
+    zipoutput="/usr/local/www/projects/ePMV/updates/"
     do_json=True
     do_update=True
     print (get_current_version())
@@ -282,9 +290,9 @@ if __name__ == "__main__":
         up = Updater(host=["all"],liste_plugin=liste_plugin)
         up.writeUpdateNote(notes="blabla")
     if do_update:
-        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://github.com/corredD/upy/trunk","major":"0.7"},
-                      "autopack":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/autopack","svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.6"},
-                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://github.com/corredD/ePMV/trunk","major":"0.6"}}
+        liste_plugin={"upy":{"path":dupy,"svn":"https://github.com/corredD/upy/trunk","major":"0.7"},
+                      "autopack":{"path":dautopack,"svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.6"},
+                        "ePMV":{"path":depmv,"svn":"https://github.com/corredD/ePMV/trunk","major":"0.6"}}
 #        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://subversion.assembla.com/svn/upy/trunk/upy","major":"0.6"},
 #                      "AutoFill":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/AutoFill","svn":"https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean","major":"0.5"},
 #                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://subversion.assembla.com/svn/epmv/trunk/","major":"0.5"}}
@@ -299,7 +307,8 @@ if __name__ == "__main__":
         up.readUpdateNote()
         up.merge_list_plug()
         for name in up.list_host:
-            up.writeUpdateNote(filename="/Users/ludo/DEV/upy_google_svn/branches/updates/update_notes_"+name+".json",notes="new update systems")
+#            up.writeUpdateNote(filename="/Users/ludo/DEV/upy_google_svn/branches/updates/update_notes_"+name+".json",notes="new update systems")
+            up.writeUpdateNote(filename=zipoutput+"update_notes_"+name+".json",notes="new update systems")
         #upload to sourceforge
 #        os.system(cd /Users/ludo/DEV/upy_google_svn/branches/updates;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
