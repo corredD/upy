@@ -884,7 +884,7 @@ class maxUI(QtGui.QWidget,uiAdaptor):
         """  
         res = QtGui.QMessageBox.information(self, 'ERROR:', errormsg,QtGui.QMessageBox.Ok)
  
-    def drawQuestion(self,title="",question=""):
+    def drawQuestion(self,title="",question="",callback=None):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -899,9 +899,14 @@ class maxUI(QtGui.QWidget,uiAdaptor):
             QtGui.QMessageBox.No, QtGui.QMessageBox.No)
      
         if res == QtGui.QMessageBox.Yes: 
-            return True
+            res = True
         else :
-            return False
+            res = False
+        if  callback is not None  :          
+            callback(res)
+        else :
+            return res
+            
 
     def drawMessage(self,title="",message=""):
         """ Draw a message dialog
