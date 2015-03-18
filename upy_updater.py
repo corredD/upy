@@ -23,7 +23,12 @@ def checkURL(URL):
         return False
     return response.code != 404
 
-local_temp_dir= os.path.abspath(__path__[0])
+try :
+    import upy
+    local_temp_dir= os.path.abspath(upy.__path__[0])
+except :
+    local_temp_dir =""
+    
 class Updater:
     def __init__(self,*args,**kw):
         self.list_host=["all","maya","c4d","blender","3dsmax"]        
