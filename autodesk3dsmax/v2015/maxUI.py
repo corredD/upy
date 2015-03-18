@@ -290,7 +290,9 @@ class ColorButton(QtGui.QPushButton):
 
         def __init__(self, parent=None, color=None, toolTip='',callback=None):
                 QtGui.QPushButton.__init__(self, parent)
-                self._color = QtGui.QColor() if color is None else color
+                self._color = QtGui.QColor()
+                if color is not None :
+                    self._color.setRgbF(color[0], color[1],color[2]) 
                 #NOTE: tool tips derrive style sheets from our button, so we can not really use it here
                 self._toolTip = toolTip
                 self.clicked.connect(self.onButtonClicked)
@@ -857,6 +859,7 @@ class maxUI(QtGui.QWidget,uiAdaptor):
                                                   callback=elem["action"])
         elem["id"].setGeometry(x, y,elem["width"]*self.scale,elem["height"]*self.scale)
         if elem["value"] is not None:
+            elem["id"].resetColor()
             self.setColor(elem,elem["value"])
 
     def drawInputQuestion(self,title="",question="",callback=None):
@@ -1413,6 +1416,7 @@ class maxUI(QtGui.QWidget,uiAdaptor):
         @param val: the new Color value
         """ 
         color = elem["id"].getColor()
+        print color,type(color)
         if rgb :
             color.setRgbF(val[0], val[1], val[2]) 
         else :
