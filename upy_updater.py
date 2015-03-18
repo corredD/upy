@@ -27,7 +27,7 @@ try :
     import upy
     local_temp_dir= os.path.abspath(upy.__path__[0])
 except :
-    local_temp_dir =""
+    local_temp_dir ="./"
     
 class Updater:
     def __init__(self,*args,**kw):
@@ -191,7 +191,7 @@ class Updater:
             urllib.urlretrieve(URI, tmpFileName)#,reporthook=self.helper.reporthook)
             #geturl(URI, tmpFileName)
         else :
-            print ("problem connecting to server")
+            print ("problem connecting to server",URI)
             return None
         with open(tmpFileName, 'r') as fp :#doesnt work with symbol link ?
             self.result_json=json.load(fp)
@@ -325,7 +325,7 @@ if __name__ == "__main__":
             up.writeUpdateNote(notes="new update systems")
         #upload to sourceforge
 #        os.system(cd /Users/ludo/DEV/upy_google_svn/branches/updates;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
-#        os.system(cd up.local_path;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
+#        os.system("cd "+up.local_path+";scp * acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
         #for host specific 
