@@ -45,7 +45,8 @@ class Updater:
         #sourceforge
         self.server = "http://sourceforge.net/projects/upyplugins/files/Updates/"#could be google
 #        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json" #sourceforge?
-        self.url = "http://mgldev.scripps.edu/projects/ePMV/updates/updates/update_notes_"+self.host+".json" #sourceforge?
+#        self.url = "http://mgldev.scripps.edu/projects/uPy/Distribs/Updates/update_notes_"+self.host+".json" #sourceforge?
+        self.url = "http://sourceforge.net/projects/upyplugins/files/Updates/update_notes_"+self.host+".json"
         self.local_path = "/usr/local/www/projects//uPy/Distribs/Updates"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
         self.result_json={}
         self.update_notes=""
@@ -210,6 +211,7 @@ class Updater:
              self.update_svn_export_one_plug(plug,host)   
              
     def update_svn_export_one_plug(self,plug,host):
+        print ("svn export ",plug)
         d = self.liste_plugin[plug]["path"] #"/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
         if os.path.exists(d):
             shutil.rmtree(d)            
@@ -233,11 +235,13 @@ class Updater:
             if os.path.isfile(f) :
                 os.remove(f)
             #need to remove some files for autopack
+            print ("zip ",plug)
             if plug == "autopack":
                 if os.path.exists(self.liste_plugin[plug]["path"]+"/Patches"):
                     shutil.rmtree(self.liste_plugin[plug]["path"]+"/Patches")
             os.system("cd "+d+"/..;zip -r "+f+" "+plug+"/  >logx")
-
+        print ("done")
+        
 def get_current_version():
 #        set afversion=`svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 `
 #        set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk | grep "Revision:" | cut -d: -f2 `
@@ -269,12 +273,12 @@ if __name__ == "__main__":
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
     update_path="/Users/ludo/DEV/upy_google_svn/branches/updates/"
 #    update_path="/virtual/local/www/projects/uPy/Distribs/Updates"
-    depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV/"
-    dupy="/usr/local/www/projects/uPy/export/upy/"
-    dautopack="/usr/local/www/projects/AF/Sources/export/autopack/"
+    depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
+    dupy="/usr/local/www/projects/uPy/export/upy"
+    dautopack="/usr/local/www/projects/AF/Sources/export/autopack"
 #    zipoutput="/usr/local/www/projects/ePMV/updates/"
     do_json=False
-    do_update=False
+    do_update=True
     afversion,epmvversion,upyversion = get_current_version()
     print afversion,epmvversion,upyversion
 #    sys.exit()
@@ -315,6 +319,7 @@ if __name__ == "__main__":
             up.writeUpdateNote(notes="new update systems")
         #upload to sourceforge
 #        os.system(cd /Users/ludo/DEV/upy_google_svn/branches/updates;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
+#        os.system(cd up.local_path;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
         #for host specific 
