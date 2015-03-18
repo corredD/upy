@@ -46,7 +46,7 @@ class Updater:
         self.server = "http://sourceforge.net/projects/upyplugins/files/Updates/"#could be google
 #        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json" #sourceforge?
         self.url = "http://mgldev.scripps.edu/projects/ePMV/updates/updates/update_notes_"+self.host+".json" #sourceforge?
-        self.local_path = "/usr/local/www/projects/ePMV/updates/"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
+        self.local_path = "/usr/local/www/projects//uPy/Distribs/Updates"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
         self.result_json={}
         self.update_notes=""
         self.typeUpdate="std"
@@ -170,7 +170,7 @@ class Updater:
                 result_json[plug]["version_dev"]=self.liste_plugin[plug]["version_dev"]
             result_json[plug]["host"]=self.liste_plugin[plug]["host"]
         result_json["notes"]=notes
-        f="update_notes_"+self.host+".json"
+        f=self.local_path+os.sep+"update_notes_"+self.host+".json"
         if filename is not None:
             f=filename
         with open(f, 'w') as fp :
@@ -222,7 +222,7 @@ class Updater:
 #        print lines
         lines = lines[-1][:-2].replace(" ","")
         f.close()
-        print ("new v ",self.liste_plugin[plug]["major"]+"."+lines)
+        print (plug,host,"new v ",self.liste_plugin[plug]["major"]+"."+lines)
         f=open(self.liste_plugin[plug]["path"]+os.sep+"version.txt","w")
         f.write(self.liste_plugin[plug]["major"]+"."+lines)
         f.close()
@@ -269,13 +269,14 @@ if __name__ == "__main__":
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
     update_path="/Users/ludo/DEV/upy_google_svn/branches/updates/"
 #    update_path="/virtual/local/www/projects/uPy/Distribs/Updates"
-    depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
-    dupy="/usr/local/www/projects/uPy/export/upy"
-    dautopack="/usr/local/www/projects/AF/Sources/export/autopack"
-    zipoutput="/usr/local/www/projects/ePMV/updates/"
-    do_json=True
-    do_update=True
-    print (get_current_version())
+    depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV/"
+    dupy="/usr/local/www/projects/uPy/export/upy/"
+    dautopack="/usr/local/www/projects/AF/Sources/export/autopack/"
+#    zipoutput="/usr/local/www/projects/ePMV/updates/"
+    do_json=False
+    do_update=False
+    afversion,epmvversion,upyversion = get_current_version()
+    print afversion,epmvversion,upyversion
 #    sys.exit()
     if do_json : 
         #current version?
@@ -289,7 +290,8 @@ if __name__ == "__main__":
         #from upy.upy_updater import Updater
         print (liste_plugin)
         up = Updater(host=["all"],liste_plugin=liste_plugin)
-        up.writeUpdateNote(notes="blabla")
+#        up.writeUpdateNote(notes="blabla")
+        up.writeUpdateNote(filename=zipoutput+"update_notes_"+"all"+".json",notes="new update systems")
     if do_update:
         liste_plugin={"upy":{"path":dupy,"svn":"https://github.com/corredD/upy/trunk","major":"0.7"},
                       "autopack":{"path":dautopack,"svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.6"},
@@ -305,11 +307,12 @@ if __name__ == "__main__":
 #        up.writeUpdateNote(filename="/Users/ludo/DEV/upy_googlesvn/branches/updates/update_notes_all.json",notes="new update systems")
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="dev")
         up.update_svn_export(host=["all"])#up.list_host)
+        
         up.readUpdateNote()
         up.merge_list_plug()
         for name in up.list_host:
 #            up.writeUpdateNote(filename="/Users/ludo/DEV/upy_google_svn/branches/updates/update_notes_"+name+".json",notes="new update systems")
-            up.writeUpdateNote(filename=zipoutput+"update_notes_"+name+".json",notes="new update systems")
+            up.writeUpdateNote(notes="new update systems")
         #upload to sourceforge
 #        os.system(cd /Users/ludo/DEV/upy_google_svn/branches/updates;scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
