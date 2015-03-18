@@ -22,7 +22,8 @@ def checkURL(URL):
     except :
         return False
     return response.code != 404
-    
+
+local_temp_dir= os.path.abspath(__path__[0])
 class Updater:
     def __init__(self,*args,**kw):
         self.list_host=["all","maya","c4d","blender","3dsmax"]        
@@ -63,7 +64,7 @@ class Updater:
         self.result_json=None
         #need version
         URI=self.url
-        tmpFileName = "update_notes_"+self.host+".json"
+        tmpFileName = local_temp_dir+os.sep+"update_notes_"+self.host+".json"
 #        if not os.path.isfile(tmpFileName):
         urllib.urlcleanup()
         if checkURL(URI) :  
@@ -179,7 +180,7 @@ class Updater:
         
     def readUpdateNote(self,):
         URI=self.url
-        tmpFileName = "update_notes_"+self.host+".json"
+        tmpFileName = local_temp_dir+os.sep+"update_notes_"+self.host+".json"
         urllib.urlcleanup()
         if checkURL(URI) :
             urllib.urlretrieve(URI, tmpFileName)#,reporthook=self.helper.reporthook)
