@@ -255,9 +255,9 @@ class maxHelper(Helper):
         pass#MaxPlus.SelectionManager.SelectNodes(obj)
     
     def getCurrentSelection(self):
-        if MaxPlus.SelectionManager.Count == 0:
+        if MaxPlus.SelectionManager.GetCount() == 0:
             return []
-        return [MaxPlus.SelectionManager.GetNode(i) for i in range(MaxPlus.SelectionManager.Count)]
+        return [MaxPlus.SelectionManager.GetNode(i) for i in range(MaxPlus.SelectionManager.GetCount())]
 
     def createObject(self, sid, cidname):
         if sid == u"camera":

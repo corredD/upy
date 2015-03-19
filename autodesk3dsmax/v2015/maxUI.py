@@ -292,7 +292,10 @@ class ColorButton(QtGui.QPushButton):
                 QtGui.QPushButton.__init__(self, parent)
                 self._color = QtGui.QColor()
                 if color is not None :
-                    self._color.setRgbF(color[0], color[1],color[2]) 
+                    if type(color) is list or type(color) is tuple:
+                        self._color.setRgbF(color[0], color[1],color[2])
+                    else :
+                        self._color = color
                 #NOTE: tool tips derrive style sheets from our button, so we can not really use it here
                 self._toolTip = toolTip
                 self.clicked.connect(self.onButtonClicked)
