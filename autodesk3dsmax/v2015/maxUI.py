@@ -1200,7 +1200,10 @@ class maxUI(QtGui.QWidget,uiAdaptor):
         @type  callback: function
         @param callback: the callback function to call
         """         
+        #pyside return (fileNames, selectedFilter)
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Open file','/')
+        print ("fileDialog got ",filename,type(filename))
+        filename = str(filename[0])
         if callback is not None :
             callback(str(filename))
         else :
