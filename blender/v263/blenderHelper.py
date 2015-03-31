@@ -871,11 +871,24 @@ class blenderHelper(Helper):
         #armData.use_deform_vertex_groups=bool(1) DEPRECATED ?
         bpy.ops.object.mode_set(mode='EDIT')
         if listeName is not None :
-            bones = [self.addBone(i,armData,x[i],x[i+1],
-                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i]) for i in range(len(x)-1)]
+            bones=[]
+            for i in range(len(x)-1):
+                b=self.addBone(i,armData,x[i],x[i+1],
+                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i],editMode=False)
+                bones.append(b)
+                print ("one bone")
+#            bones = [self.addBone(i,armData,x[i],x[i+1],
+#                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i]) for i in range(len(x)-1)]
         else :
-            bones = [self.addBone(i,armData,x[i],x[i+1],
-                    hR=hR,tR=tR,dDist=dDist,roll=roll) for i in range(len(x)-1)]
+            bones=[]
+            for i in range(len(x)-1):
+                b=self.addBone(i,armData,x[i],x[i+1],
+                    hR=hR,tR=tR,dDist=dDist,roll=roll,editMode=False)
+                bones.append(b)
+                print ("one bone")
+#            bones = [self.addBone(i,armData,x[i],x[i+1],
+#                    hR=hR,tR=tR,dDist=dDist,roll=roll) for i in range(len(x)-1)]
+                    
         bpy.ops.object.mode_set(mode='OBJECT')
         #for bone in armData.bones.values():
         #   #print bone.matrix['ARMATURESPACE']

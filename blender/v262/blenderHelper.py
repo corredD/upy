@@ -888,7 +888,7 @@ class blenderHelper(Helper):
         obj = bpy.context.object
         obj.name = name
         obj.rotation_euler[2] = 2.*math.pi # rotZ
-        obj.hide_select=True
+#        obj.hide_select=True
         cam = obj.data
         cam.name = name
         cam.lens = focal
