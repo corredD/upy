@@ -286,7 +286,7 @@ if __name__ == "__main__":
     do_json=False
     do_update=True
     afversion,epmvversion,upyversion = get_current_version()
-    print afversion,epmvversion,upyversion
+    print (afversion,epmvversion,upyversion)
 #    sys.exit()
     if do_json : 
         #current version?
