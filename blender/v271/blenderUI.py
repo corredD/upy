@@ -2029,25 +2029,24 @@ class blenderUI:
         @rtype:   string
         @return:  the current string area input value for this specific elem
         """                
-        return self.getSelectTxt()
+        return elem["value"]#self.getSelectTxt()
 
-    def SetStringArea(self,elem,val):
+    def setStringArea(self,elem,val):
         """ Set the current String area value of the string input elem
         @type  elem: dictionary
         @param elem: the elem input dictionary       
         @type  val: string
         @param val: the new string value (multiline)   
         """                
-        
-        texts = list(bpy.data.texts)
-        newText = [tex for tex in texts if tex.name == elem["name"]]
-#        print newText
-        if not len(newText) :
-            newText = None#Blender.Text.New(elem["name"])
-        else :
-            newText[0].clear()
-            newText=newText[0]
-        for line in val : newText.write(line)
+#        texts = list(bpy.data.texts)
+#        newText = [tex for tex in texts if tex.name == elem["name"]]
+##        print newText
+#        if not len(newText) :
+#            newText = None#Blender.Text.New(elem["name"])
+#        else :
+#            newText[0].clear()
+#            newText=newText[0]
+#        for line in val : newText.write(line)
         elem["value"] = val
         
     def getLong(self,elem):

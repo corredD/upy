@@ -2588,7 +2588,13 @@ class blenderHelper(Helper):
                     facesSelection=facesSelection,faceMaterial=faceMaterial)
         if not res or len(colors) == 1:
             #apply mat to the mesh
-            self.changeObjColorMat(self.getObject(mesh),colors[0])
+            
+            o = self.getObject(mesh)
+            print ("changeColor",mesh,self.getObject(mesh))
+            if o is None :
+                o = self.getObjectFromMesh(mesh)
+            print ("changeColor",mesh,o)                
+            self.changeObjColorMat(o,colors[0])
 
     def colorMaterial(self,mat,color):
         #mat input is a material name or a material object
@@ -2663,6 +2669,9 @@ class blenderHelper(Helper):
                 self.setOneMaterial(obj,mat,objmode = objmode)
     
     def changeObjColorMat(self,obj,color):
+        if obj is None :
+            print ("changeObjColorMat obj is None")
+            return
         mats=self.getMaterialObject(obj)
         if len(mats) == 0 : 
             mat = self.retrieveColorMat(color)

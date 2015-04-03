@@ -54,7 +54,7 @@ class blenderHelper(Helper):
         sc.unit_settings.system = 'METRIC'
         sc.unit_settings.scale_length = 0.01 #centimeter
         print ("blender unit setup")
-        
+        #this is a bug in Blender
         
     def setViewport(self,**kw):
         """
