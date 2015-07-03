@@ -3345,6 +3345,8 @@ class Helper:
 
     def normalize_v3(self,arr):
         ''' Normalize a numpy array of 3 component vectors shape=(n,3) '''
+#        return self.unit_vector(arr,axis=1)
+#        lens = numpy.linalg.norm(arr,axis=1)
         lens = numpy.sqrt( arr[:,0]**2 + arr[:,1]**2 + arr[:,2]**2 )
         arr[:,0] /= lens
         arr[:,1] /= lens
@@ -3359,7 +3361,8 @@ class Helper:
         #Create an indexed view into the vertex array using the array of three indices for triangles
         tris = vertices[faces]
         #Calculate the normal for all the triangles, by taking the cross product of the vectors v1-v0, and v2-v0 in each triangle             
-        n = numpy.cross( tris[::,1 ] - tris[::,0]  , tris[::,2 ] - tris[::,0] )# n is now an array of normals per triangle. The length of each normal is dependent the vertices, # we need to normalize these, so that our next step weights each normal equally.normalize_v3(n)
+        n = numpy.cross( tris[::,1 ] - tris[::,0]  , tris[::,2 ] - tris[::,0] )
+        # n is now an array of normals per triangle. The length of each normal is dependent the vertices, # we need to normalize these, so that our next step weights each normal equally.normalize_v3(n)
         # now we have a normalized array of normals, one per triangle, i.e., per triangle normals.
         # But instead of one per triangle (i.e., flat shading), we add to each vertex in that triangle, 
         # the triangles' normal. Multiple triangles would then contribute to every vertex, so we need to normalize again afterwards.
@@ -3780,6 +3783,75 @@ class Helper:
         cr = numpy.cross(vec1,vec2)
         axis = self.unit_vector(cr) 
         return angle,axis
+        
+    def scalar(self,v1,v2):
+        """
+        calculates the scalar product of two vectors
+        v1 and v2 are numpy.array objects.
+        returns a float for a one-dimensional array.
+        """
+        return numpy.sum(v1*v2)
+    
+    def dihedral(self,v1,v2,v3,v4):
+        """
+        Returns a float value for the dihedral angle between 
+        the four vectors. They define the bond for which the 
+        torsion is calculated (~) as:
+        V1 - V2 ~ V3 - V4 
+        The vectors vec1 .. vec4 can be array objects, lists or tuples of length 
+        three containing floats. 
+        For Scientific.geometry.Vector objects the behavior is different 
+        on Windows and Linux. Therefore, the latter is not a featured input type 
+        even though it may work.
+        
+        If the dihedral angle cant be calculated (because vectors are collinear),
+        the function raises a DihedralGeometryError
+        """    
+        # create array instances.
+        #numpy.array    
+        #v1,v2,v3,v4 =create_vectors(vec1,vec2,vec3,vec4)
+        all_vecs = [v1,v2,v3,v4]
+    
+        # rule out that two of the atoms are identical
+        # except the first and last, which may be.
+        for i in range(len(all_vecs)-1):
+            for j in range(i+1,len(all_vecs)):
+                if i>0 or j<3: # exclude the (1,4) pair
+                    equals = all_vecs[i]==all_vecs[j]
+                    if equals.all():
+                        return None#raise DihedralGeometryError(\
+                            #"Vectors #%i and #%i may not be identical!"%(i,j))
+    
+        # calculate vectors representing bonds
+        v12 = v2-v1
+        v23 = v3-v2
+        v34 = v4-v3
+    
+        # calculate vectors perpendicular to the bonds
+        normal1 = numpy.cross(v12,v23)
+        normal2 = numpy.cross(v23,v34)
+    
+        # check for linearity
+        if numpy.linalg.norm(normal1) == 0 or numpy.linalg.norm(normal2)== 0:
+            return None#raise DihedralGeometryError(\
+    #            "Vectors are in one line; cannot calculate normals!")
+    
+        # normalize them to length 1.0
+        normal1 = normal1/ numpy.linalg.norm(normal1)
+        normal2 = normal2/ numpy.linalg.norm(normal2)
+    
+        # calculate torsion and convert to degrees
+        torsion = math.degrees(self.angle_between_vectors(normal1,normal2))# * 180.0/pi
+    
+        # take into account the determinant
+        # (the determinant is a scalar value distinguishing
+        # between clockwise and counter-clockwise torsion.
+        if self.scalar(normal1,v34) >= 0:
+            return torsion
+        else:
+            torsion = 360-torsion
+            if torsion == 360: torsion = 0.0
+            return torsion
 
     @classmethod
     def rotation_matrix(self,angle, direction, point=None,trans=None):

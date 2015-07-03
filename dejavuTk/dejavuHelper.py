@@ -2210,7 +2210,8 @@ class dejavuHelper(hostHelper.Helper):
         name = g.name
         if name == '' :
             name = g.id
-        v=g.primitives[0].vertex#multiple primitive ?
+        v=numpy.array(g.primitives[0].vertex)#multiple primitive ?
+        print "vertices nb is ",len(v)
         nf = len(g.primitives[0].vertex_index)
         sh = g.primitives[0].vertex_index.shape
         if len(sh) == 2 and sh[1] == 3 :
@@ -2244,6 +2245,7 @@ class dejavuHelper(hostHelper.Helper):
         mesh.inheritMaterial = False
         color = [1.,1.,1.]                
         mat = self.getColladaMaterial(g,col)
+        print ("mat type is ",type(mat),mat, mat is not None, type(mat) is not type(None))
         if mat is not None :
             if type(mat.effect.diffuse) == collada.material.Map:
                 color = [1,1,1]
@@ -2275,14 +2277,18 @@ class dejavuHelper(hostHelper.Helper):
         for g in geoms:
             meshDic[g.id]={}
             dicgeoms[g.id]={}
+            dicgeoms[g.id]["geom"]=g
             dicgeoms[g.id]["id"]=g.id
             v,vn,f = self.decomposeColladaGeom(g,col)
+            print "vertices nb is ",len(v)
             if self.nogui:                
 		#apply transformation from boundGeom
                 dicgeoms[g.id]["node"]=None
                 dicgeoms[g.id]["mesh"]=v,vn,f
-		mat = self.getColladaMaterial(g,col)
-		dicgeoms[g.id]["color"]=mat.effect.diffuse[0:3]
+                mat = self.getColladaMaterial(g,col)
+                #print ("mat type is ",type(mat),mat, mat is not None, type(mat) is not type(None))
+                if mat is not None :
+                    dicgeoms[g.id]["color"]=mat.effect.diffuse[0:3]
             else :
                 onode,mesh = self.oneColladaGeom(g,col)
                 dicgeoms[g.id]["node"]=onode
@@ -2306,7 +2312,7 @@ class dejavuHelper(hostHelper.Helper):
                 if bg.original.id in dicgeoms:
                     node = dicgeoms[bg.original.id]["node"]
                     dicgeoms[bg.original.id]["instances"].append(bg.matrix)
-            
+            #dicgeoms["col"]=col
             if self.nogui : 
                 return dicgeoms
 
