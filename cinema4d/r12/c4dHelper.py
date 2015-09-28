@@ -897,6 +897,7 @@ class c4dHelper(Helper):
     def addMaterial(self,name,color):
           import c4d
           import c4d.documents
+          name = str(name)
           doc = c4d.documents.GetActiveDocument()
           # create standard material
           __mat = doc.SearchMaterial(name) 
@@ -2895,6 +2896,7 @@ class c4dHelper(Helper):
     
     def instancePolygon(self,name, matrices=None,hmatrices=None, mesh=None,parent=None,
                         transpose=False,globalT=True,dupliVert=True,**kw):
+        name=str(name)
         if hmatrices is not None :
             matrices = hmatrices
         if matrices == None : return None
@@ -2974,6 +2976,7 @@ class c4dHelper(Helper):
 
     def updateInstancePolygon(self,name,instance, matrices=None,hmatrices=None,mesh=None,
                               parent=None,transpose=False,globalT=True):
+        name=str(name)
         if matrices == None : return None
         if mesh == None : return None
         #instance = []      
