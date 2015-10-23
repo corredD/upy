@@ -2353,15 +2353,17 @@ class Helper:
 
     def unitSphere(self,name,iterations,radius):   
         """
-        Create the mesh data and the mesh object of a Icosahedron of a given radius
+        Create the mesh data and the mesh object of a Sphere of a given radius
         
         @type  name: string
-        @param name: name for the spline to update        
+        @param name: name for the sphere       
+        @type  iterations: int
+        @param iterations: resolution
         @type  radius: float
-        @param radius: radius of the embeding sphere
+        @param radius: radius of the sphere
         
         @rtype:   Object, Mesh
-        @return:  Icosahedron Object and Mesh      
+        @return:  Sphere Object and Mesh      
         """     
         v,f = self.createUnitSphereData(iterations)
         ob,obme = self.createsNmesh(name,numpy.array(v)*radius,None,f)
