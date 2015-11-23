@@ -2,7 +2,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
     
-    This file git_upy/autodeskmaya/__init__.py is part of upy.
+    This file git_upy/blender/v262/v263/__init__.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,5 +17,3 @@
     You should have received a copy of the GNU General Public License
     along with upy.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
 """
-#CRITICAL_DEPENDENCIES = ['blender','c4d']
-__revision__ = '01'

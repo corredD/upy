@@ -2,7 +2,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
     
-    This file git_upy/dejavuTk/dejavuHelper.py is part of upy.
+    This file git_upy/dejavuTk/dejavuHelper_mgl.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ from DejaVu.Cylinders import Cylinders
 from DejaVu.Box import Box
 from DejaVu.glfLabels import GlfLabels as Labels
 from DejaVu.IndexedPolygons import IndexedPolygons
-from DejaVu.Polylines import Polylines as dejavuPolylines
+from DejaVu.Polylines import Polylines
 from DejaVu.Texture import Texture
 from DejaVu import Viewer
 #standardmodule
@@ -163,7 +163,7 @@ class dejavuHelper(hostHelper.Helper):
         return self.box(*args,**kw)
     
     def Polylines(self,*args,**kw):
-        return dejavuPolylines(*args,**kw) 
+        return Polylines(*args,**kw) 
 
     def Spheres(self,*args,**kw):
         return Spheres(*args,**kw)
@@ -418,12 +418,10 @@ class dejavuHelper(hostHelper.Helper):
         parent = self.getObject(parent)
         if parent is None :
             return
-	
         if type(obj) == list or type(obj) == tuple:
             [vi.ReparentObject(self.getObject(o),parent,objectRetainsCurrentPosition=True) for o in obj]
         else :
             obj = self.getObject(obj)
-            if obj is None : return
             if obj.viewer is None :
                 obj.viewer = vi            
             vi.ReparentObject(obj,parent,objectRetainsCurrentPosition=True)
@@ -868,7 +866,7 @@ class dejavuHelper(hostHelper.Helper):
     def FromVec(self,points,pos=True):
         return numpy.array(points)#numpy.array(float(points[0]),float(points[1]),float(points[2]))
 #    
-    def ToVec(self,v,pos=True):
+    def ToVec(self,v):
         return v
 #    
 #    def getCoordinateMatrix(self,pos,direction):
@@ -928,7 +926,7 @@ class dejavuHelper(hostHelper.Helper):
 #    
     def spline(self,name, points,close=0,type=1,scene=None,parent=None):
         f=[[x,x+1] for x in range(len(points))]
-        spline=self.Polylines(name, vertices=points)#,faces=f)
+        spline=self.Polylines(name, vertices=points,faces=f)
         self.AddObject(spline, parent=parent)
         return spline,None
 
@@ -2012,35 +2010,16 @@ class dejavuHelper(hostHelper.Helper):
         mesh = self.checkIsMesh(poly)
         return mesh.getFaces()
 
-
-    def grabAllIndexedPolyonginHierarchy(self,poly,all_mesh=[]):
-        if not isinstance(poly,IndexedPolygons):
-            if isinstance(poly,Geom) :
-                for child in self.getChilds(poly):
-                    all_mesh = self.grabAllIndexedPolyonginHierarchy(child,all_mesh)
-        else :
-            all_mesh.append(poly)
-        return all_mesh
-                    
-    def isIndexedPolyon(self,obj):
-        if not hasattr(obj,"getFaces"):
-            for child in self.getChilds(obj):        
-                c,ipoly= self.isIndexedPolyon(child)
-                if ipoly : 
-                    return c,True
-            return None,False
-        else :
-            return obj,True
     def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
         #get infos
         if not isinstance(poly,IndexedPolygons):
             if isinstance(poly,Cylinders):
                 poly = poly.asIndexedPolygons()
             elif isinstance(poly,Geom) :
-                #getfirst child mesh recursively
+                #getfirst child
                 child = self.getChilds(poly)
                 if len(child):
-                    poly,isit=self.isIndexedPolyon(poly)
+                    poly=child[0]
                 elif isinstance(poly,Cylinders):
                     poly = poly.asIndexedPolygons()
                 else :
@@ -2138,7 +2117,7 @@ class dejavuHelper(hostHelper.Helper):
                 dicgeoms[g.id]["parentmesh"]=None
                 if parentxml is not None :
                     dicgeoms[gname]["parentmesh"]= self.getObject(parentxml.get("id"))                
-        else : #collada.scene.Node
+        else :
 #            print "else ",len(node.children)
 #            print "instance_geometry",nodexml.get("instance_geometry")
             #create an empty
@@ -2160,18 +2139,8 @@ class dejavuHelper(hostHelper.Helper):
                         if parent is not None and onode is not None:
                             self.reParent(onode, parent )
                         onode.Set(translation = trans)
-                        onode.Set(rotation = rot)#.reshape(4,4).transpose()) 
-                        onode.Set(scale=scale)
+                        onode.Set(rotation = rot)#.reshape(4,4).transpose())                
                         dicgeoms[gname]["parentmesh"]=onode
-            elif len(node.children) == 1 and (type(node.children[0])==collada.scene.NodeNode):
-                    #this is an instance do nothing. we are going to use instanceFortrans matrix
-                    gname = node.children[0].node.children[0].geometry.id
-                    if parentxml is not None :
-                        if gname in dicgeoms.keys():
-#                            print dicgeoms[gname]["parentmesh"]
-                            if dicgeoms[gname]["parentmesh"] is None :
-                                dicgeoms[gname]["parentmesh"]= self.getObject(pname)
-#                            print dicgeoms[gname]["parentmesh"]
             else :
                 onode = self.newEmpty(name)
 #                print "ok new empty name",onode, name
@@ -2180,7 +2149,6 @@ class dejavuHelper(hostHelper.Helper):
                     self.reParent(onode, parent )
                 onode.Set(translation = trans)
                 onode.Set(rotation = rot)#.reshape(4,4).transpose())                
-                onode.Set(scale=scale)                
             if hasattr(node, 'children') and len(node.children) :
                 for j,ch in enumerate(node.children) :
     #                print "children ",ch.xmlnode.get("name")
@@ -2214,7 +2182,6 @@ class dejavuHelper(hostHelper.Helper):
 #                onode.Set(translation = trans)#, rotation=rot*0,scale=scale)
                 onode.Set(translation = trans)
                 onode.Set(rotation = rot)#.reshape(4,4).transpose())
-                onode.Set(scale=scale)
 #                onode.ConcatRotation(rot)
 #                onode.ConcatTranslation(trans)
 #                onode.Set(matrix)
@@ -2229,8 +2196,7 @@ class dejavuHelper(hostHelper.Helper):
         name = g.name
         if name == '' :
             name = g.id
-        v=numpy.array(g.primitives[0].vertex)#multiple primitive ?
-        print "vertices nb is ",len(v)
+        v=g.primitives[0].vertex#multiple primitive ?
         nf = len(g.primitives[0].vertex_index)
         sh = g.primitives[0].vertex_index.shape
         if len(sh) == 2 and sh[1] == 3 :
@@ -2239,9 +2205,7 @@ class dejavuHelper(hostHelper.Helper):
             f=g.primitives[0].vertex_index[:(nf/3*3)].reshape((nf/3,3))
         n=g.primitives[0].normal
         ni = g.primitives[0].normal_index
-        vn=[]
-        if ni is not None :
-            vn = self.getNormals(f,v,n,ni)            
+        vn = self.getNormals(f,v,n,ni)            
         return v,vn,f.tolist()
 
     def oneColladaGeom(self,g,col):
@@ -2257,14 +2221,11 @@ class dejavuHelper(hostHelper.Helper):
             f=g.primitives[0].vertex_index.reshape((nf/3,3))
         n=g.primitives[0].normal
         ni = g.primitives[0].normal_index
-        vn=[]
-        if ni is not None :
-            vn = self.getNormals(f,v,n,ni)            
+        vn = self.getNormals(f,v,n,ni)            
         onode,mesh = self.createsNmesh(name,v,vn,f.tolist(),smooth=True)
         mesh.inheritMaterial = False
         color = [1.,1.,1.]                
         mat = self.getColladaMaterial(g,col)
-        print ("mat type is ",type(mat),mat, mat is not None, type(mat) is not type(None))
         if mat is not None :
             if type(mat.effect.diffuse) == collada.material.Map:
                 color = [1,1,1]
@@ -2296,18 +2257,11 @@ class dejavuHelper(hostHelper.Helper):
         for g in geoms:
             meshDic[g.id]={}
             dicgeoms[g.id]={}
-            dicgeoms[g.id]["geom"]=g
             dicgeoms[g.id]["id"]=g.id
             v,vn,f = self.decomposeColladaGeom(g,col)
-            print "vertices nb is ",len(v)
             if self.nogui:                
-		#apply transformation from boundGeom
                 dicgeoms[g.id]["node"]=None
                 dicgeoms[g.id]["mesh"]=v,vn,f
-                mat = self.getColladaMaterial(g,col)
-                #print ("mat type is ",type(mat),mat, mat is not None, type(mat) is not type(None))
-                if mat is not None :
-                    dicgeoms[g.id]["color"]=mat.effect.diffuse[0:3]
             else :
                 onode,mesh = self.oneColladaGeom(g,col)
                 dicgeoms[g.id]["node"]=onode
@@ -2326,16 +2280,15 @@ class dejavuHelper(hostHelper.Helper):
             col = collada.Collada(filename)#, ignore=[collada.DaeUnsupportedError,
                                             #collada.DaeBrokenRefError])
             dicgeoms,daeDic =  self.buildGeometries(col)
+            
+            if self.nogui : 
+                return dicgeoms
+
             boundgeoms = list(col.scene.objects('geometry'))
             for bg in boundgeoms:
                 if bg.original.id in dicgeoms:
                     node = dicgeoms[bg.original.id]["node"]
                     dicgeoms[bg.original.id]["instances"].append(bg.matrix)
-            #dicgeoms["col"]=col
-            if self.nogui : 
-                return dicgeoms
-
-
             #for each nodein the scene creae an empty 
             #for each primtive in the scene create an indeedPolygins-
             uniq = False

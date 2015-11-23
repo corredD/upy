@@ -2,7 +2,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
     
-    This file git_upy/blender/v263/blenderHelper.py is part of upy.
+    This file git_upy/blender/v262/v263/blenderHelper.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -201,7 +201,7 @@ class blenderHelper(Helper):
 
         if pos != None : obj.location = (float(pos[0]),float(pos[1]),float(pos[2]))
         if parent is not None:
-            obj.parent = self.getObject(parent)
+            obj.parent = parent
         return obj,mesh
 
     
@@ -846,24 +846,24 @@ class blenderHelper(Helper):
         else :            
             return [self.FromVec(c)*mat for c in coords]
 
-#    def rotation_matrix(self,angle, direction, point=None,trans=None):
-#        """
-#        Return matrix to rotate about axis defined by point and direction.
-#    
-#        """
-#        if self._usenumpy:
-#            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
-#        else :            
-#            direction = self.FromVec(direction[:3])
-#            direction.normalize()
-#            m = mathutils.Matrix.Rotation(angle,4,direction)
-#            M = m.copy()
-#            if point is not None:
-#               point = self.FromVec(point[:3]) 
-#               M.translation = point - (point * m)
-#            if trans is not None :
-#               M.translation = trans
-#            return M        
+    def rotation_matrix(self,angle, direction, point=None,trans=None):
+        """
+        Return matrix to rotate about axis defined by point and direction.
+    
+        """
+        if self._usenumpy:
+            return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
+        else :            
+            direction = self.FromVec(direction[:3])
+            direction.normalize()
+            m = mathutils.Matrix.Rotation(angle,4,direction)
+            M = m.copy()
+            if point is not None:
+               point = self.FromVec(point[:3]) 
+               M.translation = point - (point * m)
+            if trans is not None :
+               M.translation = trans
+            return M        
         
     def triangulate(self,poly):
         #select poly
@@ -890,24 +890,11 @@ class blenderHelper(Helper):
         #armData.use_deform_vertex_groups=bool(1) DEPRECATED ?
         bpy.ops.object.mode_set(mode='EDIT')
         if listeName is not None :
-            bones=[]
-            for i in range(len(x)-1):
-                b=self.addBone(i,armData,x[i],x[i+1],
-                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i],editMode=False)
-                bones.append(b)
-                print ("one bone")
-#            bones = [self.addBone(i,armData,x[i],x[i+1],
-#                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i]) for i in range(len(x)-1)]
+            bones = [self.addBone(i,armData,x[i],x[i+1],
+                    hR=hR,tR=tR,dDist=dDist,roll=roll,name=listeName[i]) for i in range(len(x)-1)]
         else :
-            bones=[]
-            for i in range(len(x)-1):
-                b=self.addBone(i,armData,x[i],x[i+1],
-                    hR=hR,tR=tR,dDist=dDist,roll=roll,editMode=False)
-                bones.append(b)
-                print ("one bone")
-#            bones = [self.addBone(i,armData,x[i],x[i+1],
-#                    hR=hR,tR=tR,dDist=dDist,roll=roll) for i in range(len(x)-1)]
-                    
+            bones = [self.addBone(i,armData,x[i],x[i+1],
+                    hR=hR,tR=tR,dDist=dDist,roll=roll) for i in range(len(x)-1)]
         bpy.ops.object.mode_set(mode='OBJECT')
         #for bone in armData.bones.values():
         #   #print bone.matrix['ARMATURESPACE']

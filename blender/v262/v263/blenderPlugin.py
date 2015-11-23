@@ -2,7 +2,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
     
-    This file git_upy/blender/v263/blenderPlugin.py is part of upy.
+    This file git_upy/blender/v262/v263/blenderPlugin.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

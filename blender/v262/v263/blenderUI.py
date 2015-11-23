@@ -2,7 +2,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
     
-    This file git_upy/blender/v257/blenderUI.py is part of upy.
+    This file git_upy/blender/v262/v263/blenderUI.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ from functools import partial
 import os
 #    Add button
 
+
+# general callback
 def checkUIVar(ww, context):
     if not hasattr(bpy,"current_gui") :
         return
@@ -75,8 +77,7 @@ def checkUIVar(ww, context):
 
 class OP_Subdialog (bpy.types.Operator):
     bl_label = "Sub Dialog"
-    bl_idname = "pyubic.subdialog"
-    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+    bl_idname = "upy.subdialog"
     subdialname = bpy.props.StringProperty()
     
     def draw(self, context):
@@ -90,7 +91,6 @@ class OP_Subdialog (bpy.types.Operator):
         subdial.current_layout = self.layout
 
         subdial.CreateLayout()
-        #set defaultValue
 #        self.layout.label(self.message)
 
     def execute(self, context):
@@ -100,15 +100,15 @@ class OP_Subdialog (bpy.types.Operator):
 
     def invoke(self, context, event):
         wm = context.window_manager
-        result = wm.invoke_props_dialog(self)#popup?
+        result = wm.invoke_props_dialog(self)
         print (result)
-        return {"RUNNING_MODAL"}
+        return result#{"RUNNING_MODAL"}
 
 bpy.utils.register_class(OP_Subdialog)
 
 
 class DialogOperator(bpy.types.Operator):
-    bl_idname = "pyubic.dialog_message"
+    bl_idname = "upy.dialog_message"
     bl_label = "Message"
 
 #    my_float = bpy.props.FloatProperty(name="Some Floating Point")
@@ -116,7 +116,7 @@ class DialogOperator(bpy.types.Operator):
     messageString = bpy.props.StringProperty()
     width = bpy.props.IntProperty(default = 300)
     height = bpy.props.IntProperty(default = 20)
-    result = bpy.props.BoolProperty(default = True)    
+    question = bpy.props.BoolProperty(default = False)  
     
     def draw(self, context):
         layout = self.layout
@@ -131,13 +131,12 @@ class DialogOperator(bpy.types.Operator):
         self.report({'INFO'}, message)
         return {'FINISHED'}
 
-    def cancel(self,context):
-        self.result = False
-        return {'FINISHED'}
-
     def invoke(self, context, event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self,width=self.width, height=self.height)
+        if not self.question :
+            return wm.invoke_props_dialog(self,width=self.width, height=self.height)
+        else :
+            return wm.invoke_confirm(self,event)#,width=self.width, height=self.height)
 
 bpy.utils.register_class(DialogOperator)
 
@@ -146,7 +145,7 @@ bpy.utils.register_class(DialogOperator)
 
 #call via bpy.ops.pyubic.save('INVOKE_DEFAULT')
 class FILEBROWSER_PT_General(bpy.types.Operator):
-    bl_idname = "pyubic.filedialog"
+    bl_idname = "upy.filedialog"
     bl_label = "File"
 #    filepath = bpy.props.StringProperty(
 #        name="File Path", 
@@ -191,7 +190,7 @@ class FILEBROWSER_PT_General(bpy.types.Operator):
 #bpy.utils.register_class(MenuSetting)
 
 class MENU_OT_General(bpy.types.Menu):
-    bl_idname = "pyubic.menu"
+    bl_idname = "upy.menu"
     bl_label = "Menu"
 #    guiname = bpy.props.StringProperty()
 #    sub = bpy.props.StringProperty()
@@ -203,8 +202,14 @@ class MENU_OT_General(bpy.types.Menu):
 #        print ("text ",self.bl_label)
 #        print (dir(self))
         layout = self.layout
+
+        #idname = ("upy.menu_%s_%s" % (self.uiname,k))
+        sp = self.bl_idname.split("_")
+        guiname = "_".join(sp[1:-1])
+        print ("guiname",guiname,self.bl_idname)#upy.menu_Test_Spheres2D_Filler_v1_0ui_File
+        gui = getattr(bpy,guiname)
 #        scn = bpy.context.scene
-        gui = getattr(bpy,"current_gui")
+#        gui = getattr(bpy,"current_gui")
 #        guiname = getattr(scn,"gui_name")
         #options = getattr(bpy,gui.title.replace(" ","_")+"menu_current")
         k,sub = self.bl_label.split(".")
@@ -219,7 +224,7 @@ class MENU_OT_General(bpy.types.Menu):
         return {'FINISHED'}
         
 class OBJECT_OT_General(bpy.types.Operator):
-    bl_idname = "pyubic.push"
+    bl_idname = "upy.push"
     bl_label = "pushbutton"
 #    name = bpy.props.StringProperty() 
     id = bpy.props.IntProperty()
@@ -240,7 +245,7 @@ class OBJECT_OT_General(bpy.types.Operator):
         guiname, id = self.modetype.split(".")
         print (guiname, id)
         gui = getattr(bpy,guiname)
-        gui._command([int(id),])
+        gui._command([int(id),])#
 #        exec(guiname+"._command([int(id),])")
         return{'FINISHED'}
         
@@ -288,6 +293,7 @@ class blenderUI:
     softdir=None
     prefdir=None
     fileDresult=""
+    questionDresult=False
     notebook=None
     currentScroolbar={}
     widgetGap = 6
@@ -300,9 +306,118 @@ class blenderUI:
     region_type = "TOOLS"#_PROPS
     
 
-
+#    def _command(self,*args):
+#        overwrite
+#        pass
+    
     def no_action(self, *args, **kwargs):pass
+        
+#    def Quit(self):
+#        """ Close the windows"""
+#        Blender.Draw.Exit()
 
+#    def CoreMessage(self, evt, val):
+#        """ Hanlde the system event such as key or mouse position """
+#        #EXIT EVENT
+#        if len(self.currentScroolbar):
+#            if self.currentScroolbar["value"] is not None :
+#                self.currentScroolbar["value"].eventFilter(evt,val)
+#        if evt == Blender.Draw.ESCKEY or evt == Blender.Draw.QKEY:
+#           stop = Blender.Draw.PupMenu("OK?%t|Stop the script %x1")
+#           if stop == 1:
+#                self.Quit()
+#        #SCROLLING EVT
+##        if (evt == Blender.Draw.WHEELDOWNMOUSE):                         
+##            #Scroll area down
+##            if (self.ScrollState < 0):
+##                self.ScrollPos   = self.ScrollPos+self.ScrollInc
+##            Blender.Draw.Draw()
+##        elif (evt == Blender.Draw.WHEELUPMOUSE):                         
+##            #Scroll area up
+##            if (self.ScrollPos > 0):
+##                self.ScrollPos = self.ScrollPos-self.ScrollInc
+##            else: self.ScrollPos = 0
+##            Blender.Draw.Draw()
+##        if (evt == Blender.Draw.DOWNARROWKEY):                           
+##            #Scroll area down
+##            if (self.ScrollState < 0):
+##                self.ScrollPos   = self.ScrollPos+self.ScrollInc
+##            Blender.Draw.Draw()
+##        elif (evt == Blender.Draw.UPARROWKEY):                           
+##            #Scroll area up
+##            if (self.ScrollPos > 0):
+##                self.ScrollPos   = self.ScrollPos-self.ScrollInc
+##            else: self.ScrollPos = 0
+##            Blender.Draw.Draw()
+##        #MOUSE CLICK EVT
+#        elif (evt == Blender.Draw.LEFTMOUSE and val):                    
+#            #Calculate mouse position in this area
+#            areaVert        =  [item["vertices"] \
+#                for item in Blender.Window.GetScreenInfo() \
+#                if item["id"] == Blender.Window.GetAreaID()]
+#            MouseCor        = Blender.Window.GetMouseCoords()
+#            self.MousePos[0]     = MouseCor[0]-areaVert[0][0]
+#            self.MousePos[1]     = MouseCor[1]-areaVert[0][1]
+##            print "mouse", self.MousePos
+#            Blender.Draw.Draw()
+#        elif (evt == Blender.Draw.LEFTMOUSE and not val):                
+#            #If button up then clear mouse position
+#            self.MousePos[0]     = 0
+#            self.MousePos[1]     = 0
+#        elif (evt == Blender.Draw.RIGHTMOUSE and val):                   
+#            #Collapse or expand all subWindows based on popmenu choice
+#            result = Blender.Draw.PupMenu("Expand all|Collapse all|Exit",27)
+#            if (result == 1):
+#                for elem in self._layout:
+#                    if type(elem) is not list :
+#                        if elem["type"] == "frame":
+#                            elem["collapse"] = False
+#                self.ScrollPos = 0
+#            if (result == 2):
+#                for elem in self._layout:
+#                    if type(elem) is not list :
+#                        if elem["type"] == "frame":
+#                            elem["collapse"] = True
+#                self.ScrollPos = 0
+#            if (result == 3):
+#                self.Quit()
+#            Blender.Draw.Draw()
+#        elif (evt == Blender.Draw.HKEY and not val):
+#            pass#ShowHelp()
+#        elif (evt == Blender.Draw.RKEY and not val):
+#            pass
+#        elif (evt == Blender.Draw.AKEY and not val):
+#            pass
+#        elif (evt == Blender.Draw.PKEY and not val):
+#            pass
+#        elif (evt == Blender.Draw.MOUSEX or evt == Blender.Draw.MOUSEY):              
+#            pass
+#            #Update area if mouse is over it and scene or active object has changed
+#            #Set mouse position to zero to prevent LEFTMOUSE tab collapse flashing while moving
+#            self.MousePos[0]         = 0                         
+#            self.MousePos[1]         = 0
+##            CurrentScene        = Blender.Scene.GetCurrent()
+##            CurrentObject       = CurrentScene.objects.active
+##            try:
+##                CurrentMaterial = CurrentObject.getMaterials(1)[CurrentObject.activeMaterial-1]
+##                if (CurrentMaterial == None):   CurrentMaterial = CurrentObject.getData(False, True).materials[CurrentObject.activeMaterial-1]
+##            except:                             CurrentMaterial = ""
+##            if ((CurrentScene and LastScene != CurrentScene.name) or (CurrentObject and LastObject != CurrentObject.name) or (CurrentMaterial and LastMaterial != CurrentMaterial.name)):
+##                Draw()
+#
+    def getFlagAlignement(self,options):
+#        alignement = {"hleft_scale":c4d.BFH_LEFT|c4d.BFH_SCALE| c4d.BFV_MASK,
+#                  "hcenter_scale":c4d.BFH_CENTER|c4d.BFH_SCALE| c4d.BFV_MASK,
+#                  "hleft":c4d.BFH_LEFT| c4d.BFV_MASK,
+#                  "hfit":c4d.BFH_FIT| c4d.BFV_MASK,
+#                  "hfit_scale":c4d.BFH_SCALEFIT| c4d.BFV_MASK,
+#                  "hcenter":c4d.BFH_CENTER| c4d.BFV_MASK,
+#                  }
+#        if type(options) is int or options not in alignement :
+#            return options
+        return None#alignement[options]
+
+      
     def makeUpdateFunction(self,callback=None):
         if callback is None :
             return None
@@ -319,10 +434,9 @@ class blenderUI:
         if not title :
             title  = self.title        
         #how do we access it throught bpy?
-        setattr(bpy,title.replace(" ","_")+"ui",self)
+        setattr(bpy,title.replace(" ","_").replace(".","_")+"ui",self)
         setattr(bpy,"current_gui",self)
-        self.uiname = title.replace(" ","_")+"ui"
-        self.setupMenu()
+        self.uiname = title.replace(" ","_").replace(".","_")+"ui"
 
 
     def setupMenu(self):
@@ -333,10 +447,11 @@ class blenderUI:
 #        menuSetting = getattr(bpy.types.Scene,self.title.replace(" ","_")+"menu_settings")
         for k in lookat:
             lelem = menuDic[k]                  
-            idname = ("pyubic.menu_%s_%s" % (self.uiname,k))
+            idname = ("upy.menu_%s_%s" % (self.uiname,k))
 #                def func(self, context):
 #                    print("Hello World", self)
 #                    return {'FINISHED'}   
+            print ("idname ",idname)
             opclass = type("DynMT%s_%s" % (self.uiname,k), (MENU_OT_General, ), {"bl_idname": idname,
                                                                     "bl_label": k+".",})
 #                                                                    "execute": func})
@@ -344,7 +459,8 @@ class blenderUI:
             lelem = menuDic[k]
             for i,elem in enumerate(lelem):
                 if elem["sub"] is not None:
-                    idname = ("pyubic.sub_menu_%s_%d" % (self.uiname,i))
+                    idname = ("upy.sub_menu_%s_%d" % (self.uiname,i))
+                    print ("idname ",idname)
                     opclass = type("DynMT%s_%d" % (self.uiname,i), (MENU_OT_General, ), {"bl_idname": idname,
                                                                     "bl_label": k+"."+elem["name"],})
 #                                                                    "execute": func})
@@ -352,8 +468,7 @@ class blenderUI:
                 
                 
     def internal_createMenu(self,MenuOp,menuDic,k,sub="",menuOrder=None):
-#        print("createMenu ",k,"sub",sub)
-#        print (getattr(bpy,self.title.replace(" ","_")+"menu_current"))
+        print(self.uiname, "createMenu ",k,"sub",sub)        
         if menuOrder : 
             lookat = menuOrder
         else :
@@ -366,17 +481,18 @@ class blenderUI:
             if sub == elem["name"] :
                 #need to create whats in the submenu
                 for sub in elem['sub']:
-                    layout.operator("pyubic.push",
+                    layout.operator("upy.push",
                     text = elem['sub'][sub]["name"]).modetype = self.uiname+"."+str(elem['sub'][sub]["id"])
                 break
             else :
                 if elem["sub"] is not None:
                     setattr(bpy,self.title.replace(" ","_")+"menu_current",
                             k+"."+elem["name"]) 
-                    idname = ("pyubic.sub_menu_%s_%d" % (self.uiname,i))
-                    layout.menu(idname,text = elem["name"])
+                    idname = ("upy.sub_menu_%s_%d" % (self.uiname,i))
+                    layout.menu(idname,text = elem["name"])#.modetype = self.uiname
+                    
                 else :
-                    layout.operator("pyubic.push",
+                    layout.operator("upy.push",
                     text = elem["name"]).modetype = self.uiname+"."+str(elem["id"])
         
     def createMenu(self,menuDic,menuOrder=None):
@@ -401,8 +517,60 @@ class blenderUI:
 #            print ("menu ",k)
 #            setattr(bpy,self.title.replace(" ","_")+"menu_current",k+".")            
 #            setattr(bpy,self.title.replace(" ","_")+"menu_"+k,"")            
-            idname = ("pyubic.menu_%s_%s" % (self.uiname,k))
+            idname = ("upy.menu_%s_%s" % (self.uiname,k))
             self.current_layout.menu(idname,text=k)
+#        for k in lookat:
+#            Blender.Draw.PushButton(mitem,menuDic[mitem][0]["id"], x, 
+#                                        self.y, 75, 25)
+#            menuDic[k]
+#            pos={}
+#            pos["x"]=x
+#            pos["y"]=self.SubPosYInc-self.TitleHeight/2-1
+#            pos["w"]=75
+#            pos["h"]=25
+#            item = menuDic[k]
+#            menuDic[k] = [item,pos]
+#            self.drawLabel(k, x, self.SubPosYInc-self.TitleHeight/2-1, 75, 25)
+#            x = x + 75
+#        for k in lookat:
+#            mitem=menuDic[k]
+#            item = mitem[0]
+#            mitem = mitem[1]
+#            if (self.MousePos[0] > mitem["x"] and self.MousePos[0] < mitem["x"]+mitem["w"] \
+#                and self.MousePos[1] > mitem["y"] \
+#                and self.MousePos[1] < mitem["y"]+mitem["h"]):
+#                self.MousePos = [0, 0]                    
+#                self.menu_cb(menuDic,k)
+#        for k in lookat:
+#            menuDic[k] = menuDic[k][0]
+        
+#    def menu_cb(self,menu,menuId):
+#        listOptions =[]
+#        suboptions={}
+#        litem = menu[menuId][0]
+#        for i,item in enumerate(litem):
+##            print item
+#            listOptions.append(item["name"])
+#            if item["sub"] is not None :
+#                msubOptions = []
+#                suboptions[str(i+1)]={}
+#                for j,sub in enumerate(item['sub']):
+#                    suboptions[str(i+1)][j]=item['sub'][sub]
+#                    msubOptions.append(item['sub'][sub]["name"])
+#        choice = Blender.Draw.PupMenu('|'.join(listOptions))
+#        if choice == -1 :
+#            return
+#        elif str(choice) in list(suboptions.keys()):
+#            subchoice = Blender.Draw.PupMenu('|'.join(msubOptions))
+#            action = suboptions[str(choice)][subchoice-1]["action"]
+#            if action is not None:
+#                action(suboptions[str(choice)][subchoice-1]["id"])
+#        else :
+#            action = menu[menuId][0][choice-1]["action"]
+#            if action is not None :
+#                print(action,choice)
+#                action(choice)
+
 
     def checkwh(self,elem,w,h):
         """ Specific function for blender which check the size of the elem """
@@ -419,39 +587,62 @@ class blenderUI:
     def addVariable(self,type,value):
         """ Create a container for storing a widget states """
         return [type,value]
+#        if type == "col" or type == "color":
+#            var = bpy.props.FloatVectorProperty()#Blender.Draw.Create(value[0],value[1],value[2])
+#        elif type == "int":
+#            var =  bpy.props.IntProperty()
+#        elif type == "float":
+#            var =  bpy.props.FloatProperty()
+#        elif type == "str": 
+#            var =  bpy.props.StringProperty()
+#        elif type == "bool": 
+#            var =  bpy.props.BoolProperty()
+#        #add the var to scene...
+#        return var
 
     def addVariablePropToSc(self,elem,type,value):
+        if elem["type"] == "button":
+            return
         updateF = noaction#checkUIVar
         if "action" in elem:
             updateF = self.makeUpdateFunction(elem["action"])
             if updateF == None :
                 updateF = noaction
         name = elem["name"]
+        label = elem["name"]
+        if elem["label"] != None :
+            label = elem["label"]
 #        if len(name) > 31 :
 #            name = name [0:30]
-        propName = name.replace(" ","_")           
+        propName = name.replace(" ","_")            
         #maxLength is 31
+#        print ("add ",elem["name"],type,value)
         if type == "col" or type == "color":
-            setattr(bpy.types.Scene,propName,bpy.props.FloatVectorProperty(name=elem["label"],update=updateF,
+            setattr(bpy.types.Scene,propName,bpy.props.FloatVectorProperty(name=label,update=updateF,
                         step=1,precision = 3,min=0.,max=1.0,soft_min=0.,
-                        soft_max=1.0,subtype="COLOR"))
-            setattr(self,propName+"_o",None)
+                        soft_max=1.0,subtype="COLOR",default=value[:3],
+                        description = elem["tooltip"] ))
+            setattr(self,propName+"_o",value[:3])
             #setattr(bpy.types.Scene,propName+"_o",bpy.props.FloatVectorProperty())
 #            setattr(self,propName+"_o",None)
-        elif type == "int":
+        elif type == "int" or type == "liste":
             if elem["type"] == "pullMenu":
                 #setMenu
                 lMenu=[]
+                if not len(elem["value"]):
+                    elem["value"] = ["None"]
                 for i,m in enumerate(elem["value"]) :
                     l = (str(i),m,m)
                     lMenu.append(l)#return,name,description
                 if elem["action"] is not None :
                     setattr(bpy.types.Scene,propName,
-                        bpy.props.EnumProperty(items=lMenu,name=elem["label"],
-                        update=self.makeUpdateFunction(elem["action"])))
+                        bpy.props.EnumProperty(items=lMenu,name=elem["name"],
+                        update=self.makeUpdateFunction(elem["action"]),
+                        description = elem["tooltip"] ))
                 else :        
                     setattr(bpy.types.Scene,propName,
-                        bpy.props.EnumProperty(items=lMenu,name=elem["label"],update=updateF))
+                        bpy.props.EnumProperty(items=lMenu,name=elem["name"],update=updateF,
+                        description = elem["tooltip"] ))
                 
                 setattr(self,propName+"_o","0")
 #                setattr(bpy.types.Scene,propName+"_o",
@@ -459,20 +650,24 @@ class blenderUI:
 #                setattr(self,propName+"_o",None))
             elif elem["type"] == "checkbox":
 #                print (propName,name)
-                setattr(bpy.types.Scene,propName,bpy.props.BoolProperty(name=elem["label"],update=updateF))
+                setattr(bpy.types.Scene,propName,bpy.props.BoolProperty(name=label,update=updateF,
+                        description = elem["tooltip"],default= bool(value)))
                 setattr(self,propName+"_o",bool(value))
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.BoolProperty(name=name))
             elif elem["type"] == "sliders" or elem["type"] == "slidersInt":
                 setattr(bpy.types.Scene,propName,
-                                bpy.props.IntProperty(name=elem["label"],default=value, 
+                                bpy.props.IntProperty(default=value, 
                                 min=elem["mini"], max=elem["maxi"], 
                                 #soft_min=elem["mini"], soft_max=elem["maxi"], 
-                                step=elem["step"], update=updateF))
+                                step=elem["step"], update=updateF,
+                                description = elem["tooltip"] ))
                 setattr(self,propName+"_o",value)
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.IntProperty())
             else :
-                setattr(bpy.types.Scene,propName,bpy.props.IntProperty(name=elem["label"],default=value,
-                                                                       update=updateF))
+                setattr(bpy.types.Scene,propName,bpy.props.IntProperty(name=label,
+                                                                       default=value,
+                                                                       update=updateF,
+                                                                       description = elem["tooltip"] ))
                 setattr(self,propName+"_o",value)
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.IntProperty())
         elif type == "float":
@@ -480,31 +675,37 @@ class blenderUI:
 #                print (elem["name"],int(elem["precision"]),float(elem["mini"]),float(elem["maxi"]),
 #                float(elem["step"]),float(value))
                 setattr(bpy.types.Scene,propName,
-                                bpy.props.FloatProperty(name=elem["label"],default=float(value), 
+                                bpy.props.FloatProperty(default=float(value), 
                                 precision = int(elem["precision"]),
                                 min=float(elem["mini"]), max=float(elem["maxi"]), 
                                 #soft_min=elem["mini"], soft_max=elem["maxi"], 
-                                step=elem["step"], update=updateF))
+                                step=elem["step"], update=updateF,
+                        description = elem["tooltip"] ))
                 setattr(self,propName+"_o",value)
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.FloatProperty())
             else :
-                setattr(bpy.types.Scene,propName,bpy.props.FloatProperty(name=elem["label"],default=value,
-                                                                         update=updateF))
+                setattr(bpy.types.Scene,propName,bpy.props.FloatProperty(name=label,default=value,
+                                                                         update=updateF,
+                        description = elem["tooltip"] ))
                 setattr(self,propName+"_o",value)
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.FloatProperty())
-        elif type == "str": 
+        elif type == "str" or type == "filename": 
             setattr(bpy.types.Scene,propName,
-                    bpy.props.StringProperty(name=elem["label"],default=value,
-                                             update=updateF))
+                    bpy.props.StringProperty(default=value,
+                                             update=updateF,
+                        description = elem["tooltip"] ))
             setattr(self,propName+"_o",value)
 #            setattr(bpy.types.Scene,propName+"_o",bpy.props.StringProperty())
         elif type == "bool": 
             if elem["type"] == "frame":
-                setattr(bpy.types.Scene,propName+"_c",bpy.props.BoolProperty(name=elem["label"],
-                        description='Collapse the Frame', default=bool(elem["collapse"])))
+                setattr(bpy.types.Scene,propName+"_c",bpy.props.BoolProperty(name=name,
+                        description='Collapse the Frame', default=bool(elem["collapse"]),
+                         ))
             else :
-                setattr(bpy.types.Scene,propName+"_o",
-                        bpy.props.BoolProperty(name=elem["label"],default=value,update=checkUIVar))
+                print ("set bool",propName,value,bool(value))
+                setattr(bpy.types.Scene,propName,
+                        bpy.props.BoolProperty(default=value,update=checkUIVar,
+                        description = elem["tooltip"] ))
                 setattr(self,propName+"_o",bool(value))
 #                setattr(bpy.types.Scene,propName+"_o",bpy.props.BoolProperty())
 #        setattr(self,propName,None)
@@ -512,7 +713,7 @@ class blenderUI:
             
     def startBlock(self,m=1,n=1):
         self.current_layout = self.layout.row(align=True)
-        self.current_layout.alignment = 'LEFT'#'EXPAND'
+        self.current_layout.alignment = 'EXPAND'#'LEFT'#'EXPAND'
 
     def endBlock(self):
         pass
@@ -532,9 +733,13 @@ class blenderUI:
         @param h: force the height of the item
         """
         w,h = self.checkwh(elem,w,h)
+        name = elem["name"]
+        if elem["label"] != None:
+            name = elem["label"]
 
-        self.current_layout.operator("pyubic.push",
-                                     text = elem["name"]).modetype = self.uiname+"."+str(elem["id"])
+        if elem["show"]:
+           self.current_layout.operator("upy.push",
+                                     text = name).modetype = self.uiname+"."+str(elem["id"])
 #        args = (elem["name"], elem["id"], int(x), int(y), int(w), int(h),\
 #                elem["tooltip"])
 #        if self.subdialog : 
@@ -555,8 +760,15 @@ class blenderUI:
         @param w: force the width of the item
         @type  h: int
         @param h: force the height of the item
-        """
-        pass
+        """     
+        w,h = self.checkwh(elem,w,h)
+        args = (elem["name"], elem["id"], int(x), int(y), int(w), int(h),\
+                elem["variable"].val, elem["tooltip"])
+        if self.subdialog :
+            elem["variable"]=self.check_addAction(Blender.Draw.Toggle, \
+                                                  elem["action"], *args)
+        else :
+            elem["variable"]=Blender.Draw.Toggle(*args)
 
     def drawCheckBox(self,elem,x,y,w=None,h=None):#drawGLCheckBox
 #        if not elem["show"]:
@@ -664,7 +876,8 @@ class blenderUI:
 
         w,h = self.checkwh(elem,w,h)
         scn = bpy.context.scene
-        self.current_layout.prop(scn, elem["name"].replace(" ","_"))        
+        if elem["show"]:
+            self.current_layout.prop(scn, elem["name"].replace(" ","_"))        
         #prop_enum
 #        
 #        menuitems = ""
@@ -720,24 +933,8 @@ class blenderUI:
         @type  h: int
         @param h: force the height of the item
         """   
-        TitleColor  = Theme.Get()[0].get("BUTS").header        
-        BGL.glColor3f(TitleColor[0]/256., TitleColor[1]/256.0, TitleColor[2]/256.0)
-        endGap      = 5
-        w,h = self.checkwh(elem,w,h)
-        if elem["value"] == "H":  
-            BGL.glLineWidth(1)
-            BGL.glBegin(BGL.GL_LINES)
-            BGL.glVertex2i(x+endGap, y)
-            BGL.glVertex2i(x+self.w-endGap, y)
-            BGL.glEnd()
-        elif elem["value"] == "V":
-            BGL.glLineWidth(1)
-            BGL.glBegin(BGL.GL_LINES)
-            BGL.glVertex2i(x, y+endGap)
-            BGL.glVertex2i(x, y+self.h-endGap)
-            BGL.glEnd()
-        if elem["label"] is not None :
-            self.drawText(elem,x+endGap,y+4,w=w,h=h)
+        if elem["show"]:
+            self.current_layout.separator()
 
     def drawLabel(self,elem,x,y,w=None,h=None):
         """ Draw a Label
@@ -759,14 +956,14 @@ class blenderUI:
             label = elem["label"]
             w,h = self.checkwh(elem,w,h)
 #        Blender.BGL.glRasterPos2i(x,y+5)
-        self.current_layout.label(label)
+        if elem["show"]:
+            self.current_layout.label(label)
 #        elem["width"] = 50#len(elem["label"])* 3 #TODO find a more flexible solution
 
     def drawElem(self,elem,x,y,w=None,h=None):
-        scn = bpy.context.scene
-        #should I put the val here ?
-        self.setVal(elem,elem["value"])
-        self.current_layout.prop(scn, elem["name"].replace(" ","_"))        
+        scn = bpy.context.scene    
+        if elem["show"]:
+            self.current_layout.prop(scn, elem["name"].replace(" ","_"))       
 
     def drawString(self,elem,x,y,w=None,h=None):
         """ Draw a String input elem
@@ -784,19 +981,6 @@ class blenderUI:
 #        print (elem["variable"])
     #        if elem["variable"] is not None :
         self.drawElem(elem,x,y,w=w,h=h)
-
-#        print ("PANEL "+elem["name"].replace(" ","_"))
-#        print(self.panel)
-#        print (hasattr(self.panel,elem["name"].replace(" ","_")))
-#        w,h = self.checkwh(elem,w,h)
-#        args = (elem["name"], elem["id"],int(x), int(y), int(w), int(h),
-#                elem["variable"].val,self.maxStrLenght,elem["tooltip"])
-#        if self.subdialog :
-#            elem["variable"]= self.check_addAction(Blender.Draw.String,
-#                    elem["action"], *args)
-#        else :
-#            elem["variable"]= Blender.Draw.String(*args)
-        pass
             
     def drawStringArea(self,elem,x,y,w=None,h=None):
         """ Draw a String Area input elem, ie multiline
@@ -893,11 +1077,11 @@ class blenderUI:
         @param errormsg: the messag to display
         """  
 #        Blender.Draw.PupMenu("ERROR: "+errormsg)
-        bpy.ops.pyubic.dialog_message('INVOKE_DEFAULT',messageString = "ERROR: "+errormsg,
+        bpy.ops.upy.dialog_message('INVOKE_DEFAULT',messageString = "ERROR: "+errormsg,
                                       width=300, height=300)
         return
         
-    def drawQuestion(self,title="",question=""):
+    def drawQuestionOld(self,title="",question=""):
         """ Draw a Question message dialog, requiring a Yes/No answer
         @type  title: string
         @param title: the windows title       
@@ -907,18 +1091,84 @@ class blenderUI:
         @rtype:   bool
         @return:  the answer     
         """            
-        block=[]
-        for line in question.split('\n'):
-            if len(line) > 30 :
-                block.append(line[0:28]+"-")
-                block.append("-"+line[28:])
-            else :
-                block.append(line)
-        bpy.ops.pyubic.dialog_message('INVOKE_DEFAULT',messageString = question,
+#        block=[]
+#        for line in question.split('\n'):
+#            if len(line) > 30 :
+#                block.append(line[0:28]+"-")
+#                block.append("-"+line[28:])
+#            else :
+#                block.append(line)
+        res = bpy.ops.upy.dialog_message('INVOKE_DEFAULT',messageString = question, question=True,
                                       width=300, height=300)
-        
-        #return Blender.Draw.PupBlock(title, block)
-        
+        if res == {"FINISHED"} : 
+            return True
+        else : return False
+    
+    def drawQuestion_cb(self,*args):
+        self.questionDresult = True
+    
+    def drawQuestion(self, title="",question="", callback=None):
+        """ Draw a File input dialog
+        @type  label: string
+        @param label: the windows title       
+        @type  callback: function
+        @param callback: the callback function to call
+        @type  suffix: string
+        @param suffix: suffix of filename
+        #work only in main windows..? not from a pull down menu.how to triger?
+        """ 
+        self.questionDresult = False        
+        if callback is None :
+            callback = self.drawQuestion_cb
+#        idname = "upy.%s" % (self.uiname.lower()+title.lower().replace(" ","_"))
+        idname = "upy.drawquestionop"# % (self.uiname.lower()+title.lower().replace(" ","_"))
+        classname = "drawQuestionOp"#self.uiname+label.lower().replace(" ","_")
+#        print ("callback is ",callback)
+        #how to change the exec?
+        question = question.replace("\n","\\n")
+        ldic = locals()
+        gdic = globals()
+        ldic["callback"] = callback
+        gdic["callback"] = callback
+        clascode = ""
+#        if not hasattr(bpy.ops,idname) :
+        clascode += "class Dialog%s (bpy.types.Operator):\n" % classname
+        clascode += "    bl_label = '%s'\n" % title
+        clascode += "    bl_idname =   '%s'\n" %  idname
+        clascode += "    bl_optons =   {'UNDO','REGISTER','BLOCKING'}\n"
+        clascode += "    messageString = bpy.props.StringProperty()\n"
+        clascode += "    width = bpy.props.IntProperty(default = 300)\n"
+        clascode += "    height = bpy.props.IntProperty(default = 20)\n"
+        clascode += "    def draw(self, context):\n"
+        clascode += "        layout = self.layout\n"
+        clascode += '        lines = self.messageString.split("\\n")\n'
+        clascode += "        for line in lines :\n"
+        clascode += "            row = layout.row()\n"
+        clascode += "            row.label(line)\n"
+        clascode += "    def execute(self, context):\n"
+        clascode += "        message = '%s' % (self.messageString)\n"
+        clascode += "        self.report({'INFO'}, message)\n"
+        clascode += "        if callback:\n"
+        clascode += "            print ('callback',True)\n"
+        clascode += "            callback(True)\n"
+#        clascode += "        else : print ('filename ',self.filepath)\n"
+        clascode += "        return {'FINISHED'}\n"
+        clascode += "    def cancel(self, context):\n"
+        clascode += "        message = '%s' % (self.messageString)\n"
+        clascode += "        self.report({'INFO'}, message)\n"
+        clascode += "        if callback:\n"
+        clascode += "            print ('callback',False)\n"
+        clascode += "            callback(False)\n"
+#        clascode += "        else : print ('filename ',self.filepath)\n"
+        clascode += "        return {'FINISHED'}\n"
+        clascode += "    def invoke(self, context, event):\n"
+        clascode += "        wm = context.window_manager\n"
+        clascode += "        return wm.invoke_props_dialog(self,width=self.width, height=self.height)\n"
+        clascode += "bpy.utils.register_class(Dialog%s)\n" % classname
+        clascode += "bpy.ops.%s('INVOKE_AREA',messageString='%s')\n" % (idname,question)
+        exec(clascode, gdic,ldic)
+        return self.questionDresult
+      
     def drawMessage(self,title="",message=""):
         """ Draw a message dialog
         @type  title: string
@@ -936,11 +1186,19 @@ class blenderUI:
 #            else :
 #                block.append(line)
 #        bpy.ops.('INVOKE_DEFAULT')
-        bpy.ops.pyubic.dialog_message('INVOKE_DEFAULT',messageString = message,
+#        setattr(bpy.types.Scene,propName,bpy.props.BoolProperty(update=updateF,
+#                    step=1,precision = 3,min=0.,max=1.0,soft_min=0.,
+#                    soft_max=1.0,subtype="COLOR"))
+#        setattr(self,propName+"_o",None)
+
+        bpy.ops.upy.dialog_message('INVOKE_DEFAULT',messageString = message,
                                       width=300, height=300)
 #        retval = Blender.Draw.PupBlock(title, block)
         return
-
+        
+    def drawInputQuestion_cb(self,*args):
+        print (args)
+    
     def drawInputQuestion(self,title="",question="",callback=None):
         """ Draw an Input Question message dialog, requiring a string answer
         @type  title: string
@@ -951,13 +1209,116 @@ class blenderUI:
         @rtype:   string
         @return:  the answer     
         """                  
-        result = None#Blender.Draw.PupStrInput(question, "", 100)
-        if result :
-            if callback is not None :
-                callback(result)
-            else :
-                return result
+        self.questionDresult = False        
+        if callback is None :
+            callback = self.drawInputQuestion_cb
+#        idname = "upy.%s" % (self.uiname.lower()+title.lower().replace(" ","_"))
+        idname = "upy.drawinputquestionop"# % (self.uiname.lower()+title.lower().replace(" ","_"))
+        classname = "drawinputQuestionOp"#self.uiname+label.lower().replace(" ","_")
+#        print ("callback is ",callback)
+        #how to change the exec?
+        ldic = locals()
+        gdic = globals()
+        ldic["callback"] = callback
+        gdic["callback"] = callback
+        setattr(bpy.types.Scene,"drawinputquestionopr",
+                    bpy.props.StringProperty(name="enter a geom name",default="..."))
+        clascode = ""
+#        if not hasattr(bpy.ops,idname) :
+        clascode += "class Dialog%s (bpy.types.Operator):\n" % classname
+        clascode += "    bl_label = '%s'\n" % title
+        clascode += "    bl_idname =   '%s'\n" %  idname
+        clascode += "    bl_optons =   {'UNDO','REGISTER','BLOCKING'}\n"
+        clascode += "    messageString = bpy.props.StringProperty()\n"
+        clascode += "    answerString = bpy.props.StringProperty()\n"        
+        clascode += "    width = bpy.props.IntProperty(default = 300)\n"
+        clascode += "    height = bpy.props.IntProperty(default = 20)\n"
+        clascode += "    def draw(self, context):\n"
+        clascode += "        layout = self.layout\n"
+        clascode += '        lines = self.messageString.split("\\n")\n'
+        clascode += "        for line in lines :\n"
+        clascode += "            row = layout.row()\n"
+        clascode += "            row.label(line)\n"
+        clascode += "        row = layout.row()\n"
+        clascode += "        row.prop(self,'answerString')\n"        
+        clascode += "    def execute(self, context):\n"
+        clascode += "        message = '%s' % (self.messageString)\n"
+        clascode += "        self.report({'INFO'}, message)\n"
+        clascode += "        if callback:\n"
+#        clascode += "            print ('callback',self.filepath)\n"
+        clascode += "            callback(self.answerString)\n"
+#        clascode += "        else : print ('filename ',self.filepath)\n"
+        clascode += "        return {'FINISHED'}\n"
+        clascode += "    def invoke(self, context, event):\n"
+        clascode += "        wm = context.window_manager\n"
+        clascode += "        return wm.invoke_props_dialog(self,width=self.width, height=self.height)\n"
+        clascode += "bpy.utils.register_class(Dialog%s)\n" % classname
+        clascode += "bpy.ops.%s('INVOKE_DEFAULT',messageString='%s',answerString='')\n" % (idname,question)#INVOKE_AREA
+        exec(clascode, gdic,ldic)
+        return True
 
+#    def drawProgressBar(self,title="Progress",question="",callback=None):
+#        """ Draw an Input Question message dialog, requiring a string answer
+#        @type  title: string
+#        @param title: the windows title       
+#        @type  question: string
+#        @param question: the question to display
+#        
+#        @rtype:   string
+#        @return:  the answer     
+#        """                  
+##        self.questionDresult = False        
+##        if callback is None :
+##            callback = self.drawInputQuestion_cb
+##        idname = "upy.%s" % (self.uiname.lower()+title.lower().replace(" ","_"))
+#        idname = "upy.progressop"# % (self.uiname.lower()+title.lower().replace(" ","_"))
+#        classname = "ProgressOp"#self.uiname+label.lower().replace(" ","_")
+##        print ("callback is ",callback)
+#        #how to change the exec?
+#        ldic = locals()
+#        gdic = globals()
+#        ldic["callback"] = callback
+#        gdic["callback"] = callback
+#        setattr(bpy.types.Scene,"progressop",
+#                    bpy.props.IntProperty(default=0, 
+#                                min=0, max=100, 
+#                                #soft_min=elem["mini"], soft_max=elem["maxi"], 
+#                                step=1))
+#        setattr(bpy.types.Scene,"labelstring",
+#                    bpy.props.StringProperty())
+#        clascode = ""
+##        if not hasattr(bpy.ops,idname) :
+#        clascode += "class Dialog%s (bpy.types.Operator):\n" % classname
+#        clascode += "    bl_label = '%s'\n" % title
+#        clascode += "    bl_idname =   '%s'\n" %  idname
+#        clascode += "    bl_optons =   {'UNDO','REGISTER','BLOCKING'}\n"
+#        clascode += "    messageString = bpy.props.StringProperty()\n"
+#        clascode += "    answerString = bpy.props.StringProperty()\n"    
+##        clascode += "    progress = bpy.props.IntProperty()\n"    
+#        
+#        clascode += "    width = bpy.props.IntProperty(default = 300)\n"
+#        clascode += "    height = bpy.props.IntProperty(default = 20)\n"
+#        clascode += "    def draw(self, context):\n"
+#        clascode += "        layout = self.layout\n"
+#        clascode += "        row = layout.row()\n"
+#        clascode += "        row.label(bpy.types.Scene.labelstring)\n"
+#        clascode += "        row.prop(bpy.types.Scene,'progressop')\n"        
+#        clascode += "    def execute(self, context):\n"
+#        clascode += "        message = '%s' % (self.messageString)\n"
+#        clascode += "        self.report({'INFO'}, message)\n"
+##        clascode += "        #if callback:\n"
+##        clascode += "            print ('callback',self.filepath)\n"
+##        clascode += "        #    callback(self.answerString)\n"
+##        clascode += "        else : print ('filename ',self.filepath)\n"
+#        clascode += "        return {'FINISHED'}\n"
+#        clascode += "    def invoke(self, context, event):\n"
+#        clascode += "        wm = context.window_manager\n"
+#        clascode += "        return wm.invoke_props_dialog(self,width=self.width, height=self.height)\n"
+#        clascode += "bpy.utils.register_class(Dialog%s)\n" % classname
+#        clascode += "bpy.ops.%s('INVOKE_DEFAULT',messageString='%s',answerString='')\n" % (idname,question)#INVOKE_AREA
+#        exec(clascode, gdic,ldic)
+#        return True
+        
     def getSelectTxt(self):
         """ specific function that proposed all text open in blender Text windows,
         and return the selected one from a pull-down menu
@@ -1046,7 +1407,8 @@ class blenderUI:
         """           
         w, h = self.checkwh(elem,w,h)
         scn = bpy.context.scene
-        self.current_layout.prop(scn, elem["name"].replace(" ","_"))        
+        if elem["show"]:
+            self.current_layout.prop(scn, elem["name"].replace(" ","_"))        
         
         #print "color",elem["id"], x, y, w, h, elem["variable"].val,elem["action"]
 #        args = (elem["id"], int(x), int(y), int(w), int(h), elem["variable"].val)
@@ -1221,12 +1583,23 @@ class blenderUI:
             toprow.prop(scn, cname, icon="TRIA_DOWN", icon_only=False,
                 emboss=False)
             for k,blck in enumerate(bloc["elems"]):
-    #            cmds.rowLayout(numberOfColumns=len(blck))
-#                self.startBlock(m=len(blck))
-                self.current_layout = box.row()
-                self.current_layout.alignment = 'LEFT'
-                for index, item in enumerate(blck):
-                    self._drawElem(item,x,y)
+                if type(blck) is list :
+                    self.current_layout = box.row()
+    #                self.current_layout.alignment = 'LEFT'
+                    for index, item in enumerate(blck):
+                        self._drawElem(item,x,y)
+                else : #dictionary: multiple line / format dict?
+                    if "0" in blck:
+                        y = self._drawGroup(blck,x,y)
+                    else :
+                        for k,bl in enumerate(blck["elems"]):
+                            self.current_layout = box.row()
+                            for index, item in enumerate(bl):
+                                self._drawElem(item,x,y)
+                                
+
+
+
 #                self.endBlock()
 #        self.endBlock()
 #        self.LayoutChanged(bloc["id"])
@@ -1568,7 +1941,7 @@ class blenderUI:
         """ 
         if callback is None :
             callback = self.fileDialog_cb
-        idname = "pyubic.%s" % (self.uiname.lower()+label.lower().replace(" ","_"))
+        idname = "upy.%s" % (self.uiname.lower()+label.lower().replace(" ","_"))
         classname = self.uiname+label.lower().replace(" ","_")
         print ("callback is ",callback)
         #how to change the exec?
@@ -1709,7 +2082,8 @@ class blenderUI:
         if elem["type"] == "pullMenu":
             print ("menu",elem)
             print ("value",val)
-            
+            if type(val) == str and len(val) == 0:
+                return None
             return int(val) #for menu...as its start at 1
         else :
             return int(getattr(scn,elem["name"].replace(" ","_")))
@@ -1723,24 +2097,27 @@ class blenderUI:
         @param val: the new Int value
         """ 
         scn = bpy.context.scene
+#        setattr(scn,elem["name"].replace(" ","_"),int(val))
         if elem["type"] == "pullMenu":
-            propName = elem["name"].replace(" ","_")
-            lMenu=[]
-            for i,m in enumerate(elem["value"]) :
-                l = (str(i),m,m)
-                lMenu.append(l)#return,name,description
-            print ("default",elem["value"][val])
-            if elem["action"] is not None :
-                setattr(bpy.types.Scene,propName,
-                    bpy.props.EnumProperty(items=lMenu,name=elem["name"],
-                    #default=elem["value"][val],
-                    update=self.makeUpdateFunction(elem["action"])))
-            else :
-                setattr(bpy.types.Scene,propName,
-                    bpy.props.EnumProperty(items=lMenu,
-                        #default=elem["value"][val],
-                        name=elem["name"],
-                        update=checkUIVar))            
+            setattr(scn,elem["name"].replace(" ","_"),str(val))
+#            propName = elem["name"].replace(" ","_")
+#            lMenu=[]
+#            for i,m in enumerate(elem["value"]) :
+#                l = (str(i),m,m)
+#                lMenu.append(l)#return,name,description
+#            print ("default",elem["value"][val])
+#            if elem["action"] is not None :
+#                setattr(bpy.types.Scene,propName,
+#                    bpy.props.EnumProperty(items=lMenu,name=elem["name"],
+#                    default=elem["value"][val],
+#                    update=self.makeUpdateFunction(elem["action"])))
+#            else :
+#                setattr(bpy.types.Scene,propName,
+#                    bpy.props.EnumProperty(items=lMenu,
+#                        default=elem["value"][val],
+#                        name=elem["name"],
+#                        update=checkUIVar))
+#            setattr(scn,elem["name"].replace(" ","_"),int(val))
         else :
             setattr(scn,elem["name"].replace(" ","_"),int(val))
             
@@ -1867,6 +2244,7 @@ class blenderUI:
 #        Blender.Window.QRedrawAll()  
 #        Blender.Redraw()
 
+    @classmethod
     def _restore(self,rkey,dkey=None):
         """
         Function used to restore the windows data, usefull for plugin
@@ -1878,15 +2256,15 @@ class blenderUI:
         if hasattr(bpy,rkey):
             obj = bpy.__dict__[rkey]
             if dkey is not None:
-                if dkey in bpy.__dict__[rkey] :
-                    return  bpy.__dict__[rkey][dkey]       
+                if dkey in obj :
+                    return  obj[dkey]       
                 else :
-                    return None
+                    return obj
             return obj
         else :
             return None
 
-
+    @classmethod
     def _store(self,rkey,dict):
         """
         Function used to store the windows data, usefull for plugin
@@ -1899,13 +2277,20 @@ class blenderUI:
         
     def close(self,*args):
         """ Close the windows"""
-        if not self.subdialog :
-#            print ("try to remove %s"%self.uiname)
-#            bpy.utils.unregister_class(type(bpy.myGuiui.panel))
+        print ("closing ",self, self.uiname,self.subdialog)
+        try :
             exec("bpy.utils.unregister_class(type(bpy.%s.panel))"%self.uiname)
-        else :
-            #should stop drawing it
+        except :
+            print ("not a dialog %s"%self.uiname)
+        if self.subdialog :
             self.drawUIblock = False
+#        if not self.subdialog :
+#            print ("try to remove %s"%self.uiname)
+##            bpy.utils.unregister_class(type(bpy.myGuiui.panel))
+#            exec("bpy.utils.unregister_class(type(bpy.%s.panel))"%self.uiname)
+#        else :
+#            #should stop drawing it
+#            self.drawUIblock = False
 #
 #    def drawSubDialogUI(self):
 #        Blender.Draw.UIBlock(self._createLayout, mouse_exit=0)
@@ -1926,9 +2311,9 @@ class blenderUI:
 #        print ("do i have a panel id",dial.panel.bl_idname)
 #        operator = getattr(bpy.ops,dial.panel.bl_idname)
 #        operator('INVOKE_DEFAULT')
-        setattr(bpy,dial.uiname,dial)
-        bpy.ops.pyubic.subdialog('INVOKE_DEFAULT',subdialname=dial.uiname)
-
+#        setattr(bpy,dial.uiname,dial)
+#        bpy.ops.pyubic.subdialog('INVOKE_DEFAULT',subdialname=dial.uiname)
+        dial.display()
 #        
 #        sub=[]
 #        if dial.block  :
@@ -1999,9 +2384,12 @@ class blenderUIDialog(blenderUI,uiAdaptor):
         if "title" in kw.keys():
             self.title= kw["title"]
         else :
-            self.title= "pyubic_blenderUI"
+            self.title= "upy_blenderUI"
         self.SetTitle(self.title)    
         print ("title",self.title)
+
+
+
 #
 #class blenderUISubDialog(blenderUIDialog):
 #    def __init__(self,name):
