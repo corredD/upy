@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """
     Copyright (C) <2010>  Autin L. TSRI
     
@@ -16,12 +16,6 @@
 
     You should have received a copy of the GNU General Public License
     along with upy.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
-"""
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Dec  5 23:30:44 2010
-
-@author: Ludovic Autin - ludovic.autin@gmail.com
 """
 import sys
 import os
