@@ -1992,32 +1992,86 @@ class blenderHelper(Helper):
         o.location = (float(c[0]),float(c[1]),float(c[2]))
 
     
-#    def instancesSphere(self,name,centers,radii,meshsphere,colors,scene,parent=None):
-#        sphs=[]
-#        k=0
-#        mat = None
-#        if len(colors) == 1:
-#            mat = self.addMaterial('mat_'+name,colors[0])
-#        for j in range(len(centers)):
-#            spname = name+str(j)
-#            atC=centers[j]
-#            #meshsphere is the object which is link to the mesh
-#            mesh=Mesh.Get("mesh_"+meshsphere.getName().split("_")[1])    
-#            #"mesh_"+name     OR use shareFrom    
-#            #mesh=Mesh.Get(mesh)
-#            OBJ=Object.New('Mesh',spname)
-#            OBJ.link(mesh)
-#            #OBJ=scene.objects.new(mesh,spname)
-#            OBJ.setLocation(float(atC[0]),float(atC[1]),float(atC[2]))
-#            OBJ.setSize(float(radii[j]),float(radii[j]),float(radii[j]))
-#            #OBJ=Object.New('Mesh',"S_"+fullname)   
+    def instancesSphere(self,name,centers,radii,meshsphere,colors,scene,parent=None):
+        sphs=[]
+        #k=0
+        rad=1
+        mat = None
+        #if len(colors) == 1:
+        #    mat = self.addMaterial('mat_'+name,colors[0])
+        for j in range(len(centers)):
+            spname = name+str(j)
+            atC=centers[j]
+            #meshsphere is the object which is link to the mesh
+            mesh=meshsphere.data#Mesh.Get("mesh_"+meshsphere.getName().split("_")[1])   
+            OBJ=bpy.data.objects.new(spname,mesh)
+            #"mesh_"+name     OR use shareFrom    
+            #mesh=Mesh.Get(mesh)
+            #OBJ=Object.New('Mesh',spname)
+            #OBJ.link(mesh)
+            #OBJ=scene.objects.new(mesh,spname)
+            OBJ.location=(float(atC[0]),float(atC[1]),float(atC[2]))
+            if len(radii) == 1 :
+                rad = radii[0]
+            elif j >= len(radii) :
+                rad = radii[0]
+            else :
+                rad = radii[j]            
+            OBJ.scale=(float(rad),float(rad),float(rad))
+            #OBJ=Object.New('Mesh',"S_"+fullname)   
 #            if mat == None : mat = self.addMaterial("matsp"+str(j),colors[j])
 #            OBJ.setMaterials([mat])
 #            OBJ.colbits = 1<<0
-#            sphs.append(OBJ)
-#        self.AddObject(sphs,parent=parent)
-#        return sphs
-#    
+            sphs.append(OBJ)
+        self.AddObject(sphs,parent=parent)
+        return sphs
+
+    def updateInstancesSphere(self,name,sphs,centers,radii,meshsphere,
+                        colors,scene,parent=None,delete=True,**kw):
+        mat = None
+#        if len(colors) == 1:
+#            mat = self.retrieveColorMat(colors[0])
+#            if mat == None and colors[0] is not None:        
+#                mat = self.addMaterial('mat_'+name,colors[0])
+        delete = True
+        if "delete" in kw :
+            delete = kw["delete"]
+        for i in range(len(centers)):
+            if len(radii) == 1 :
+                rad = radii[0]
+            elif i >= len(radii) :
+                rad = radii[0]
+            else :
+                rad = radii[i]            
+            if i < len(sphs):
+                sphs[i].location=(float(centers[i][0]),float(centers[i][1]),float(centers[i][2]))
+                sphs[i].scale=(float(rad),float(rad),float(rad))
+#                if mat == None : 
+#                    if colors is not None and i < len(colors) and colors[i] is not None : 
+#                        mat = self.addMaterial("matsp"+str(i),colors[i])
+#                if colors is not None and i < len(colors) and colors[i] is not None : 
+#                    self.colorMaterial(mat,colors[i])
+                #texture[1010] = mat
+                self.toggleDisplay(sphs[i],True)
+            else :
+                sphs.append(bpy.data.objects.new(name+str(i),meshsphere.data))
+                sphs[i].location=(float(centers[i][0]),float(centers[i][1]),float(centers[i][2]))
+                sphs[i].scale=(float(rad),float(rad),float(rad))
+#                if mat == None :
+#                    if colors is not None and  i < len(colors) and colors[i] is not None : 
+#                        mat = self.addMaterial("matsp"+str(i),colors[i])
+#                sphs[i].setMaterials([mat])
+                self.addObjectToScene(scene,sphs[i],parent=parent)
+        if len(centers) < len(sphs) and delete :
+            #delete the other ones ?
+            for i in range(len(centers),len(sphs)):
+                if delete : 
+                    obj = sphs.pop(i)
+                    self.deleteObject(obj)
+                else :
+                    self.toggleDisplay(sphs[i],False)
+        return sphs
+        
 #    def clonesAtomsSphere(self,name,iMe,x,scn,armObj,scale,Res=32,R=None,join=0):
 #        pass
 #         

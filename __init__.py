@@ -153,8 +153,17 @@ def getUClass(host,pref=None):
             #from upy.softimage.v2013.softimageUI import softimageUIDialog as adaptor
             from upy.pythonUI.qtUI import qtUIDialog as adaptor          
     elif host=='3dsmax':
+        import MaxPlus
+        release = MaxPlus.Core.EvalMAXScript("getDir #maxData").Get()
         #from upy.autodesk3dsmax.v2013.maxUI import maxUIDialog as adaptor
-        from upy.autodesk3dsmax.v2015.maxUI import maxUI as adaptor
+        if release.find("2015") != -1 :
+            from upy.autodesk3dsmax.v2015.maxUI import maxUI as adaptor
+        elif release.find("2016") != -1 :
+            from upy.autodesk3dsmax.v2016.maxUI import maxUI as adaptor            
+        else :
+            print (release)
+            print ("not suppported")
+            adaptor = None
     elif host=='dejavu':
         from upy.dejavuTk.dejavuUI import dejavuUIDialog as adaptor
 #        print ("ok",adaptor)
@@ -221,7 +230,17 @@ def getHClass(host):
         if v >= (11,0,525,0):
             from upy.softimage.v2013.softimageHelper import softimageHelper as helper
     elif host=='3dsmax':
-        from upy.autodesk3dsmax.v2015.maxHelper import maxHelper as helper
+        import MaxPlus
+        release = MaxPlus.Core.EvalMAXScript("getDir #maxData").Get()
+        #from upy.autodesk3dsmax.v2013.maxUI import maxUIDialog as adaptor
+        if release.find("2015") != -1 :
+            from upy.autodesk3dsmax.v2015.maxHelper import maxHelper as helper
+        elif release.find("2016") != -1 :
+            from upy.autodesk3dsmax.v2016.maxHelper import maxHelper as helper   
+        else :
+            print (release)
+            print ("not suppported")
+            helper = None        
     elif host=='dejavu':
         from upy.dejavuTk.dejavuHelper import dejavuHelper as helper
     elif host == 'chimera':
@@ -336,7 +355,17 @@ def getPClass(host):
         if v >= (11,0,525,0) :
             from upy.softimage.v2013 import softimagePlugin as plugClass
     elif host=='3dsmax':
-        from upy.autodesk3dsmax.v2015 import maxPlugin as plugClass
+        import MaxPlus
+        release = MaxPlus.Core.EvalMAXScript("getDir #maxData").Get()
+        #from upy.autodesk3dsmax.v2013.maxUI import maxUIDialog as adaptor
+        if release.find("2015") != -1 :
+            from upy.autodesk3dsmax.v2015 import maxPlugin as plugClass
+        elif release.find("2016") != -1 :
+            from upy.autodesk3dsmax.v2016 import maxPlugin as plugClass   
+        else :
+            print (release)
+            print ("not suppported")
+            plugClass = None                  
     elif host=='dejavu':
         from upy.dejavuTk import dejavuPlugin as plugClass
     elif host == 'chimera':

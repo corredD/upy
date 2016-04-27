@@ -450,7 +450,7 @@ class c4dUI(gui.GeDialog):
 #        area = c4d.gui.GeUserArea()        
 #        self.AddUserArea(5000,flags=c4d.BFH_SCALEFIT,initw=100, inith=150)
 #        self.AttachUserArea(area, id=10, userareaflags=c4d.USERAREA_COREMESSAGE)
-#        self.area.DrawBitmap(bmp, 0, 0, 396, 60, 0, 0, 396, 60, mode=c4d.BMP_NORMALSCALED)#396?×?60
+#        self.area.DrawBitmap(bmp, 0, 0, 396, 60, 0, 0, 396, 60, mode=c4d.BMP_NORMALSCALED)#396x60
 ##        self.area.DrawText('welcome to ePMV '+__version__, 0, 0, flags=c4d.DRAWTEXT_STD_ALIGN)
 #        self.area.Init()
 #        self.area.InitValues()

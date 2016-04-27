@@ -1782,12 +1782,14 @@ class maxHelper(Helper):
         except :
             pass
         if ainstance : 
-            obj = self.Cylinder(name)
+            obj = self.Cylinder(name)[0]#node , obj
         else : 
-            obj = self.newInstance(name,instance,parent=parent)
+            obj = self.newInstance(name,instance,parent=parent)#node ,obj
         if radius is None :
             radius= 1.0
-        obj = self.getObject(obj)
+        print ("oneCylinder ",obj)
+        #obj = obj[0]#self.getObject(obj)
+        #print ("omeCylinder ",obj)        
         m=obj.GetWorldTM()
         m.ToIdentity()
         #SetWorldScale? which is actually working
@@ -2672,7 +2674,7 @@ maxOps.CollapseNode $ off
             print "getMeshVertice ",name,poly,node,mesh           
         else :
             mesh = poly
-        #print "updateMesh mesh", mesh,type(mesh)
+        print "getMeshVertices mesh", mesh,type(mesh),poly,type(poly)
         if  mesh is None:
             return []
         nv = mesh.GetNumVertices()
