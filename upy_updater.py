@@ -290,7 +290,8 @@ def get_current_version():
     upyversion = int(svn_info[4].split("Revision: ")[1])
     return afversion,epmvversion,upyversion
     
-if __name__ == "__main__":  
+if __name__ == "__main__":
+    #  python2.7 -i upy/upy_updater.py
     #cd ~/DEV/git_upy;python -i upy_updater.py;cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
     #scp *.zip acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
@@ -323,7 +324,7 @@ if __name__ == "__main__":
         up.writeUpdateNote(filename=zipoutput+"update_notes_"+"all"+".json",notes="new update systems")
     if do_update:
         liste_plugin={"upy":{"path":dupy,"svn":"https://github.com/corredD/upy/trunk","major":"0.7"},
-                      "autopack":{"path":dautopack,"svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.6"},
+                      "autopack":{"path":dautopack,"svn":"https://github.com/gj210/autoPACK/trunk/autopack","major":"0.7"},
                         "ePMV":{"path":depmv,"svn":"https://github.com/corredD/ePMV/trunk","major":"0.6"}}
 #        liste_plugin={"upy":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/upy","svn":"https://subversion.assembla.com/svn/upy/trunk/upy","major":"0.6"},
 #                      "AutoFill":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/AutoFill","svn":"https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean","major":"0.5"},

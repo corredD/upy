@@ -1412,6 +1412,7 @@ class c4dHelper(Helper):
             mat = self.retrieveColorMat(colors[0])
             if mat == None and colors[0] is not None:
                 mat = self.addMaterial('mat_' + name, colors[0])
+        color_count=0                
         for i in range(len(centers)):
             sphs.append(c4d.BaseObject(c4d.Oinstance))
             sphs[i][1001] = meshsphere
@@ -1427,10 +1428,13 @@ class c4dHelper(Helper):
             sphs[i][905] = c4d.Vector(float(rad), float(rad), float(rad))
             texture = sphs[i].MakeTag(c4d.Ttexture)
             # if mat == None :
-            if colors is not None and i < len(colors) and colors[i] is not None:
-                mat = self.addMaterial("matsp" + str(i), colors[i])
+            if colors is not None and colors[color_count] is not None and len(colors) != 1:
+                mat = self.addMaterial(name+"matsp" + str(i), colors[color_count])
             texture[1010] = mat  # mat[bl.retrieveColorName(sphColors[i])]
             self.addObjectToScene(scene, sphs[i], parent=parent)
+            color_count+=1
+            if (color_count>=len(colors)):
+                color_count=0
         return sphs
 
     def updateInstancesSphere(self, name, sphs, centers, radii, meshsphere,

@@ -34,6 +34,8 @@ import gzip
 import types
 
 import bpy
+import bpy_types
+
 from bpy import *
 import mathutils
 try :
@@ -64,7 +66,7 @@ class blenderHelper(Helper):
 
     SPLINE = 'Curve'
     INSTANCE = 'Mesh'
-    MESH = 'MESH'
+    MESH = bpy_types.Mesh
     EMPTY = 'EMPTY'
     POLYGON = 'MESH'
     host = "blender25"
@@ -299,16 +301,17 @@ class blenderHelper(Helper):
             print ("shader ",kw["shader"],self.vshade[kw["shader"]])
             
 
-    def getType(self,object):
+    def getType(self, object):
         if type(object) is str:
             object = self.getObject(object)
-        return object.type
+            return object.type
+        else:
+            return type(object)
 
     def getName(self,o):
-#        print ("getName ",o,type(o))
         if type(o) is str:
             return o
-        else :
+        else:
             return o.name
 
     def getMaterial(self,name):
