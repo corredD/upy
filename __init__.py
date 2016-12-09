@@ -35,6 +35,7 @@ Created on Sun Dec  5 23:30:44 2010
     
 """
 import os
+import sys
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -49,8 +50,21 @@ f = open(os.path.abspath(__path__[0])+os.sep+"version.txt","r")
 __version__ = f.readline()#"0.6.304"
 f.close()
 
-#print globals()
-
+def getExecutable():
+    host = retrieveHost()
+    path_to_exe = "python"
+    if host  == "c4d":
+        if sys.platform == "win32":
+            path_to_exe = os.path.dirname(sys.executable)+os.sep+"resource"+os.sep+"modules"+os.sep+"python"+os.sep+"Python.win64.framework"+os.sep+"python.exe"
+        #mac?
+    elif host == 'blender25':
+        path_to_exe = sys.executable
+    elif host == 'maya':
+        path_to_exe = "python"
+    elif host == 'maya':
+        path_to_exe = "python"     
+    return path_to_exe
+       
 def retrieveHost():
     """
     Retrieve the 3d host application where the script is running.
