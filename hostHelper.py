@@ -1312,7 +1312,7 @@ class Helper:
         name= "customMat"+str(color[0])+str(color[1])+str(color[2])
         return self.addMaterial(name.replace(".",""), color)
         
-    def addMaterial(self,name, color):
+    def addMaterial(self,name, color,**kw):
         """
         Add a material in the current document 
         
@@ -1326,7 +1326,12 @@ class Helper:
         @rtype:   hostMaterial
         @return:  the new material 
         """    
-        pass
+        return None
+
+    def createMaterial(self, name, color, type = "Phong",**kw):
+        #type can be lamber phong etc... need a dictionry
+        return self.addMaterial(name, color,type=type,**kw )
+
 
     def assignMaterial(self,object,matname,texture = True,**kw):
         """
@@ -1346,6 +1351,10 @@ class Helper:
         #verify if the mat exist, if the string.
         #apply it to the object
         pass
+
+    def assignNewMaterial(self, matname, color, type, object):
+        mat = self.createMaterial (matname, color, type)
+        self.assignMaterial (object,mat)
 
     def colorMaterial(self,mat,col):
         """
@@ -1640,7 +1649,8 @@ class Helper:
         @return:  the created text object
         """    
         text = None
-        return text
+        print ("not supported")
+        return [text,text]
         
     def Circle(self,name, rad=1.,**kw):
         """
@@ -2642,8 +2652,9 @@ class Helper:
         
         @rtype:   host Object,list of bone
         @return:  the created armature and the created bones      
-        """                
-        pass
+        """  
+        print "not supported"              
+        return None,None
         #return armObj,bones
     
     def oneMetaBall(self,metab,rad,coord,**kw):

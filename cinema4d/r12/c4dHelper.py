@@ -1490,7 +1490,7 @@ class c4dHelper(Helper):
 
     def getTubeProperties(self, coord1, coord2):
         # need ot overwrite in C4D
-        #        print coord1,coord1[0],type(coord1[0])
+        # print coord1,coord1[0],type(coord1[0])
         coord1 = self.ToVec(coord1)
         coord2 = self.ToVec(coord2)
         x1 = float(coord1[0])
@@ -1565,7 +1565,7 @@ class c4dHelper(Helper):
     def updateTubeMesh(self, mesh, cradius=1.0, quality=0, **kw):
         # change the radius to cradius
         mesh = self.getMesh(mesh)
-        print mesh.GetName(), cradius
+        # print mesh.GetName(), cradius
         #        mesh=geom.mesh.GetDown()#should be the cylinder
         # mesh[5000]=cradius
         #        cradius = cradius*1/0.2

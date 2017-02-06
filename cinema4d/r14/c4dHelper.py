@@ -1058,27 +1058,8 @@ class c4dHelper(Helper):
     def getTubeProperties(self, coord1, coord2):
         # need ot overwrite in C4D
         #        print coord1,coord1[0],type(coord1[0])
-        coord1 = self.ToVec(coord1)
-        coord2 = self.ToVec(coord2)
-        x1 = float(coord1[0])
-        y1 = float(coord1[1])
-        z1 = float(coord1[2])
-        x2 = float(coord2[0])
-        y2 = float(coord2[1])
-        z2 = float(coord2[2])
-        laenge = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2))
-        wsz = atan2((y1 - y2), (z1 - z2))
-        wz = acos((x1 - x2) / laenge)
-        offset = c4d.Vector(float(z1 + z2) / 2, float(y1 + y2) / 2, float(x1 + x2) / 2)
-        v_2 = c4d.Vector(float(z1 - z2), float(y1 - y2), float(x1 - x2))
-        v_2.Normalize()
-        v_1 = c4d.Vector(float(1.), float(0.), float(2.))
-        v_3 = c4d.Vector.Cross(v_1, v_2)
-        v_3.Normalize()
-        v_1 = c4d.Vector.Cross(v_2, v_3)
-        v_1.Normalize()
-        mx = c4d.Matrix(offset, v_1, v_2, v_3)
-        return laenge, mx
+        length, mx = self.getTubePropertiesMatrix(coord1,coord2)
+        return length, self.FromMat(mx.transpose())
 
     def updateTubeMesh(self, mesh, cradius=1.0, quality=0, **kw):
         # change the radius to cradius
