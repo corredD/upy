@@ -220,6 +220,25 @@ class blenderHelper(Helper):
         obj.empty_draw_size = 1.0
         return obj
 
+
+    def getPropertyObject(self, obj, key=["radius"]):
+        """
+        Return the  property "key" of the object obj
+        
+        * overwrited by children class for each host
+        
+        @type  obj: host Obj
+        @param obj: the object that contains the property
+        @type  key: string
+        @param key: name of the property        
+
+        @rtype  : int, float, str, dict, list
+        @return : the property value    
+        """          
+        allk=[]
+        for k in key:
+            allk.append(self.getProperty(obj, k))
+        return allk
 ##
 #    def getObjectMatrix(self,obj):
 #        t = obj.location
@@ -921,7 +940,8 @@ class blenderHelper(Helper):
 #            bpy.context.scene.objects.active = ob
 #            ob = bpy.context.object
             mat = self.getObjectMatrix(ob)#ob.matrix_world #cache problem ?
-            mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
+            #no transpose, from blender matrix is column major
+            #mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
             #print (ob,poly,mat)
             vertices = self.ApplyMatrix(vertices,mat)
 #        if edit and copy :
@@ -929,6 +949,24 @@ class blenderHelper(Helper):
 #            c4d.CallCommand(100004787) #delete the obj       
         return faces,vertices,vnormals
 
+    def addToGroup(self,master,objects,group=None):
+        if group is None :
+            master = self.getObject(master) 
+            namegroup = self.getName(master)+"_gr"
+            if not namegroup in bpy.data.groups: 
+               bpy.ops.group.create(name=namegroup)
+            group = bpy.data.groups[namegroup]
+            if not len(master.users_group):
+                group.objects.link(master)
+        for o in objects :
+            o =  self.getObject(o)
+            try :
+                group.objects.link(o)
+            except:
+                print ("in group already",o,o.name)
+            chs = self.getChilds(o)
+            self.addToGroup(master,chs,group=group)    
+            
 #    def ApplyMatrix(self,coords,mat):
 #        """
 #        Apply the 4x4 transformation matrix to the given list of 3d points.

@@ -63,7 +63,7 @@ class blenderHelper(Helper):
         This is the blend er helper Object. The helper 
         give access to the basic function need for create and edit a host 3d object and scene.
     """
-
+    SPHERE = 'Sphere'
     SPLINE = 'Curve'
     INSTANCE = 'Mesh'
     MESH = bpy_types.Mesh
@@ -300,13 +300,19 @@ class blenderHelper(Helper):
                 sv3d.show_textured_solid = True
             print ("shader ",kw["shader"],self.vshade[kw["shader"]])
             
-
+           
     def getType(self, object):
         if type(object) is str:
             object = self.getObject(object)
-            return object.type
-        else:
-            return type(object)
+        #test if sphere
+        isph = self.isSphere(object)
+        if isph :
+            return self.SPHERE
+        else :
+            if hasattr(object,"type"):
+                return object.type
+            else :
+                return type(object)
 
     def getName(self,o):
         if type(o) is str:
@@ -1673,7 +1679,7 @@ class blenderHelper(Helper):
 
     def getBoxSize(self,name):
         box=self.getObject(name)
-        return box.scale
+        return box.dimensions
 
     def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
                               mat =None,**kw):
@@ -1690,7 +1696,7 @@ class blenderHelper(Helper):
                 size[i] = cornerPoints[1][i]-cornerPoints[0][i]
             center=(self.FromVec(cornerPoints[0])+self.FromVec(cornerPoints[1]))/2.
         obj.location = (float(center[0]),float(center[1]),float(center[2]))
-        obj.scale = (float(size[0]),float(size[1]),float(size[2]))
+        obj.dimensions = (float(size[0]),float(size[1]),float(size[2]))
         parent= None
         if "parent" in kw :
             parent = kw["parent"]
@@ -1710,7 +1716,7 @@ class blenderHelper(Helper):
             for i in range(3):
                 center[i]=(cornerPoints[0][i]+cornerPoints[1][i])/2.
         box.location = (float(center[0]),float(center[1]),float(center[2]))
-        box.scale = (float(size[0]),float(size[1]),float(size[2]))
+        box.dimensions = (float(size[0]),float(size[1]),float(size[2]))
         
     def plane(self,name,center=[0.,0.,0.],size=[1.,1.],cornerPoints=None,visible=1,**kw):
         #plane or grid
@@ -1734,7 +1740,7 @@ class blenderHelper(Helper):
                 size[i] = cornerPoints[1][i]-cornerPoints[0][i]
             center=(self.FromVec(cornerPoints[0])+self.FromVec(cornerPoints[1]))/2.
         obj.location = (float(center[0]),float(center[1]),float(center[2]))
-        obj.scale = (float(size[0])*0.5,float(size[1])*0.5,1.0)
+        obj.dimensions = (float(size[0])*0.5,float(size[1])*0.5,1.0)
         
         if "axis" in kw : #orientation
             dic = { "+X":[1.,0.,0.],"-X":[-1.,0.,0.],
@@ -3318,8 +3324,8 @@ class blenderHelper(Helper):
 #                data_to.materials = data_from.materials
 #            for obj in data_to.objects: bpy.context.scene.objects.link(bpy.data.objects[obj])    
 
-    def write(self,listObj,**kw):
-        pass
+#    def write(self,listObj,*args, **kw):
+#        pass
 
 
 #==============================================================================

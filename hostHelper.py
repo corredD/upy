@@ -466,6 +466,26 @@ class Helper:
         wz = acos((z1-z2)/laenge)
         return laenge,wsz,wz,[float(x1+x2)/2,(y1+y2)/2,(z1+z2)/2]
 
+    def isSphere(self, obj):
+        v = self.getMeshVertices(obj)
+        dmd = 10
+        r=10.0
+        if usenumpy:
+            alld = numpy.linalg.norm(v,axis=1)
+            #dmd = numpy.average(alld - numpy.average(alld)) 
+            r = alld.max()
+            dmd = r - numpy.average(alld)
+        else :
+            alld = [self.norm(ve[0],ve[1],ve[2]) for ve in v] 
+            dm = sum(alld)/float(len(alld))
+            alldm = [ad - dm for ad in alld]
+            r = max(alld)
+            dmd = r - sum(alldm)/float(len(alldm))
+        if dmd < 0.1 :
+            obj["radius"] = r
+            return True
+        else :
+            return False    
 
     def update(self,):
         """
@@ -2653,7 +2673,7 @@ class Helper:
         @rtype:   host Object,list of bone
         @return:  the created armature and the created bones      
         """  
-        print "not supported"              
+        print ("not supported")
         return None,None
         #return armObj,bones
     
@@ -4757,7 +4777,7 @@ class Helper:
     def read(self,filename,**kw):
         pass
     
-    def write(self,listObj,**kw):
+    def write(self,*args,**kw):
         pass
 
     def instancesToCollada(self,parent_object,collada_xml=None,instance_node=True,**kw):

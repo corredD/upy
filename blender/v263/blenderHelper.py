@@ -136,7 +136,7 @@ class blenderHelper(Helper):
         return mat
         
     def setObjectMatrix1(self,o,matrice=None,hostmatrice=None,transpose = False):
-        if matrice == None and hostmatrice == None :
+        if matrice is None and hostmatrice is None :
             return
         if type(o) == str : obj=self.getObject(o)
         else : obj=o
@@ -158,7 +158,7 @@ class blenderHelper(Helper):
         #If the object has a parent, the matrix transform is relative to the parent.
 
     def setObjectMatrix(self,o,matrice=None,hostmatrice=None,transpose = False):
-        if matrice == None and hostmatrice == None :
+        if matrice is None and hostmatrice is None :
             return
         if type(o) == str : obj=self.getObject(o)
         else : obj=o
@@ -456,11 +456,11 @@ class blenderHelper(Helper):
             if isinstance(faces,numpy.ndarray) and type(faces[0][0]) == numpy.int32:
                 faces = numpy.array(faces,"int").tolist()
         #mesh.from_pydata(vertices, [], faces) 
-        if vertices != None :
+        if vertices is not None :
             bvs = [bm.verts.new(c) for c in vertices]   
             bm.verts.index_update()
         nov=False    
-        if faces != None and len(faces) :
+        if faces is not None and len(faces) :
             for face in faces :
                 vv=[]
                 if face is None or not len(face) : 
@@ -931,7 +931,7 @@ class blenderHelper(Helper):
 #                                      filter_collada=True, filter_folder=True, filemode=8, 
 #                                      display_type='FILE_DEFAULTDISPLAY')
     
-    def write(self,listObj,**kw):
-        pass
-                
+#    def write(self,listObj,**kw):
+#        pass
+#                
 
