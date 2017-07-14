@@ -82,6 +82,8 @@ class blenderHelper(Helper):
     editmode = 0
     vshade = {"glsl":"MATERIAL","box":"BOUNDBOX","wire":"WIREFRAME","solid":"SOLID","texture":"TEXTURED","render":"RENDERED"}
     
+    pbstarted = False
+    
     def __init__(self,master=None,**kw):
         Helper.__init__(self)
         self.updateAppli = self.update
@@ -168,12 +170,18 @@ class blenderHelper(Helper):
         @type  label: string
         @param label: the new message to put in the progress status
         """
+        if not self.pbstarted :
+            bpy.context.window_manager.progress_begin(0, 100)
+            self.pbstarted= True
         if label is None :
             label =""
         print (progress, label)
-#        if progress != None and label != None :
-#            Blender.Window.DrawProgressBar(progress, label)
+        wm.progress_update(progress)
 
+    def resetProgressBar(self,*args,**kwargs):
+        if self.pbstarted : 
+            bpy.context.window_manager.progress_end()
+        self.pbstarted = False
 
 #    def Compose4x4(self,rot,tr,sc):
 #        """ compose a blender matrix of shape (16,) from  a rotation (shape (16,)),

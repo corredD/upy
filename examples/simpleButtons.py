@@ -28,13 +28,18 @@ Created on Wed Dec 29 13:09:18 2010
 import sys
 #pyubic have to be in the pythonpath, if not add it
 pathtoupy = "/Users/ludo/DEV/"
+pathtoupy = "C:\\Users\\ludov\\OneDrive\\Documents\\"
 sys.path.insert(0,pathtoupy)
 
 import upy
-upy.setUIClass("qt")
+
+uiadaptor = upy.getUIClass()
+
+
+#upy.setUIClass("qt")
 #this will automatically recognize the host and define the class uiadaptor
 #from upy.pythonUI.qtUI import qtUIDialog as uiadaptor
-from upy import uiadaptor
+#from upy import uiadaptor
 #but you can directly import the one you want like :
 #from pyubic.dejavuTk.tkUI import tkUIDialog as uiadaptor
 #from pyubic.blender.blenderUI import blenderUIDialog as uiadaptor
@@ -140,6 +145,9 @@ else :
     #call it
 mygui.setup()
 mygui.display()
-if uiadaptor.host == "qt": app.exec_()
+if uiadaptor.host == "qt": 
+    app.exec_():
+elif uiadaptor.host == "clarisse": 
+    mygui.exec_hack()
 
 ##execfile("/Users/ludo/DEV/pyubic/examples/simpleButtons.py")

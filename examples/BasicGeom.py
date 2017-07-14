@@ -27,9 +27,13 @@ import math
 import sys,os
 from random import random
 
-#pyubic have to be in the pythonpath, if not uncomment the next line to add it
-#pathtoupy = "/Users/ludo/DEV/upy/trunk/"
-#sys.path.insert(0,pathtoupy)
+try :
+    import upy
+except :
+    #pyubic have to be in the pythonpath, if not uncomment the next line to add it
+    #pathtoupy = "/Users/ludo/DEV/upy/trunk/"
+    pathtoupy = "C:\\Users\\ludov\\OneDrive\\Documents\\"
+    sys.path.insert(0,pathtoupy)
 
 import upy
 from upy import colors as col

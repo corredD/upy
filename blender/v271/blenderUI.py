@@ -1257,6 +1257,7 @@ class blenderUI:
         exec(clascode, gdic,ldic)
         return True
 
+#check https://blender.stackexchange.com/questions/3219/how-to-show-to-the-user-a-progression-in-a-script
 #    def drawProgressBar(self,title="Progress",question="",callback=None):
 #        """ Draw an Input Question message dialog, requiring a string answer
 #        @type  title: string
@@ -1944,6 +1945,8 @@ class blenderUI:
         idname = "upy.%s" % (self.uiname.lower()+label.lower().replace(" ","_"))
         classname = self.uiname+label.lower().replace(" ","_")
         print ("callback is ",callback)
+        print ("classname is ",classname)
+        print ("idname ",idname)
         #how to change the exec?
         ldic = locals()
         gdic = globals()
@@ -1951,22 +1954,28 @@ class blenderUI:
         gdic["callback"] = callback
         clascode = ""
 #        if not hasattr(bpy.ops,idname) :
-        clascode += "class fileDialog%s (bpy.types.Operator):\n" % classname
+        clascode += "class fileDialog%s(bpy.types.Operator):\n" % classname
         clascode += "    bl_label = '%s'\n" % label
-        clascode += "    bl_idname =   '%s'\n" %  idname
+        clascode += "    bl_idname = '%s'\n" %  idname
         clascode += "    filepath = bpy.props.StringProperty()\n"
-        clascode += "    def invoke(self, context, event):\n"
-        clascode += "        wm = context.window_manager\n"
-        clascode += "        wm.fileselect_add(self)\n"
+        clascode += "    def invoke(self, context, event):\n" #difference with bpy.context?
+        clascode += "        print (context,event)\n"
+        clascode += "        context.window_manager.fileselect_add(self)\n"
         clascode += "        return {'RUNNING_MODAL'}\n"
         clascode += "    def execute(self,context):\n"
+        clascode += "        print ('execute')\n"
         clascode += "        if callback:\n"
-        clascode += "            print ('callback',self.filepath)\n"
+        clascode += "            print ('inside callback',self.filepath)\n"
         clascode += "            callback(self.filepath)\n"
         clascode += "        else : print ('filename ',self.filepath)\n"
         clascode += "        return {'FINISHED'}\n"
         clascode += "bpy.utils.register_class(fileDialog%s)\n" % classname
-        clascode += "bpy.ops.%s('INVOKE_DEFAULT')\n" % idname
+        clascode += "print ('should exe fileDialog%s')\n" % classname
+        clascode += "print (bpy.ops.%s)\n" % idname
+        #clascode += "res = bpy.ops.%s('INVOKE_DEFAULT')\n" % idname  
+        clascode += "res = bpy.ops.%s('INVOKE_DEFAULT')\n" % idname        
+        clascode += "print('INVOKE_DEFAULT',res)\n"
+        clascode += "print('INVOKE_DEFAULT')\n"
         exec(clascode, gdic,ldic)
         #exec(codeString, globals(), locals())
         
