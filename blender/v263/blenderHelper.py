@@ -638,6 +638,21 @@ class blenderHelper(Helper):
             vnormals = [self.ToVec(v.normal) for v in points]
             return vnormals
 
+    def getMeshFaceNormales(self,poly,selected = False):
+#        editmode = self.toggleEditMode()
+        mesh = self.checkIsMesh(poly)
+        mfaces = mesh.polygons
+        mesh.calc_normals()
+        facesnormals=[]
+        if selected :
+            mfaces_indice = [face.index for face in mesh.faces
+                             if face.select and not face.hide]
+            facesnormals = [self.ToVec(mfaces[f].normal) for f in mfaces_indice]
+            return facesnormals,mfaces_indice
+        else :
+            facesnormals = [self.ToVec(f.normal) for f in mfaces]    
+            return facesnormals
+            
     def getMeshEdge(self,e):
         return e.vertices[0],e.vertices[1]
 
@@ -805,26 +820,26 @@ class blenderHelper(Helper):
             mesh.vertices[ind].select = select
         self.restoreEditMode(editmode)
 
-    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
-        mesh = self.getMeshFrom(poly)
-        vertices = self.getMeshVertices(mesh)
-        faces = self.getMeshFaces(mesh)
-        vnormals = self.getMeshNormales(mesh)
-
-        if transform :
-            #node = self.getNode(mesh)
-            #fnTrans = om.MFnTransform(mesh)
-            ob = self.getObject(poly)
-#            bpy.context.scene.objects.active = ob
-#            ob = bpy.context.object
-            mat = self.getObjectMatrix(ob)#ob.matrix_world #cache problem ?
-            mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
-            #print (ob,poly,mat)
-            vertices = self.ApplyMatrix(vertices,mat)
-#        if edit and copy :
-#            self.getCurrentScene().SetActiveObject(poly)
-#            c4d.CallCommand(100004787) #delete the obj       
-        return faces,vertices,vnormals
+#    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
+#        mesh = self.getMeshFrom(poly)
+#        vertices = self.getMeshVertices(mesh)
+#        faces = self.getMeshFaces(mesh)
+#        vnormals = self.getMeshNormales(mesh)
+#
+#        if transform :
+#            #node = self.getNode(mesh)
+#            #fnTrans = om.MFnTransform(mesh)
+#            ob = self.getObject(poly)
+##            bpy.context.scene.objects.active = ob
+##            ob = bpy.context.object
+#            mat = self.getObjectMatrix(ob)#ob.matrix_world #cache problem ?
+#            mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
+#            #print (ob,poly,mat)
+#            vertices = self.ApplyMatrix(vertices,mat)
+##        if edit and copy :
+##            self.getCurrentScene().SetActiveObject(poly)
+##            c4d.CallCommand(100004787) #delete the obj       
+#        return faces,vertices,vnormals
 
     def ApplyMatrix(self,coords,mat):
         """

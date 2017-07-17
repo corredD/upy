@@ -64,6 +64,8 @@ class blenderHelper(Helper):
         give access to the basic function need for create and edit a host 3d object and scene.
     """
     SPHERE = 'Sphere'
+    CYLINDER = "Cylinder"
+    CUBE = 'Cube'
     SPLINE = 'Curve'
     INSTANCE = 'Mesh'
     MESH = bpy_types.Mesh
@@ -175,8 +177,10 @@ class blenderHelper(Helper):
             self.pbstarted= True
         if label is None :
             label =""
+        if progress is None :
+            progress = 0.0
         print (progress, label)
-        wm.progress_update(progress)
+        bpy.context.window_manager.progress_update(progress)
 
     def resetProgressBar(self,*args,**kwargs):
         if self.pbstarted : 
@@ -313,6 +317,14 @@ class blenderHelper(Helper):
         if type(object) is str:
             object = self.getObject(object)
         #test if sphere
+        #if empty dont check if sphere
+        atype=""
+        if hasattr(object,"type"):
+            atype=object.type
+        else :
+            atype = type(object)
+        if atype == self.EMPTY:
+            return atype
         isph = self.isSphere(object)
         if isph :
             return self.SPHERE
@@ -378,7 +390,10 @@ class blenderHelper(Helper):
         if not isinstance(key, str):
             raise Exception("expected a str for the key argument")
         if not key in obj:
-            return 
+            if not hasattr(obj,key):
+                return None
+            else :
+                return getattr(obj,key)
         return obj[key]
         
     def setProperty(self, obj, key, value):
@@ -425,7 +440,7 @@ class blenderHelper(Helper):
 #        print (mesh,type(mesh))
         if type(mesh) is str :
             return self.getMesh(mesh)
-        if type(mesh) == bpy.types.Object:
+        if type(mesh) == bpy.types.Object: # should we check that its not an empty ?
             return self.getMeshFrom(mesh) 
         if type(mesh) == bpy.types.Mesh:
             return mesh

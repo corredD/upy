@@ -237,7 +237,12 @@ class blenderHelper(Helper):
         """          
         allk=[]
         for k in key:
-            allk.append(self.getProperty(obj, k))
+            if k == "pos":
+                k = "location"
+            v = self.getProperty(obj, k)
+            if k == "location":
+                v = self.ToVec(v)
+            allk.append(v)
         return allk
 ##
 #    def getObjectMatrix(self,obj):
@@ -920,7 +925,7 @@ class blenderHelper(Helper):
 #            mesh.vertices[ind].select = select
 #        self.restoreEditMode(editmode)
 
-    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True):
+    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,**kw):
         print ("what is the poly",poly)
         if poly is None :
             return [],[],[]
@@ -944,10 +949,11 @@ class blenderHelper(Helper):
             #mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
             #print (ob,poly,mat)
             vertices = self.ApplyMatrix(vertices,mat)
-#        if edit and copy :
-#            self.getCurrentScene().SetActiveObject(poly)
-#            c4d.CallCommand(100004787) #delete the obj       
-        return faces,vertices,vnormals
+        if "fn" in kw and kw["fn"] :
+            fnormals = self.getMeshFaceNormales(mesh)
+            return faces,vertices,vnormals,fnormals
+        else :
+            return faces,vertices,vnormals   
 
     def addToGroup(self,master,objects,group=None):
         if group is None :
@@ -966,7 +972,10 @@ class blenderHelper(Helper):
                 print ("in group already",o,o.name)
             chs = self.getChilds(o)
             self.addToGroup(master,chs,group=group)    
-            
+
+    def drawQuestion(self,*args,**kw)            :
+        return False
+        
 #    def ApplyMatrix(self,coords,mat):
 #        """
 #        Apply the 4x4 transformation matrix to the given list of 3d points.
