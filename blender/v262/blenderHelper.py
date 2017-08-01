@@ -2815,7 +2815,13 @@ class blenderHelper(Helper):
         set = PS.settings
         set.name = name
         set.count = n
+        set.lifetime = 3000
+        set.physics_type = 'NO'
+        set.frame_start = 0
+        set.frame_end = 0
+        
         set.emit_from = 'VERT'#Particle.EMITFROM[ 'PARTICLE' | 'VOLUME' | 'FACES' | 'VERTS' ]
+        
 #        o.glBrown=5.0 #brownian motion brownian_factor
         if "display" in kw :
             if kw["display"] == "cross":

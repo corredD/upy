@@ -65,15 +65,20 @@ class blenderHelper(Helper):
         This is the blend er helper Object. The helper 
         give access to the basic function need for create and edit a host 3d object and scene.
     """
-
+    render = "BLENDER"
+    
     def __init__(self,master=None,**kw):
         Helper.__init__(self,**kw)
         #setup metric unit to centimeter?
         sc=bpy.context.scene
         sc.unit_settings.system = 'METRIC'
         sc.unit_settings.scale_length = 0.01 #centimeter
+        sv3d = self.getSpaceView3D()
+        sv3d.cursor_location = [0,0,0]
+        sv3d.grid_scale = 0.1
         print ("blender unit setup")
-        #this is a bug in Blender
+        self.setViewport(clipstart=0.001,clipend=10000,shader="solid")
+        self.render = bpy.context.scene.render.engine
         
     def setViewport(self,**kw):
         """
@@ -90,6 +95,7 @@ class blenderHelper(Helper):
         #if "center" in kw :
         #    if kw["center"] :
         #        bpy.ops.view3d.view_all(center=False)
+        sv3d.cursor_location = [0,0,0]
         if "clipstart" in kw :
             if kw["clipstart"] == 0 :
                 kw["clipstart"]= 0.001
