@@ -1,7 +1,7 @@
 
 """
     Copyright (C) <2010>  Autin L. TSRI
-    
+
     This file git_upy/__init__.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
@@ -24,20 +24,20 @@ Created on Sun Dec  5 23:30:44 2010
 @author: Ludovic Autin - ludovic.autin@gmail.com
 
     This is the main uPy module initialisation
-    
+
     >>> import upy
     >>> hClass = upy.getHelperClass()
     >>> helper = hClass()
     >>> upy.setUIClass()
     >>> from upy import uiadaptor
-    
+
     See examples in upy/examples
-    
+
 """
 import os
 import sys
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning) 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 uiadaptor = None
 helper = None
@@ -62,9 +62,9 @@ def getExecutable():
     elif host == 'maya':
         path_to_exe = "python"
     elif host == 'maya':
-        path_to_exe = "python"     
+        path_to_exe = "python"
     return path_to_exe
-       
+
 def retrieveHost():
     """
     Retrieve the 3d host application where the script is running.
@@ -91,7 +91,7 @@ def retrieveHost():
                     import bpy
                     host = 'blender25'
                     #Text->Open->Execute Python Script
-                except:              
+                except:
                     try :
                         import hou
                         host = 'houdini'
@@ -100,7 +100,7 @@ def retrieveHost():
                         try :
                             import siutils
                             host = 'softimage'
-                        except:  
+                        except:
                             try :
                                 import maya
                                 host = 'maya'
@@ -108,7 +108,7 @@ def retrieveHost():
                                 try :
                                     import chimera
                                     host = 'chimera'
-                                except :                      
+                                except :
                                     try :
                                         import DejaVu
                                         host = 'dejavu'
@@ -119,15 +119,15 @@ def retrieveHost():
 def getUClass(host,pref=None):
     """
     Return the base class for UI design according the provide host.
-        
+
     @type  host: string
     @param host: name of the host application
     @type  pref: string
     @param pref: UI interface prefernce for instance qt
-    
+
     @rtype:   Class
     @return:  the specific ui class
-    """         
+    """
     if host == 'blender24':
         #check version
 #        from pyubic.blender.blenderUI import blenderUIDialog as adaptor
@@ -143,8 +143,10 @@ def getUClass(host,pref=None):
             from upy.blender.v263.blenderUI import blenderUIDialog as adaptor
         elif blender_version >= (2,71,0): #2.63 and more
             from upy.blender.v271.blenderUI import blenderUIDialog as adaptor
+        #elif blender_version >= (2,78,0): #2.63 and more
+        #    from upy.blender.v278.blenderUI import blenderUIDialog as adaptor
         else :
-            print (blender_version,blender_version < (2,60,0))
+            print (blender_version,blender_version < (2,71,0))
     elif host=='c4d':
         import c4d
         c4d_version = c4d.GetC4DVersion()
@@ -165,7 +167,7 @@ def getUClass(host,pref=None):
         v = Application.version()
         if v >= (11,0,525,0):
             #from upy.softimage.v2013.softimageUI import softimageUIDialog as adaptor
-            from upy.pythonUI.qtUI import qtUIDialog as adaptor          
+            from upy.pythonUI.qtUI import qtUIDialog as adaptor
     elif host=='3dsmax':
         import MaxPlus
         release = MaxPlus.Core.EvalMAXScript("getDir #maxData").Get()
@@ -173,7 +175,7 @@ def getUClass(host,pref=None):
         if release.find("2015") != -1 :
             from upy.autodesk3dsmax.v2015.maxUI import maxUI as adaptor
         elif release.find("2016") != -1 :
-            from upy.autodesk3dsmax.v2016.maxUI import maxUI as adaptor            
+            from upy.autodesk3dsmax.v2016.maxUI import maxUI as adaptor
         else :
             print (release)
             print ("not suppported")
@@ -184,9 +186,9 @@ def getUClass(host,pref=None):
     elif host=='houdini':
         if pref is not  None :
             if pref == "qt" :
-                from upy.pythonUI.qtUI import qtUIDialog as adaptor        
-            else :    
-                from upy.houdini.houdiniUI import houdiniUIDialog as adaptor           
+                from upy.pythonUI.qtUI import qtUIDialog as adaptor
+            else :
+                from upy.houdini.houdiniUI import houdiniUIDialog as adaptor
 ##        elif host == 'chimera':
 #            from ePMV.Chimera.chimeraUI import chimeraAdaptor as uiadaptor
 #        elif host == 'houdini':
@@ -195,15 +197,15 @@ def getUClass(host,pref=None):
         from upy.pythonUI.qtUI import qtUIDialog as adaptor
     else :
         adaptor = None
-    return adaptor    
+    return adaptor
 
 def getHClass(host):
     """
     Return the base class for modelling design according the provide host.
-        
+
     @type  host: string
     @param host: name of the host application
-    
+
     @rtype:   Class
     @return:  the specific ui class
     """
@@ -215,12 +217,14 @@ def getHClass(host):
         blender_version = bpy.app.version
         if blender_version < (2,60,0):
             from upy.blender.v257.blenderHelper import blenderHelper as helper
-        elif blender_version >= (2,60,0) and blender_version < (2,63,0): #2.62
+        elif blender_version >= (2,60,0) and blender_version < (2,63,0):
             from upy.blender.v262.blenderHelper import blenderHelper as helper
-        elif blender_version >= (2,63,0) and blender_version < (2,71,0): #2.62
+        elif blender_version >= (2,63,0) and blender_version < (2,71,0):
             from upy.blender.v263.blenderHelper import blenderHelper as helper
-        elif blender_version >= (2,71,0): #2.62
+        elif blender_version >= (2,71,0) and blender_version < (2,78,0):
             from upy.blender.v271.blenderHelper import blenderHelper as helper
+        elif blender_version >= (2,78,0): #2.62
+            from upy.blender.v278.blenderHelper import blenderHelper as helper
         else :
             print (blender_version)
     elif host=='c4d':
@@ -236,7 +240,7 @@ def getHClass(host):
         from upy.autodeskmaya.mayaHelper import mayaHelper as helper
     elif host=='softimage':
         from  siutils import si
-        Application = si()               
+        Application = si()
         if type(Application) == unicode :
             import sipyutils
             Application = sipyutils.si()
@@ -250,33 +254,33 @@ def getHClass(host):
         if release.find("2015") != -1 :
             from upy.autodesk3dsmax.v2015.maxHelper import maxHelper as helper
         elif release.find("2016") != -1 :
-            from upy.autodesk3dsmax.v2016.maxHelper import maxHelper as helper   
+            from upy.autodesk3dsmax.v2016.maxHelper import maxHelper as helper
         else :
             print (release)
             print ("not suppported")
-            helper = None        
+            helper = None
     elif host=='dejavu':
         from upy.dejavuTk.dejavuHelper import dejavuHelper as helper
     elif host == 'chimera':
         from upy.ucsfchimera.chimeraHelper import chimeraHelper as helper
-    elif host == 'houdini': 
+    elif host == 'houdini':
         from upy.houdini.houdiniHelper import houdiniHelper as helper
     else :
         helper = None
-    return helper    
+    return helper
 
 def getUIClass(host=None):
     """
     Return and define the base class for UI design according the provide host.
     If the host is not provide,retrieveHost() will be called to guess the host.
-    
+
     @type  host: string
     @param host: name of the host application
-    
+
     @rtype:   Class
     @return:  the specific ui class
-    """ 
-    global uiadaptor   
+    """
+    global uiadaptor
     if host is None:
         host = retrieveHost()
         print ("getUIClass ",host)
@@ -291,13 +295,13 @@ def setUIClass(host=None,pref=None):
     """
     Set the base class for UI design according the provide host.
     If the host is not provide,retrieveHost() will be called to guess the host.
-    
+
     @type  host: string
     @param host: name of the host application
     @type  pref: string
-    @param pref: UI interface prefernce for instance qt    
-    """ 
-    global uiadaptor  
+    @param pref: UI interface prefernce for instance qt
+    """
+    global uiadaptor
     if host is None:
         host = retrieveHost()
     if not host :
@@ -308,13 +312,13 @@ def getHelperClass(host=None):
     """
     Return the base class for modelling design according the provide host.
     If the host is not provide,retrieveHost() will be called to guess the host.
-    
+
     @type  host: string
     @param host: name of the host application
-    
+
     @rtype:   Class
     @return:  the specific ui class
-    """ 
+    """
     global helper
     if host is None:
         host = retrieveHost()
@@ -326,13 +330,13 @@ def getHelperClass(host=None):
 def getPClass(host):
     """
     Return the base class for plugin type provided.
-        
+
     @type  host: string
     @param host: name of the host application
-    
+
     @rtype:   Class
     @return:  the specific ui class
-    """     
+    """
     if host == 'blender24':
         from upy.blender.v249 import blenderPlugin as plugClass
     elif host == 'blender25':
@@ -361,7 +365,7 @@ def getPClass(host):
         from upy.autodeskmaya import mayaPlugin as plugClass
     elif host=='softimage':
         from  siutils import si
-        Application = si()        
+        Application = si()
         if type(Application) == unicode :
             import sipyutils
             Application = sipyutils.si()
@@ -375,21 +379,21 @@ def getPClass(host):
         if release.find("2015") != -1 :
             from upy.autodesk3dsmax.v2015 import maxPlugin as plugClass
         elif release.find("2016") != -1 :
-            from upy.autodesk3dsmax.v2016 import maxPlugin as plugClass   
+            from upy.autodesk3dsmax.v2016 import maxPlugin as plugClass
         else :
             print (release)
             print ("not suppported")
-            plugClass = None                  
+            plugClass = None
     elif host=='dejavu':
         from upy.dejavuTk import dejavuPlugin as plugClass
     elif host == 'chimera':
         from upy.ucsfchimera import chimeraPlugin as plugClass
-    elif host == 'houdini': 
+    elif host == 'houdini':
         from upy.houdini import houdiniPlugin as plugClass
     else :
         plugClass = None
-    return plugClass    
-    
+    return plugClass
+
 def getPluginClass(host=None,plug = None):
     global pluginType
     if host is None:
@@ -401,4 +405,3 @@ def getPluginClass(host=None,plug = None):
         return pluginType.get(plug)
     else :
         return pluginType.general_plugClass
-    
