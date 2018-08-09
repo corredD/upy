@@ -1,7 +1,7 @@
 
 """
     Copyright (C) <2010>  Autin L. TSRI
-    
+
     This file git_upy/upy_updater.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
@@ -32,8 +32,9 @@ except :
     import urllib
 try :
     import simplejson as json
-except:    
+except:
     import json
+
 
 def checkURL(URL):
     try :
@@ -47,10 +48,10 @@ try :
     local_temp_dir= os.path.abspath(upy.__path__[0])
 except :
     local_temp_dir ="./"
-    
+
 class Updater:
     def __init__(self,*args,**kw):
-        self.list_host=["all","maya","c4d","blender","3dsmax"]        
+        self.list_host=["all","maya","c4d","blender","3dsmax"]
         self.host="all"
         if "host" in kw :
             self.host=kw["host"]
@@ -72,13 +73,13 @@ class Updater:
 #        self.url = "https://upy.googlecode.com/svn/branches/updates/update_notes_"+self.host+".json" #sourceforge?
 #        self.url = "http://mgldev.scripps.edu/projects/uPy/Distribs/Updates/update_notes_"+self.host+".json" #sourceforge?
         self.url = "http://sourceforge.net/projects/upyplugins/files/Updates/update_notes_"+self.host+".json"
-        self.local_path = "/usr/local/www/projects//uPy/Distribs/Updates"#"/Users/ludo/DEV/upy_google_svn/branches/updates"
+        self.local_path = "/usr/local/www/projects//uPy/Distribs/Updates"#"/Users/ludo/DEV/upy_google_svn/branches/updates"#"C:\\Users\\ludov\\Documents\\uPy_Update\\archives\\"#
         self.result_json={}
         self.update_notes=""
         self.typeUpdate="std"
         if "typeUpdate" in kw :
             self.typeUpdate=kw["typeUpdate"]
-        
+
     def checkForUpdate(self,):
         #check on web if update available
         #return boolean for update_PMV,update_ePMV and update_pyubics
@@ -91,7 +92,7 @@ class Updater:
         tmpFileName = local_temp_dir+os.sep+"update_notes_"+self.host+".json"
 #        if not os.path.isfile(tmpFileName):
         urllib.urlcleanup()
-        if checkURL(URI) :  
+        if checkURL(URI) :
             urllib.urlretrieve(URI, tmpFileName)#,reporthook=self.helper.reporthook)
             #geturl(URI, tmpFileName)
         else :
@@ -111,7 +112,7 @@ class Updater:
         #self.merge_list_plug()
         print(self.update_notes)
         os.remove(tmpFileName)
-        return do_update        
+        return do_update
 
     def update(self,backup=False):
         #path should be set up before getting here
@@ -127,7 +128,7 @@ class Updater:
         self.update(backup=res)
         self.gui.drawMessage(title='update',message="You are now up to date. Please restart "+self.host)
         self.helper.resetProgressBar()
-            
+
     def checkUpdate_cb(self,res):
         if res :
             self.gui.drawQuestion(question="Do you want to backup the current version?",callback=self.checkUpdate_cb_cb)
@@ -146,12 +147,12 @@ class Updater:
             self.gui.drawQuestion(question=msg,callback=self.checkUpdate_cb)
         else :
             self.gui.drawMessage(title='update',message="You are up to date! No update necessary.")
-            
+
     def update_plug(self,plug,path=None,typeUpdate="std",backup=False):
         import zipfile
         p = path
         if p is None:
-            p = self.liste_plugin[plug]["path"]#AutoFill.__path__[0]+os.sep #path of plug      
+            p = self.liste_plugin[plug]["path"]#AutoFill.__path__[0]+os.sep #path of plug
 #        print "update_AF",AFwrkDir1
         if self.host in self.result_json[plug]["host"] :
             URI=self.server+"/"+plug+"_"+typeUpdate+"_"+self.host+".zip"
@@ -161,7 +162,7 @@ class Updater:
         os.chdir("../")
         patchpath = os.path.abspath(os.curdir)
         tmpFileName = patchpath+os.sep+plug+"_"+typeUpdate+".zip"
-        
+
         urllib.urlcleanup()
         if checkURL(URI) :
             urllib.urlretrieve(URI, tmpFileName,reporthook=self.helper.reporthook)
@@ -179,13 +180,13 @@ class Updater:
                 shutil.rmtree(dirname2,True)
             shutil.copytree(dirname1, dirname2)
         if os.path.exists(dirname1):
-            shutil.rmtree(dirname1,True)           
+            shutil.rmtree(dirname1,True)
 #        TF.extractall(patchpath)
         zfile.extractall(patchpath)
         zfile.close()
         os.remove(tmpFileName)
         return True
-        
+
     def writeUpdateNote(self,filename=None,notes=""):#std or dev
         result_json={}
         for plug in self.liste_plugin:
@@ -201,7 +202,7 @@ class Updater:
             f=filename
         with open(f, 'w') as fp :
             json.dump(result_json,fp,indent=1, separators=(',', ': '))#,indent=4, separators=(',', ': ')
-        
+
     def readUpdateNote(self,):
         URI=self.url
         tmpFileName = local_temp_dir+os.sep+"update_notes_"+self.host+".json"
@@ -223,7 +224,7 @@ class Updater:
                 self.liste_plugin[plug]=self.result_json[plug]
             else :
                 for opt in self.result_json[plug]:
-                    if opt not in self.liste_plugin[plug]:  
+                    if opt not in self.liste_plugin[plug]:
                         self.liste_plugin[plug][opt]=self.result_json[plug][opt]
                 if self.liste_plugin[plug]["version_dev"] < self.liste_plugin[plug]["version_std"]:
                     self.liste_plugin[plug]["version_dev"] = self.liste_plugin[plug]["version_std"]
@@ -233,22 +234,29 @@ class Updater:
             host=self.host
         for plug in self.liste_plugin:
 #             print self.liste_plugin[plug]["svn"],self.liste_plugin[plug]["path"]
-             self.update_svn_export_one_plug(plug,host)   
-             
+             self.update_svn_export_one_plug(plug,host)
+
     def update_svn_export_one_plug(self,plug,host):
         print ("svn export ",plug)
         d = self.liste_plugin[plug]["path"] #"/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
         if os.path.exists(d):
-            shutil.rmtree(d)            
-        os.system("rm "+self.liste_plugin[plug]["path"]+"log")
-        os.system("rm "+self.liste_plugin[plug]["path"]+"version")            
+            shutil.rmtree(d)
+        #os.system("rm "+self.liste_plugin[plug]["path"]+"log")# os.remove(path)
+        #os.system("rm "+self.liste_plugin[plug]["path"]+"version")   # os.remove(path)
+        if os.path.isfile(self.liste_plugin[plug]["path"]+"log") :
+            os.remove(self.liste_plugin[plug]["path"]+"log")# os.remove(path)
+        if os.path.isfile(self.liste_plugin[plug]["path"]+"version") :
+            os.remove(self.liste_plugin[plug]["path"]+"version")   # os.remove(path)
         os.system("svn export "+self.liste_plugin[plug]["svn"]+" "+self.liste_plugin[plug]["path"]+" > "+self.liste_plugin[plug]["path"]+"log")
-        os.system("tail -1 "+self.liste_plugin[plug]["path"]+"log > "+self.liste_plugin[plug]["path"]+"version")
-        f = open(self.liste_plugin[plug]["path"]+"version","r")
-        lines = f.readline().split(" ")
+        a=open(self.liste_plugin[plug]["path"]+"log",'r')
+        lines = a.readlines()
+        last_line = lines[-1]
+        #os.system("tail -1 "+self.liste_plugin[plug]["path"]+"log > "+self.liste_plugin[plug]["path"]+"version")
+        #f = open(self.liste_plugin[plug]["path"]+"version","r")
+        #lines = f.readline().split(" ")
 #        print lines
-        lines = lines[-1][:-2].replace(" ","")
-        f.close()
+        lines = last_line.split(" ")[-1][:-2].replace(" ","")
+        a.close()
         print (plug,host,"new v ",self.liste_plugin[plug]["major"]+"."+lines)
         f=open(self.liste_plugin[plug]["path"]+os.sep+"version.txt","w")
         f.write(self.liste_plugin[plug]["major"]+"."+lines)
@@ -256,7 +264,7 @@ class Updater:
         self.liste_plugin[plug]["version_"+self.typeUpdate] = self.liste_plugin[plug]["major"]+"."+lines
         self.liste_plugin[plug]["host"] = host
         for h in host :
-            f=self.local_path+os.sep+plug+"_"+self.typeUpdate+"_"+h+".zip"
+            f=self.local_path+os.sep+plug+"_"+self.typeUpdate+"_"+h#+".zip"
             if os.path.isfile(f) :
                 os.remove(f)
             #need to remove some files for autopack
@@ -264,32 +272,39 @@ class Updater:
             if plug == "autopack":
                 if os.path.exists(self.liste_plugin[plug]["path"]+"/Patches"):
                     shutil.rmtree(self.liste_plugin[plug]["path"]+"/Patches")
-            os.system("cd "+d+"/..;zip -r "+f+" "+plug+"/  >logx")
+            #zip_command = 'C:\\"Program Files"\\7-Zip\\7z a -t7z "%s" %s' % (f, plug)#% (f, ' '.join(plug))
+            #zip_command = 'zip -r "%s" %s' % (target, ' '.join(source))
+            #os.system("cd "+d+"/..;zip -r "+f+" "+plug+"/  >logx")
+            #print (zip_command)
+            #os.system('cd '+d+'/..;')
+            #os.system(zip_command)
+            shutil.make_archive(f, 'zip', d)# root_dir=None, base_dir=None, verbose=0, dry_run=0, owner=None, group=None, logger=None)
         print ("done")
-        
+
 def get_current_version():
 #        set afversion=`svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 `
 #        set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk | grep "Revision:" | cut -d: -f2 `
 #        set upyversion=`svn info https://github.com/corredD/upy/trunk | grep "Revision:" | cut -d: -f2 `
-#    output = os.system('svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 ')    
-    import subprocess    
-    svn = subprocess.Popen(['svn', 'info', 'https://github.com/gj210/autoPACK/trunk/autopack'], 
+#    output = os.system('svn info https://github.com/gj210/autoPACK/trunk/autopack | grep "Revision:" | cut -d: -f2 ')
+    import subprocess
+    revid = 5#4
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/gj210/autoPACK/trunk/autopack'],
                             stdout=subprocess.PIPE,
                             )
     svn_info = svn.stdout.readlines()
-    afversion = int(svn_info[4].split("Revision: ")[1])
-    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/ePMV/trunk'], 
+    afversion = int(svn_info[revid].split("Revision: ")[1][:-2])#svn_info[revid].split("Revision: ")[1])
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/ePMV/trunk'],
                             stdout=subprocess.PIPE,
                             )
     svn_info = svn.stdout.readlines()
-    epmvversion = int(svn_info[4].split("Revision: ")[1])
-    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/upy/trunk'], 
+    epmvversion = int(svn_info[revid].split("Revision: ")[1][:-2])#int(svn_info[revid].split("Revision: ")[1])
+    svn = subprocess.Popen(['svn', 'info', 'https://github.com/corredD/upy/trunk'],
                             stdout=subprocess.PIPE,
                             )
     svn_info = svn.stdout.readlines()
-    upyversion = int(svn_info[4].split("Revision: ")[1])
+    upyversion = int(svn_info[revid].split("Revision: ")[1][:-2])#int(svn_info[revid].split("Revision: ")[1])
     return afversion,epmvversion,upyversion
-    
+
 if __name__ == "__main__":
     #  python2.7 -i upy/upy_updater.py
     #cd ~/DEV/git_upy;python -i upy_updater.py;cd /Users/ludo/DEV/upy_google_svn/branches/updates;svn commit -m"update"
@@ -297,18 +312,26 @@ if __name__ == "__main__":
 #    set afversion=`svn info https://subversion.assembla.com/svn/autofill/trunk/AutoFillClean | grep "Revision:" | cut -d: -f2 `
 #    set epmvversion=`svn info https://subversion.assembla.com/svn/epmv/trunk/ | grep "Revision:" | cut -d: -f2 `
 #    set upyversion=`svn info https://subversion.assembla.com/svn/upy/trunk/upy | grep "Revision:" | cut -d: -f2 `
+    #linux mgl2 path
     update_path="/Users/ludo/DEV/upy_google_svn/branches/updates/"
 #    update_path="/virtual/local/www/projects/uPy/Distribs/Updates"
     depmv="/usr/local/www/projects/ePMV/SOURCES/export/ePMV"
     dupy="/usr/local/www/projects/uPy/export/upy"
     dautopack="/usr/local/www/projects/AF/Sources/export/autopack"
 #    zipoutput="/usr/local/www/projects/ePMV/updates/"
+    #windows local folder
+    update_path="C:\\Users\\ludov\\Documents\\uPy_Update\\archives\\"
+#    update_path="/virtual/local/www/projects/uPy/Distribs/Updates"
+    depmv="C:\\Users\\ludov\\Documents\\uPy_Update\\export\\ePMV"
+    dupy="C:\\Users\\ludov\\Documents\\uPy_Update\\export\\upy"
+    dautopack="C:\\Users\\ludov\\Documents\\uPy_Update\\export\\autopack"
+
     do_json=False
     do_update=True
     afversion,epmvversion,upyversion = get_current_version()
     print (afversion,epmvversion,upyversion)
 #    sys.exit()
-    if do_json : 
+    if do_json :
         #current version?
         afversion,epmvversion,upyversion = get_current_version()
         upyv="0.7."+str(upyversion)
@@ -331,13 +354,15 @@ if __name__ == "__main__":
 #                        "ePMV":{"path":"/Users/ludo/DEV/upy_google_svn/branches/updates/ePMV","svn":"https://subversion.assembla.com/svn/epmv/trunk/","major":"0.5"}}
         #from upy.upy_updater import Updater
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="std")
+        up.local_path = update_path
         up.update_svn_export(host=["all"])
 #        up.readUpdateNote()
 #        up.merge_list_plug()
 #        up.writeUpdateNote(filename="/Users/ludo/DEV/upy_googlesvn/branches/updates/update_notes_all.json",notes="new update systems")
         up = Updater(host=["all"],liste_plugin=liste_plugin,typeUpdate="dev")
+        up.local_path = update_path
         up.update_svn_export(host=["all"])#up.list_host)
-        
+
         up.readUpdateNote()
         up.merge_list_plug()
         for name in up.list_host:
@@ -348,10 +373,8 @@ if __name__ == "__main__":
 #        os.system("cd "+up.local_path+";scp * acoreda@frs.sourceforge.net:/home/frs/project/upyplugins/Updates")
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
 #        os.system(scp file.zip jsmith@frs.sourceforge.net:/home/frs/project/fooproject/Rel_1
-        #for host specific 
+        #for host specific
 #        up = Updater(host=["maya"],liste_plugin=liste_plugin,typeUpdate="std")
 #        up.update_svn_export()
         #this willl create an update just for maya
         #so shoul we have udpate_note per host
-
-            
