@@ -1,7 +1,7 @@
 
 """
     Copyright (C) <2010>  Autin L. TSRI
-    
+
     This file git_upy/blender/v262/blenderHelper.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
@@ -60,7 +60,7 @@ class blenderHelper(Helper):
     """
     The blender helper abstract class
     ============================
-        This is the blend er helper Object. The helper 
+        This is the blend er helper Object. The helper
         give access to the basic function need for create and edit a host 3d object and scene.
     """
     SPHERE = 'Sphere'
@@ -83,9 +83,9 @@ class blenderHelper(Helper):
     LIGHT_OPTIONS = {"Area":"AREA","Sun":"SUN","Spot":"SPOT"}#POINT’, ‘SUN’, ‘SPOT’, ‘HEMI’, ‘AREA’
     editmode = 0
     vshade = {"glsl":"MATERIAL","box":"BOUNDBOX","wire":"WIREFRAME","solid":"SOLID","texture":"TEXTURED","render":"RENDERED"}
-    
+
     pbstarted = False
-    
+
     def __init__(self,master=None,**kw):
         Helper.__init__(self)
         self.updateAppli = self.update
@@ -97,7 +97,7 @@ class blenderHelper(Helper):
         self.Geom = self.newEmpty
         #self.getCurrentScene = c4d.documents.GetActiveDocument
         self.IndexedPolygons = self.polygons
-        self.Points = self.PointCloudObject 
+        self.Points = self.PointCloudObject
         self.hext = "blend"
         self.editmode = False
         self.instance_dupliFace = True
@@ -107,7 +107,7 @@ class blenderHelper(Helper):
             "NEG_Y" : [0.,-1.,0.],
             "POS_Y" : [0.,1.,0.],
             "NEG_X" : [-1.,0.,0.],
-            "POS_X" : [1.,0.,0.],        
+            "POS_X" : [1.,0.,0.],
         }
         self.quad={"-Z" :[[1,1,0],[1,-1,0], [-1,-1,0],[-1,1,0]],#XY
                    "+Y" :[[-1,0,1],[1,0,1],[1,0,-1], [-1,0,-1]],#XZ
@@ -119,7 +119,7 @@ class blenderHelper(Helper):
                    "-Y" :[[-1,0,1],[-1,0,-1],[1,0,-1], [1,0,1]],#XZ
                    "+X" :[[0,-1,1],[0,-1,-1],[0,1,-1], [0,1,1]],#YZ
                   }
-        
+
         self.noise_type ={
               "boxNoise":noise.types.BLENDER,
               "buya":noise.types.STDPERLIN,
@@ -151,20 +151,20 @@ class blenderHelper(Helper):
               "voronoi2":noise.types.VORONOI_F2,
               "voronoi3":noise.types.VORONOI_F3,
               "wavyTurbulence":noise.types.VORONOI_F4,
-              "zada":noise.types.VORONOI_F4,       
+              "zada":noise.types.VORONOI_F4,
              }
 #            usenumpy
-             
-    @classmethod     
+
+    @classmethod
     def getCurrentScene(self):
 #        return bpy.data.scenes[0] #or bpy.context.scene
         return bpy.context.scene
 
-    @classmethod    
+    @classmethod
     def getCurrentSceneName(self):
         doc = self.getCurrentScene()
         return doc.name
-                
+
     def progressBar(self,progress=None,label=None):
         """ update the progress bar status by progress value and label string
         @type  progress: Int/Float
@@ -183,7 +183,7 @@ class blenderHelper(Helper):
         bpy.context.window_manager.progress_update(progress)
 
     def resetProgressBar(self,*args,**kwargs):
-        if self.pbstarted : 
+        if self.pbstarted :
             bpy.context.window_manager.progress_end()
         self.pbstarted = False
 
@@ -199,12 +199,12 @@ class blenderHelper(Helper):
 #        ms=Mathutils.ScaleMatrix(scale.length, 4, scale.normalize())
 #        Transformation = mt*mr#*ms
 #        return Transformation
-# 
+#
     def setCurrentSelection(self, obj):
         if obj is None :
             bpy.ops.object.select_all(action='DESELECT')
         bpy.context.scene.objects.active = obj
-   
+
     def getCurrentSelection(self,sc=None):
         if sc is None :
             sc = bpy.context.scene
@@ -224,20 +224,20 @@ class blenderHelper(Helper):
         liste = [o for o in bpy.context.scene.objects if o.select]
         return bpy.context.selected_objects
 
-#    
+#
 #    def updateAppli(self,):
 #        Blender.Scene.GetCurrent().update()
 #        Blender.Draw.Redraw()
 #        Blender.Window.RedrawAll()
-#        Blender.Window.QRedrawAll()  
+#        Blender.Window.QRedrawAll()
 #        Blender.Redraw()
-#    
+#
 #    def update(self,):
 #        import Blender
 #        Blender.Scene.GetCurrent().update()
 #        Blender.Draw.Redraw()
 #        Blender.Window.RedrawAll()
-#        Blender.Window.QRedrawAll()  
+#        Blender.Window.QRedrawAll()
 #        Blender.Redraw()
 #
     def setEditMode(self):
@@ -246,13 +246,13 @@ class blenderHelper(Helper):
     def setObjectMode(self):
         bpy.ops.object.mode_set(mode='OBJECT')
         self.editmode = False
-        
+
     def toggleEditMode(self):
         bpy.ops.object.editmode_toggle()
         self.editmode = not self.editmode
 #        bpy.ops.object.editmode_toggle()
 #        editmode = Blender.Window.EditMode()    # are we in edit mode?  If so ...
-#        if editmode: 
+#        if editmode:
 #            Blender.Window.EditMode(0)
         return 1
 #
@@ -269,7 +269,7 @@ class blenderHelper(Helper):
     def unsynchronize(self,cb):
         i = bpy.app.handlers.frame_change_post.index(self.timeline_cb[cb].doit)
         bpy.app.handlers.frame_change_post.pop(i)
-        
+
     def updateViewer(self):
         bpy.context.scene.update()
 
@@ -278,17 +278,17 @@ class blenderHelper(Helper):
             if area.type == "VIEW_3D":
                 print(area.spaces.active.lens)
                 return area.spaces.active
-                
+
     def setViewport(self,**kw):
         """
         set the property of the viewport
-        
+
         * overwrited by children class for each host
         >>>helper.setViewport(clipstart=0,clipend=diag,shader="GLSL")
-        
+
         @type  kw: dictionary
-        @param kw: the list of parameter and their value to change   
-        """  
+        @param kw: the list of parameter and their value to change
+        """
         print (kw)
         sv3d = self.getSpaceView3D()
         if "center" in kw :
@@ -311,8 +311,8 @@ class blenderHelper(Helper):
                 sv3d.viewport_shade = self.vshade["solid"]
                 sv3d.show_textured_solid = True
             print ("shader ",kw["shader"],self.vshade[kw["shader"]])
-            
-           
+
+
     def getType(self, object):
         if type(object) is str:
             object = self.getObject(object)
@@ -345,7 +345,7 @@ class blenderHelper(Helper):
 #
     def getMaterialObject(self,o):
         return [slot.material for slot in o.material_slots]
-        
+
     def getMaterialName(self,mat):
         return mat.name
 
@@ -360,7 +360,7 @@ class blenderHelper(Helper):
             return name
         try :
             obj= bpy.data.objects.get(name)
-        except : 
+        except :
             obj=None
 #        #print obj
         return obj
@@ -395,7 +395,7 @@ class blenderHelper(Helper):
             else :
                 return getattr(obj,key)
         return obj[key]
-        
+
     def setProperty(self, obj, key, value):
         cool_value_types = (int, float, str, dict, list)
         def check_property_values(value, name):
@@ -403,27 +403,27 @@ class blenderHelper(Helper):
             if not isinstance(value, (int, float, str, dict, list)):
                 raise Exception("expected a %s for the property: %s"%\
                       (", ".join("%s"%t.__name__ for t in cool_value_types), name))
-#            
+#
             if isinstance(value, dict):
                 for key, val in list(value.items()):
                     check_properties(val, name+"['%s']"%key)
             if isinstance(value, (list, str)) and len(value) > 10000:
                 raise Exception("property: %s is a %s which is "\
                       "too long. Max size: 10000 "%(name, str(type(value))))
-#        
+#
         if not isinstance(obj, bpy.types.Object):
             raise Exception("expected an Object for the obj argument")
         if not isinstance(key, str):
             raise Exception("expected a str for the key argument")
 
         check_property_values(value, key)
-        
+
         obj[key] = value
- 
+
     def setPropertyObject(self,obj,**kw):
         for k in kw :
             if hasattr(obj,k):
-                setattr(obj,k,kw[k])                   
+                setattr(obj,k,kw[k])
 #
     def checkIsMesh(self,mesh):
         #verify that we are not in editModes
@@ -441,7 +441,7 @@ class blenderHelper(Helper):
         if type(mesh) is str :
             return self.getMesh(mesh)
         if type(mesh) == bpy.types.Object: # should we check that its not an empty ?
-            return self.getMeshFrom(mesh) 
+            return self.getMeshFrom(mesh)
         if type(mesh) == bpy.types.Mesh:
             return mesh
 #
@@ -454,7 +454,7 @@ class blenderHelper(Helper):
         else :
             #name of the mesh or the object?
             mesh = bpy.data.meshes.get(name)
-            if mesh is None : 
+            if mesh is None :
                 obj = bpy.data.objects.get(name)
                 if obj is not None :
                     return obj.data
@@ -481,11 +481,11 @@ class blenderHelper(Helper):
     def reParent(self,obj,parent):
         #should I apply scale/rotation...
         parent = self.getObject(parent)
-        if type(obj) == list or type(obj) == tuple: 
+        if type(obj) == list or type(obj) == tuple:
             for o in obj :
                 o = self.getObject(o)
                 o.parent = parent
-        else : 
+        else :
             obj = self.getObject(obj)
             if obj is not None :
                 obj.parent = parent#.makeParent([obj,])
@@ -498,7 +498,7 @@ class blenderHelper(Helper):
         #problem with neer zero value
         nearZero=6.123233995736766e-10
         for i in range(3):
-            if abs(v[i])<=nearZero : 
+            if abs(v[i])<=nearZero :
                 v[i]=0.0
         for a in self.track_axis_dic:
             if self.FromVec(self.track_axis_dic[a]) == self.FromVec(v) :
@@ -512,10 +512,10 @@ class blenderHelper(Helper):
                 mat = matrice.transpose().tolist()
                 return mat
             blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
-            blender_mat.transpose()        
+            blender_mat.transpose()
             return blender_mat
         return matrice
-        
+
     def getObjectMatrix(self,obj):
         t = obj.location
         s = obj.scale
@@ -541,15 +541,15 @@ class blenderHelper(Helper):
             #if transpose : m = m.transpose()
             #mat=m.tolist()
             blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
-            
+
         elif hostmatrice is not None :
             blender_mat=hostmatrice
-        #if transpose :  
+        #if transpose :
         #blender_mat.transpose()#change nothing ?
 #        print (blender_mat)
         if transpose : blender_mat.transpose()
         obj.matrix_world = blender_mat
-        #Sets the object's matrix and updates its transformation. 
+        #Sets the object's matrix and updates its transformation.
         #If the object has a parent, the matrix transform is relative to the parent.
 #
     def setTranslation(self,obj,pos=[0.0,0.,0.],**kw):
@@ -562,23 +562,23 @@ class blenderHelper(Helper):
 #
     def getTranslation(self,name):
         obj = self.getObject(name)
-        return obj.location#("worldspace")#[obj.LocX,obj.LocY,obj.LocZ]#obj.matrixWorld[3][0:3] 
-#        
+        return obj.location#("worldspace")#[obj.LocX,obj.LocY,obj.LocZ]#obj.matrixWorld[3][0:3]
+#
     def translateObj(self,obj,coord,use_parent=False):
         obj.location=obj.location+mathutils.Vector((float(coord[0]),float(coord[1]),float(coord[2])))
 
-#    
+#
     def scaleObj(self,obj,sc):
         if type(sc) is float :
-            sc = [sc,sc,sc]        
+            sc = [sc,sc,sc]
         obj.scale = sc
 #        obj.dimensions = sc
-        #what about the dimension ? 
+        #what about the dimension ?
         #if the dimensio are not equal should take it in account or actually use the dimension
 #        obj.SizeX=float(sc[0])
 #        obj.SizeY=float(sc[1])
 #        obj.SizeZ=float(sc[2])
-#    
+#
     def rotateObj(self,obj,rot):
         #radians
         obj.rotation_euler.x=float(rot[0])
@@ -586,9 +586,9 @@ class blenderHelper(Helper):
         obj.rotation_euler.z=float(rot[2])
 
     def getScale(self,name,absolue=True):
-        obj = self.getObject(name)     
+        obj = self.getObject(name)
         return obj.scale
-#    
+#
     def newEmpty(self,name,location=(0.,0.,0.),visible=0,**kw):
         res = bpy.ops.object.add(type='EMPTY',location=location)
         obj = bpy.context.object
@@ -596,14 +596,14 @@ class blenderHelper(Helper):
         parent = None
         if "parent" in kw :
             parent = kw["parent"]
-        self.addObjectToScene(self.getCurrentScene(),obj,parent=parent)        
+        self.addObjectToScene(self.getCurrentScene(),obj,parent=parent)
         return obj
 
 
     def updateMasterInstance(self,master, newMesh,**kw):
         #if master is group then remove it from group and put the other gjec in the group
         #ew mesis a list
-        master = self.getObject(master) 
+        master = self.getObject(master)
         if len(master.users_group):
             if len(master.users_group) > 1 :
                 group = master.users_group[-1]
@@ -611,26 +611,26 @@ class blenderHelper(Helper):
                 group = master.users_group[0]
 #            group.objects.unlink(master)#is thi
             self.addToGroup(master,newMesh,group=group)
-            self.removeToGroup(master,[master],group=group)  
+            self.removeToGroup(master,[master],group=group)
         else :
             print ("no group ? ",master, master.name)
 #        for o in newMesh :
 #            o =  self.getObject(o)
 #            group.objects.link(o)
-        #should we use the layer of group here 
+        #should we use the layer of group here
         #group.layers
 #        self.setLayers(newMesh,[1])?
-#        groupname = master.users_group[0].name       
+#        groupname = master.users_group[0].name
 #        self.setCurrentSelections(master)
 #        bpy.ops.group.objects_remove()
 #        self.setCurrentSelections(newMesh)
 #        bpy.ops.object.group_link(groupname)
 #        #group_link
-        
+
         #newInstance(name,instance,coord,parent=parent)
     def removeToGroup(self,master,objects,group=None):
         if group is None :
-            master = self.getObject(master)         
+            master = self.getObject(master)
             group = master.users_group[0]
         for o in objects :
             o =  self.getObject(o)
@@ -639,11 +639,11 @@ class blenderHelper(Helper):
             except:
                 print ("in group already unlink",o,o.name)
             chs = self.getChilds(o)
-            self.removeToGroup(master,chs,group=group) 
-            
+            self.removeToGroup(master,chs,group=group)
+
     def addToGroup(self,master,objects,group=None):
         if group is None :
-            master = self.getObject(master) 
+            master = self.getObject(master)
             group = master.users_group[0]
         for o in objects :
             o =  self.getObject(o)
@@ -652,13 +652,13 @@ class blenderHelper(Helper):
             except:
                 print ("in group already",o,o.name)
             chs = self.getChilds(o)
-            self.addToGroup(master,chs,group=group)       
+            self.addToGroup(master,chs,group=group)
 
     def newInstanceGroup(self,name,ob,location=None,hostmatrice=None,
                     matrice=None,parent=None,**kw):
         #check the type of mesh
 #        print ("instance of ",ob)
-        #first needto check if ob have child or just one object        
+        #first needto check if ob have child or just one object
         dupligroup = False
         mesh = None
         if mesh is None :
@@ -675,10 +675,10 @@ class blenderHelper(Helper):
 #                print ("selected childs",childs)
                 #check if the group exist
                 namegroup = self.getName(ob)+"_gr"
-                if not namegroup in bpy.data.groups: 
+                if not namegroup in bpy.data.groups:
                     bpy.ops.group.create(name=namegroup)
                     #print ("group  created",namegroup)
-                    self.addToGroup(ob,childs)  
+                    self.addToGroup(ob,childs)
                 #create the instance
                 bpy.ops.object.group_instance_add(group=namegroup,location=[0,0,0],rotation=[0,0,0])#'INVOKE_DEFAULT'?ix400_n25MeshsParent_gr
                 #print ("group  group_instance_add")
@@ -702,23 +702,23 @@ class blenderHelper(Helper):
                 #mesh=obj.getData(False,True)
                 OBJ=bpy.data.objects.new(name,mesh)
                 self.addObjectToScene(self.getCurrentScene(),OBJ)
-                bpy.context.scene.objects.active = OBJ        
+                bpy.context.scene.objects.active = OBJ
                 if parent is not None:
                     OBJ.parent = parent
         else :
             OBJ=bpy.data.objects.new(name,mesh)
             self.addObjectToScene(self.getCurrentScene(),OBJ)
-            bpy.context.scene.objects.active = OBJ        
+            bpy.context.scene.objects.active = OBJ
             if parent is not None:
                 OBJ.parent = parent
-        #print ("OBJ created",OBJ) 
+        #print ("OBJ created",OBJ)
         #set the instance matrice
         transpose = False
         if "transpose" in kw :
             transpose = kw["transpose"]
 #        print ("set objecMatrix")
 #        if matrice is not None and hostmatrice is None :
-        
+
         if location != None :
             self.translateObj(OBJ,location)
         else :
@@ -728,14 +728,14 @@ class blenderHelper(Helper):
         if "material" in kw :
             mat = kw["material"]
             if not dupligroup : self.assignMaterial(OBJ,[mat])
-        
+
         return OBJ
-                
+
     def newInstance(self,name,ob,location=None,hostmatrice=None,
                     matrice=None,parent=None,**kw):
         #check the type of mesh
 #        print ("instance of ",ob)
-        #first needto check if ob have child or just one object        
+        #first needto check if ob have child or just one object
         dupligroup = False
         mesh = None
         for me in bpy.data.meshes:
@@ -756,10 +756,10 @@ class blenderHelper(Helper):
 #                print ("selected childs",childs)
                 #check if the group exist
                 namegroup = self.getName(ob)+"_gr"
-                if not namegroup in bpy.data.groups: 
+                if not namegroup in bpy.data.groups:
                     bpy.ops.group.create(name=namegroup)
                     #print ("group  created",namegroup)
-                    self.addToGroup(ob,childs)  
+                    self.addToGroup(ob,childs)
                 #create the instance
                 bpy.ops.object.group_instance_add(group=namegroup,location=[0,0,0],rotation=[0,0,0])#'INVOKE_DEFAULT'?ix400_n25MeshsParent_gr
                 #print ("group  group_instance_add")
@@ -783,23 +783,23 @@ class blenderHelper(Helper):
                 #mesh=obj.getData(False,True)
                 OBJ=bpy.data.objects.new(name,mesh)
                 self.addObjectToScene(self.getCurrentScene(),OBJ)
-                bpy.context.scene.objects.active = OBJ        
+                bpy.context.scene.objects.active = OBJ
                 if parent is not None:
                     OBJ.parent = parent
         else :
             OBJ=bpy.data.objects.new(name,mesh)
             self.addObjectToScene(self.getCurrentScene(),OBJ)
-            bpy.context.scene.objects.active = OBJ        
+            bpy.context.scene.objects.active = OBJ
             if parent is not None:
                 OBJ.parent = parent
-        #print ("OBJ created",OBJ) 
+        #print ("OBJ created",OBJ)
         #set the instance matrice
         transpose = False
         if "transpose" in kw :
             transpose = kw["transpose"]
 #        print ("set objecMatrix")
 #        if matrice is not None and hostmatrice is None :
-        
+
         if location != None :
             self.translateObj(OBJ,location)
         else :
@@ -809,7 +809,7 @@ class blenderHelper(Helper):
         if "material" in kw :
             mat = kw["material"]
             if not dupligroup : self.assignMaterial(OBJ,[mat])
-        
+
         return OBJ
 #    #alias
     setInstance = newInstance
@@ -821,7 +821,7 @@ class blenderHelper(Helper):
 #        return o
 #
 
-    def instancePolygon(self,name, matrices=None,hmatrices=None, 
+    def instancePolygon(self,name, matrices=None,hmatrices=None,
                         mesh=None,parent=None,
                         transpose=True,globalT=True,dupliVert=True,**kw):
         hostM= False
@@ -842,7 +842,7 @@ class blenderHelper(Helper):
             if "axis" in kw and kw["axis"] is not None:
                 v=kw["axis"]
             print ("axis",v)
-            o = self.getObject(name+"ds") 
+            o = self.getObject(name+"ds")
             if o is None :
 #                o,m=self.matrixToVNMesh(name,matrices,vector=v)
                 o,m=self.matrixToFacesMesh(name,matrices,vector=v,transpose=transpose)
@@ -867,7 +867,7 @@ class blenderHelper(Helper):
             if "axis" in kw and kw["axis"] is not None:
                 v=kw["axis"]
             print ("axis",v)
-            o = self.getObject(name) 
+            o = self.getObject(name)
             if o is None :
                 o,m=self.matrixToVNMesh(name,matrices,vector=v,transpose=transpose)
                 if parent is not None :
@@ -883,7 +883,7 @@ class blenderHelper(Helper):
                 self.applyToRec(mesh,self.setPropertyObject,**kw)
 #                mesh.track_axis = self.getTrackAxis(v)
                 #apply to children
-                
+
             else :
                 #update
                 pass
@@ -896,8 +896,8 @@ class blenderHelper(Helper):
                 mat = matrices[i]
     #            print (mat)
             #for i,mat in enumerate(matrices):
-    #            print (mat) 
-                inst = self.getObject(name+str(i)) 
+    #            print (mat)
+                inst = self.getObject(name+str(i))
                 #print (inst)
                 if inst is None :
                     if hostM :
@@ -922,13 +922,13 @@ class blenderHelper(Helper):
         #objects must first be linked to a scene before they can become parents of other objects.
         if sc is None :
             sc = self.getCurrentScene()
-        if type(obj) == list or type(obj) == tuple: 
-            for o in obj : 
+        if type(obj) == list or type(obj) == tuple:
+            for o in obj :
                 if o not in list(sc.objects.values()) : sc.objects.link(o)
-        else : 
-            if obj not in list(sc.objects.values()) : 
+        else :
+            if obj not in list(sc.objects.values()) :
                 sc.objects.link(obj)
-        if parent != None: 
+        if parent != None:
             parent = self.getObject(parent)
             self.reParent(obj,parent)
             #if type(obj) == list or type(obj) == tuple: parent.makeParent(obj)
@@ -961,7 +961,7 @@ class blenderHelper(Helper):
         lampe.energy = energy
         lampe.type = self.LIGHT_OPTIONS[Type]
         #lampe.setSoftness(soft)
-        if shadow : 
+        if shadow :
             lampe.shadow_method = 'RAY_SHADOW'
 #        obj.hide_select=True#?
 
@@ -973,36 +973,36 @@ class blenderHelper(Helper):
         except:
             print(("problem deleting ", obj))
 
-#    
+#
 #    def ObjectsSelection(self,listeObjects,typeSel="new"):
 #        """
 #        Modify the current object selection.
-#        
+#
 #        @type  listeObjects: list
 #        @param listeObjects: list of object to joins
 #        @type  typeSel: string
 #        @param listeObjects: type of modification: new,add,...
-#    
-#        """    
+#
+#        """
 #        dic={"add":None,"new":None}
 #        sc = self.getCurrentScene()
 #        if typeSel == "new" :
 #            sc.objects.selected = listeObjects
 #        elif typeSel == "add":
 #            sc.objects.selected.extend(listeObjects)
-#    
+#
 #    def JoinsObjects(self,listeObjects):
 #        """
 #        Merge the given liste of object in one unique geometry.
-#        
+#
 #        @type  listeObjects: list
 #        @param listeObjects: list of object to joins
-#        """    
+#        """
 #        sc = getCurrentScene()
 #        #put here the code to add the liste of object to the selection
 #        listeObjects[0].join(listeObjects[1:])
 #        for ind in range(1,len(listeObjects)):
-#            sc.unlink(listeObjects[ind])  
+#            sc.unlink(listeObjects[ind])
 #
 #
     def getMaterial(self,mat):
@@ -1032,28 +1032,28 @@ class blenderHelper(Helper):
         mat.diffuse_color = (col[0],col[1],col[2])
         return mat
 
-    def createVolumeMaterial(self,name,mat=None,**kw):     
+    def createVolumeMaterial(self,name,mat=None,**kw):
         textType ='POINT_DENSITY'
         if 'type' in kw :
-            textType = kw["type"]            
-        footex = bpy.data.textures.new(name+"volume",type = textType)             
+            textType = kw["type"]
+        footex = bpy.data.textures.new(name+"volume",type = textType)
         if mat is None :
             mat = bpy.data.materials.new(name)    # get a material
         mat.type='VOLUME'
         Tslot = mat.texture_slots.add()
-        Tslot.texture = footex 
+        Tslot.texture = footex
         return mat,footex
-    
+
     def createTexturedMaterial(self,name,filename,normal=False,mat=None,w=640,h=480):
-      
-        footex = bpy.data.textures.new(name+"texture",type = 'IMAGE' )             
+
+        footex = bpy.data.textures.new(name+"texture",type = 'IMAGE' )
         # get texture named 'foo'
         #footex = footex.recast_type()
         footex.use_normal_map = normal
         # make foo be an image texture
         if filename is None:
             img = bpy.data.images.new(name,width=w, height = h)
-            #img = bpy.data.images[f]            
+            #img = bpy.data.images[f]
             img.filepath = name
             img.save()
         else :
@@ -1061,10 +1061,10 @@ class blenderHelper(Helper):
         footex.image = img                   # link the image to the texture
         if mat is None :
             mat = bpy.data.materials.new(name)    # get a material
-        
+
         Tslot = mat.texture_slots.add()
-        Tslot.texture = footex 
-#        Tslot.texture_coords  #default is ORCO    
+        Tslot.texture = footex
+#        Tslot.texture_coords  #default is ORCO
 #        use_texture
 #        use_face_texture
 #        use_face_texture_alpha
@@ -1088,17 +1088,17 @@ class blenderHelper(Helper):
         elif type(ob) is list :
             [self.toggleDisplay(o,display=display) for o in ob]
             return
-        else : 
+        else :
             obj=ob
         if obj is None :
-            return            
+            return
         obj.hide=not display
         obj.hide_render=not display
         if child :
             chs = self.getChilds(obj)
             self.toggleDisplay(chs,display=display)
             #for ch in chs:
-                
+
         #obj.makeDisplayList()
 
     def toggleXray(self,object,xray):
@@ -1120,13 +1120,13 @@ class blenderHelper(Helper):
         else :
             return obj.hide,obj.hide_render,False
 
-#    
+#
 #    def b_matrix(self,array):
 #        return Mathutils.Matrix(array)
-#    
+#
 #    def b_toEuler(self,bmatrix):
 #        return bmatrix.toEuler()
-#    
+#
 #    def Compose4x4BGL(self,rot,trans,scale):
 #        """ compose a matrix of shape (16,) from  a rotation (shape (16,)),
 #        translation (shape (3,)), and scale (shape (3,)) """
@@ -1154,7 +1154,7 @@ class blenderHelper(Helper):
 #                            vecs1[2],vecs[0],vecs[1],vecs[2])
 #       bt.handleTypes= (BezTriple.HandleTypes.AUTO, BezTriple.HandleTypes.AUTO)
 #       return bt
-#       
+#
 #    def bezFromVecs2(self,vecs0,vecs1,vecs):
 #       '''
 #       Bezier triple from 3 vecs, shortcut functon
@@ -1164,7 +1164,7 @@ class blenderHelper(Helper):
 #       B=numpy.array([0.,0.,0.])
 #       H1=numpy.array([0.,0.,0.])
 #       H2=numpy.array([0.,0.,0.])
-#       for i in range(3): B[i]=vecs1[i]-vecs0[i]                      
+#       for i in range(3): B[i]=vecs1[i]-vecs0[i]
 #       A=numpy.array([0.,0.,0.])
 #       for i in range(3): A[i]=vecs[i]-vecs0[i]
 #       #Projection B on A
@@ -1190,9 +1190,9 @@ class blenderHelper(Helper):
         return None,vecs1,None
 #       bt= BezTriple.New(vecs1[0],vecs1[1],vecs1[2])
 #       bt.handleTypes= (BezTriple.HandleTypes.AUTO  , BezTriple.HandleTypes.AUTO  )
-#       
+#
 #       return bt
-                      
+
     def bezFromVecs1(self,vecs0,vecs1,vecs): #tYPE vECTOR
        '''
        Bezier triple from 3 vecs, shortcut functon
@@ -1201,7 +1201,7 @@ class blenderHelper(Helper):
        A=mathutils.Vector((0.,0.,0.))
        B=mathutils.Vector((0.,0.,0.))
        H2=mathutils.Vector((0.,0.,0.))
-       A=vecs0-vecs1                     
+       A=vecs0-vecs1
        B=vecs-vecs1
        crP=A.cross(B)
        crP.normalize()
@@ -1220,9 +1220,9 @@ class blenderHelper(Helper):
        return vecs0,vecs1,vecs
 #       bt= BezTriple.New(vecs0[0],vecs0[1],vecs0[2],vecs1[0],vecs1[1],vecs1[2],vecs[0],vecs[1],vecs[2])
 #       bt.handleTypes= (BezTriple.HandleTypes.FREE , BezTriple.HandleTypes.FREE )
-#       
+#
 #       return bt
-#        
+#
 #    def bezSquare(self,r,name):
 #          kappa=4*((math.sqrt(2)-1)/3)
 #          l = r * kappa
@@ -1277,11 +1277,11 @@ class blenderHelper(Helper):
 #
 #    def createShapes2D(self,doc=None,parent=None):
 #        if doc is None :
-#            doc = self.getCurrentScene()    
+#            doc = self.getCurrentScene()
 #        circle = doc.objects.new(self.bezCircle(0.3,'Circle'))
 #        square = doc.objects.new(self.bezSquare(0.3,'Square'))
 #        return [circle,square]
-#        
+#
     def bezList2Curve(self,x,curveData,cType):
         '''
         Take a list or vector triples and converts them into a bezier curve object
@@ -1296,29 +1296,29 @@ class blenderHelper(Helper):
         #coord0=x[0].atms[(x[0].atms.Cpos())-1].xyz()
         #coord1=x[0].atms[(x[0].atms.Cpos())].xyz()
         #need to check the type of x :atom list or coord list
- 
+
         coord1=self.FromVec(x[0])
-        coord2=self.FromVec(x[1])    
-    
+        coord2=self.FromVec(x[1])
+
         coord0=coord1-(coord2-coord1)
-    
-#        if typeC == "tBezier" : 
+
+#        if typeC == "tBezier" :
 #            cu.appendNurb(self.bezFromVecs(Vector(coord0[0],coord0[1],coord0[2]),
-#                                           Vector(coord1[0],coord1[1],coord1[2]))) 
+#                                           Vector(coord1[0],coord1[1],coord1[2])))
 #                                           # We must add with a point to start with
-#        elif typeC == "sBezier" : 
+#        elif typeC == "sBezier" :
 #            cu.appendNurb(self.bez2FromVecs(Vector(coord1[0],coord1[1],coord1[2])))
-#        else : 
+#        else :
 #        vecs0,vecs1,vecs = self.bezFromVecs1(self.FromVec(coord0),
 #                                            self.FromVec(coord1),
 #                                            self.FromVec(coord2))
 #                                            # We must add with a point to start with
         vecs0,vecs1,vecs = self.bez2FromVecs(coord1)
         self.setBezierPoint(cu.bezier_points[0],vecs0,vecs1,vecs)
-        
+
 #        cu_nurb= cu[0] # Get the first curve just added in the CurveData
-                   
-                   
+
+
         i= 1 # skip first vec triple because it was used to init the curve
         while i<(len(x)-1):
             coord0=x[i-1]#atms[(x[i].atms.Cpos())-1].xyz()
@@ -1331,24 +1331,24 @@ class blenderHelper(Helper):
             vecs0,vecs1,vecs = self.bezFromVecs1(bt_vec_tripleAv,bt_vec_triple,bt_vec_tripleAp)
 #            if typeC == "tBezier" : cu_nurb.append(bt)
 #            elif typeC == "sBezier" : cu_nurb.append(self.bez2FromVecs(Vector(coord1[0],coord1[1],coord1[2])))
-#            else : 
+#            else :
             self.setBezierPoint(cu.bezier_points[i],vecs0,vecs1,vecs)
-            i+=1              
-            
+            i+=1
+
         coord0=self.FromVec(x[len(x)-2])
-        coord1=self.FromVec(x[len(x)-1])       
+        coord1=self.FromVec(x[len(x)-1])
         coord2=coord1+(coord1-coord0)
-    
+
 #        if typeC == "tBezier" : cu_nurb.append(self.bezFromVecs(Vector(coord0[0],coord0[1],coord0[2]),Vector(coord1[0],coord1[1],coord1[2]))) # We must add with a point to start with
 #        elif typeC == "sBezier" : cu_nurb.append(self.bez2FromVecs(Vector(coord1[0],coord1[1],coord1[2])))
-#        else : 
+#        else :
         vecs0,vecs1,vecs = self.bez2FromVecs(coord1)
         #self.setBezierPoint(cu.bezier_points[-1],vecs0,vecs1,vecs)
         self.setBezierPoint(cu.bezier_points[-1],vecs0,vecs1,vecs)
         #else : cu_nurb.append(bezFromVecs1(Vector(coord0[0],coord0[1],coord0[2]),Vector(coord1[0],coord1[1],coord1[2]),Vector(coord2[0],coord2[1],coord2[2]))) # We must add with a point to start with
-                    
+
         return cu
-#        
+#
 ##    def makeRuban(x,str_type,r,name,scene):
 ##        #rename by Extrude and give a spline
 ##        #the bezierCurve"tBezier"
@@ -1362,7 +1362,7 @@ class blenderHelper(Helper):
 ##        #make the object
 ##        ob = scene.objects.new(cu)
 ##        return ob
-##        
+##
 #    def update_spline(self,name,coords):
 #        pass
 #
@@ -1414,7 +1414,7 @@ class blenderHelper(Helper):
 #                       bpy.context.scene.unit_settings.scale_length,
 #                       bpy.context.scene.unit_settings.scale_length]
         return shape,None
-        
+
     def extrudeSpline(self,spline,**kw):
         extruder = None
         shape = None
@@ -1425,10 +1425,10 @@ class blenderHelper(Helper):
                 shape = self.build_2dshape("sh_"+kw["shape"]+"_"+str(spline),
                                            kw["shape"])[0]
             else :
-                shape = kw["shape"]        
+                shape = kw["shape"]
         if shape is None :
             shape = self.build_2dshape("sh_circle"+str(spline))[0]
-      
+
         if "clone" in kw and kw["clone"] :
             bpy.ops.object.select_all(action='DESELECT')
             bpy.ops.object.select_pattern(pattern=spline.name)
@@ -1449,9 +1449,9 @@ class blenderHelper(Helper):
         if scene is None :
             scene = self.getCurrentScene()
         faces=numpy.array([range(0,nbPts-1),range(1,nbPts)]).transpose().tolist()
-        poly,mesh = self.createsNmesh(name,coords,None,faces) 
+        poly,mesh = self.createsNmesh(name,coords,None,faces)
         self.setCurrentSelections([poly,])
-        #convertToCurve:1   
+        #convertToCurve:1
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.delete(type='ONLY_FACE')
@@ -1461,7 +1461,7 @@ class blenderHelper(Helper):
         obj = bpy.context.object
         # Set spline type to custom property in panel
         bpy.ops.object.editmode_toggle()
-        bpy.ops.curve.spline_type_set(type=lType[4]) 
+        bpy.ops.curve.spline_type_set(type=lType[4])
         # Set handle type to custom property in panel
         bpy.ops.curve.handle_type_set(type="AUTOMATIC") #ALIGNED,AUTOMATIC,FREE_ALIGN,VECTOR
         bpy.ops.object.editmode_toggle()
@@ -1470,19 +1470,19 @@ class blenderHelper(Helper):
         obj.data.bevel_resolution = 4 #curve_resolution
         obj.data.resolution_u = 12 #curve_u
         # Set depth to custom property in panel
-        obj.data.bevel_depth = 0.1#Btrace.curve_depth 
+        obj.data.bevel_depth = 0.1#Btrace.curve_depth
         # Smooth object
         bpy.ops.object.shade_smooth()
         # Modulate curve radius and add distortion
-#        if Btrace.distort_curve: 
+#        if Btrace.distort_curve:
 #            scale = Btrace.distort_modscale
 #            if scale == 0:
 #                return {'FINISHED'}
 #            for u in obj.data.splines:
 #                for v in u.bezier_points:
-#                    v.radius = scale*round(random.random(),3) 
-        return poly,poly        
-        
+#                    v.radius = scale*round(random.random(),3)
+        return poly,poly
+
     def spline_bezier(self,name,coords,type="",extrude_obj=None,scene=None,parent=None,**kw):
         #Type : "sBezier", "tBezier" or ""
         lType = ["POLY", "BEZIER", "BSPLINE", "CARDINAL", "NURBS"]
@@ -1498,7 +1498,7 @@ class blenderHelper(Helper):
         curveData.dimensions="3D"
         if cType == "BEZIER" :
             spline = self.bezList2Curve(coords,curveData,cType)
-        
+
 #        cu=self.bezList2Curve(coords,type)
 #        cu.name = name
         if extrude_obj is not None :
@@ -1551,7 +1551,7 @@ class blenderHelper(Helper):
         if not editMode :
             bpy.ops.object.mode_set(mode='OBJECT')
         return eb
-        
+
     def armature(self,name,x,hR=0.5,tR=0.5,dDist=0.4,roll=10,scn=None,root=None,
                  listeName=None):
         if scn is None:
@@ -1580,23 +1580,23 @@ class blenderHelper(Helper):
 #        self.addObjectToScene(scn,armObj,parent=root)
         #scn.objects.link(armObj)
         return armObj,bones
-    
+
 #    def add_armature(self,armObj,obj):
 #         mods = obj.modifiers
 #         mod=mods.append(Modifier.Types.ARMATURE)
 #         mod[Modifier.Settings.OBJECT] = armObj
 #         obj.addVertexGroupsFromArmature(armObj)
-#        
+#
 #    def bindGeom2Bones(self,listeObject,bones):
 #        """
 #        Make a skinning. Namely bind the given bones to the given list of geometry.
 #        This function will joins the list of geomtry in one geometry
-#        
+#
 #        @type  listeObjects: list
 #        @param listeObjects: list of object to joins
 #        @type  bones: list
 #        @param bones: list of joins
-#        """    
+#        """
 #        #the joins dont work using non interactive mode
 #        if len(listeObject) >1:
 #            self.JoinsObjects(listeObject)
@@ -1611,9 +1611,9 @@ class blenderHelper(Helper):
     def oneMetaBall(self,metab,rad,coord):
         #add one ball
         me=metab.elements.new()
-        me.radius=float(rad) *3. # 
-        me.co = (coord[0], coord[1], coord[2])  
-    
+        me.radius=float(rad) *3. #
+        me.co = (coord[0], coord[1], coord[2])
+
     def metaballs(self,name,listePt,listeR,scn=None,root=None,**kw):
         if scn == None:
             scn = self.getCurrentScene()
@@ -1635,12 +1635,12 @@ class blenderHelper(Helper):
     def constraintLookAt(self,object):
         """
         Cosntraint an hostobject to llok at the camera
-        
+
         @type  object: Hostobject
         @param object: object to constraint
         """
         object=self.getObject(object)
-        
+
 #
     def updateText(self,text,string="",parent=None,size=None,pos=None,font=None):
         pass
@@ -1648,15 +1648,15 @@ class blenderHelper(Helper):
 #        if type(text) == list or type(text) == tuple:
 #            txt,otxt =text
 #        else :
-#            txt = text  
-#            otxt = None          
-#        if string : 
+#            txt = text
+#            otxt = None
+#        if string :
 #            txt.setText(string)
-#        if size is not None :  
+#        if size is not None :
 #            txt.setSize(size)
-#        if pos is not None : 
+#        if pos is not None :
 #            self.setTranslation(otxt,pos)
-#        if parent is not None : 
+#        if parent is not None :
 #            self.reParent(otxt,parent)
 #        otxt.makeDisplayList()
 #
@@ -1694,7 +1694,7 @@ class blenderHelper(Helper):
 #            if extruder is not None :
 #                extruder[c4d.EXTRUDEOBJECT_MOVE] = self.FromVec([0.5,0.,0.]) # if x 180.0
 #                extruder[c4d.EXTRUDEOBJECT_HIERARCHIC] = 1
-#                parent = extruder       
+#                parent = extruder
         if return_extruder :
             return obj,extruder
         else :
@@ -1706,12 +1706,12 @@ class blenderHelper(Helper):
 
     def box(self,name,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
                               mat =None,**kw):
-                                  
+
         res = bpy.ops.mesh.primitive_cube_add()
         obj = bpy.context.object
         obj.name = name
         mesh = obj.data
-        mesh.name = "m_"+name   
+        mesh.name = "m_"+name
         #self.addMaterial(name,[1.,1.,0.])
 
         if cornerPoints != None :
@@ -1724,10 +1724,10 @@ class blenderHelper(Helper):
         if "parent" in kw :
             parent = kw["parent"]
         if mat is not None :
-            self.assignMaterial(obj,mat)                
+            self.assignMaterial(obj,mat)
         else :
-            self.addMaterial(name+"mat",[1.,1.,0.])        
-        self.addObjectToScene(self.getCurrentScene(),obj,parent=parent)        
+            self.addMaterial(name+"mat",[1.,1.,0.])
+        self.addObjectToScene(self.getCurrentScene(),obj,parent=parent)
         return obj,mesh
 
     def updateBox(self,box,center=[0.,0.,0.],size=[1.,1.,1.],cornerPoints=None,visible=1,
@@ -1740,7 +1740,7 @@ class blenderHelper(Helper):
                 center[i]=(cornerPoints[0][i]+cornerPoints[1][i])/2.
         box.location = (float(center[0]),float(center[1]),float(center[2]))
         box.dimensions = (float(size[0]),float(size[1]),float(size[2]))
-        
+
     def plane(self,name,center=[0.,0.,0.],size=[1.,1.],cornerPoints=None,visible=1,**kw):
         #plane or grid
         xres = 2
@@ -1748,7 +1748,7 @@ class blenderHelper(Helper):
         if "subdivision" in kw :
             xres = kw["subdivision"][0]
             yres = kw["subdivision"][1]
-            if xres == 1 : xres = 2                      
+            if xres == 1 : xres = 2
             if yres == 1 : yres = 2
         res = bpy.ops.mesh.primitive_grid_add(x_subdivisions=xres,
                                               y_subdivisions=yres,
@@ -1756,7 +1756,7 @@ class blenderHelper(Helper):
         obj = bpy.context.object
         obj.name = name
         mesh = obj.data
-        mesh.name = "m_"+name   
+        mesh.name = "m_"+name
 
         if cornerPoints != None :
             for i in range(3):
@@ -1764,7 +1764,7 @@ class blenderHelper(Helper):
             center=(self.FromVec(cornerPoints[0])+self.FromVec(cornerPoints[1]))/2.
         obj.location = (float(center[0]),float(center[1]),float(center[2]))
         obj.dimensions = (float(size[0])*0.5,float(size[1])*0.5,1.0)
-        
+
         if "axis" in kw : #orientation
             dic = { "+X":[1.,0.,0.],"-X":[-1.,0.,0.],
                     "+Y":[0.,1.,0.],"-Y":[0.,-1.,0.],
@@ -1778,10 +1778,10 @@ class blenderHelper(Helper):
                 axis = idic[kw["axis"]]
             #plane[c4d.PRIM_AXIS]=axis
             #should rotate around the axis
-        
+
         if "material" in kw :
             if type(kw["material"]) is not bool :
-                self.assignMaterial(plane,[kw["material"],])                
+                self.assignMaterial(plane,[kw["material"],])
             else :
                 self.addMaterial(name,[1.,1.,0.])
         parent = None
@@ -1790,10 +1790,10 @@ class blenderHelper(Helper):
             obj.parent = parent
 #        self.addObjectToScene(self.getCurrentScene(),obj)
         return obj,mesh
-    
+
     def Sphere(self,name,res=16,radius=1.0,pos=None,color=None,mat=None,parent=None):
-         #res = bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=res, size=radius)
-        res = bpy.ops.mesh.primitive_uv_sphere_add(segments=res, ring_count=res, size=radius) 
+        res = bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=res, size=radius)
+        # res = bpy.ops.mesh.primitive_uv_sphere_add(segments=res, ring_count=res, size=radius)
 #        print (res)
         obj = bpy.context.object
         obj.name = name
@@ -1819,21 +1819,21 @@ class blenderHelper(Helper):
         return obj,mesh
 
     def Cone(self,name,radius=1.,length=1.,res=9, pos = [0.,0.,0.],parent=None):
-        res = bpy.ops.mesh.primitive_cone_add(vertices=res, radius=radius, 
+        res = bpy.ops.mesh.primitive_cone_add(vertices=res, radius=radius,
                                 depth=length,
-                                location = (float(pos[0]),float(pos[1]),float(pos[2]))) 
+                                location = (float(pos[0]),float(pos[1]),float(pos[2])))
         obj = bpy.context.object
         obj.name = name
         mesh = obj.data
         mesh.name = "mesh_"+name
         if parent is not None:
-            obj.parent = parent        
+            obj.parent = parent
         return obj,mesh
 
     def Cylinder(self,name,radius=1.,length=1.,res=16,pos = None,parent = None,**kw):
         #import numpy
 #        diameter = radius#2*radius??
-        res = bpy.ops.mesh.primitive_cylinder_add(vertices=res, radius=radius, 
+        res = bpy.ops.mesh.primitive_cylinder_add(vertices=res, radius=radius,
                         depth=length, cap_ends=True)
         obj = bpy.context.object
         obj.name = name
@@ -1844,7 +1844,7 @@ class blenderHelper(Helper):
         if parent is not None:
             obj.parent = self.getObject(parent)
         return obj,mesh
-#    
+#
 #    """
 #    def createMeshSphere(self,**kwargs):
 #            # default the values
@@ -1858,13 +1858,13 @@ class blenderHelper(Helper):
 #            subdivisions = kwargs.get('subdivisions',2)
 #            if useIco:
 #                sphere = Blender.Mesh.Primitives.Icosphere(subdivisions,diameter)
-#            else:    
+#            else:
 #                sphere = Blender.Mesh.Primitives.UVsphere(segments,rings,diameter)
-#            #ob = self.scene.objects.new(item,name)    
+#            #ob = self.scene.objects.new(item,name)
 #            #ob.setLocation(loc)
 #            return sphere
 #    """
-#        
+#
     def getTubeProperties(self,coord1,coord2):
         x1 = float(coord1[0])
         y1 = float(coord1[1])
@@ -1876,7 +1876,7 @@ class blenderHelper(Helper):
         wsz = atan2((y1-y2), (x1-x2))
         wz = acos((z1-z2)/laenge)
         return laenge,wsz,wz,[float(x1+x2)/2,(y1+y2)/2,(z1+z2)/2]
-        
+
     def updateTubeMesh(self,mesh,basemesh=None,verts=None,faces=None,cradius=1.0,quality=1.):
         if verts is None :
             if basemesh is not None :
@@ -1904,7 +1904,7 @@ class blenderHelper(Helper):
                 #update
                 obj.data.update()
                 #print "done"
-                
+
     def updateTubeObj(self,o,coord1,coord2):
         laenge,wsz,wz,coord=self.getTubeProperties(coord1,coord2)
         o.scale[2] = laenge
@@ -1912,14 +1912,14 @@ class blenderHelper(Helper):
         #o.setLocation(coord[0],coord[1],coord[2])
         o.rotation_euler[2] = wz
         o.rotation_euler[2] = wsz
-#    
+#
 #    def instancesCylinder(self,name,points,faces,radii,mesh,colors,scene,parent=None):
 #        cyls=[]
 #        mat = None
 #        if len(colors) == 1:
 #            mat = self.addMaterial('mat_'+name,colors[0])
 #        for i in range(len(faces)):
-#            laenge,wsz,wz,coord=self.getTubeProperties(points[faces[i][0]],points[faces[i][1]])     
+#            laenge,wsz,wz,coord=self.getTubeProperties(points[faces[i][0]],points[faces[i][1]])
 #            cname=name+str(i)
 #            mesh=Mesh.Get("mesh_"+mesh.getName().split("_")[1])    #"mesh_"+name
 #            if mat == None : mat = self.addMaterial("matcyl"+str(i),colors[i])
@@ -1934,13 +1934,13 @@ class blenderHelper(Helper):
 #            cyls.append(obj)
 #        self.AddObject(cyls,parent=parent)
 #        return cyls
-#    
+#
     def oneCylinder(self,name,head,tail,radius=None,instance=None,material=None,
                     parent = None,color=None,**kw):
         laenge,wsz,wz,coord=self.getTubeProperties(head,tail)
-        if instance == None : 
+        if instance == None :
             obj = self.Cylinder(name,parent=parent,pos=coord)[0]
-        else : 
+        else :
             obj=self.newInstance(name,instance,parent=parent)
             self.translateObj(obj,coord)
         obj.rotation_euler[1] = wz
@@ -1951,7 +1951,7 @@ class blenderHelper(Helper):
         #obj.setSize(1.,1.,float(laenge))
 
         if material != None :
-            mat = self.getMaterial(material)  
+            mat = self.getMaterial(material)
             self.setOneMaterial(obj,mat,objmode=True)
         elif color is not None :
             mats = self.getMaterialObject(obj)
@@ -1959,7 +1959,7 @@ class blenderHelper(Helper):
                 mat = self.addMaterial("mat_"+name,color)
                 self.setOneMaterial(obj,mat,objmode=True)
             else :
-                self.colorMaterial(mats[0],color)            
+                self.colorMaterial(mats[0],color)
         return obj
 
     def updateOneCylinder(self,name,head,tail,radius=None,material=None,color=None):
@@ -1967,7 +1967,7 @@ class blenderHelper(Helper):
         obj = self.getObject(name)
         self.setTranslationObj(obj,coord)
         if radius is None :
-            radius= 1.0        
+            radius= 1.0
         obj.rotation_euler[1] = wz
         obj.rotation_euler[2] = wsz
         self.scaleObj(obj,[radius,radius,float(laenge)])
@@ -1980,14 +1980,14 @@ class blenderHelper(Helper):
                 mat = self.addMaterial("mat_"+name,color)
                 self.setOneMaterial(obj,mat,objmode=True)
             else :
-                self.colorMaterial(mats[0],color)  
+                self.colorMaterial(mats[0],color)
         return obj
-        
+
     def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
                          scale=None,typ=None,**kw):
 
-        
-        
+
+
 #        obj.data.user_clear()
 #        bpy.data.meshes.remove(obj.data)
 #        obj.data = baseobj.data.copy()
@@ -2017,13 +2017,13 @@ class blenderHelper(Helper):
                 Smatrix=mathutils.Matrix.Scale(factor, 4)
                 obj.data.transform(Smatrix)
                 obj.data.update()
-#        
+#
     def updateSphereObj(self,o,c):
         if type(o) == str or type(o) == unicode :
             o = self.getObject(o)
         o.location = (float(c[0]),float(c[1]),float(c[2]))
 
-    
+
     def instancesSphere(self,name,centers,radii,meshsphere,colors,scene,parent=None):
         sphs=[]
         #k=0
@@ -2035,9 +2035,9 @@ class blenderHelper(Helper):
             spname = name+str(j)
             atC=centers[j]
             #meshsphere is the object which is link to the mesh
-            mesh=meshsphere.data#Mesh.Get("mesh_"+meshsphere.getName().split("_")[1])   
+            mesh=meshsphere.data#Mesh.Get("mesh_"+meshsphere.getName().split("_")[1])
             OBJ=bpy.data.objects.new(spname,mesh)
-            #"mesh_"+name     OR use shareFrom    
+            #"mesh_"+name     OR use shareFrom
             #mesh=Mesh.Get(mesh)
             #OBJ=Object.New('Mesh',spname)
             #OBJ.link(mesh)
@@ -2048,9 +2048,9 @@ class blenderHelper(Helper):
             elif j >= len(radii) :
                 rad = radii[0]
             else :
-                rad = radii[j]            
+                rad = radii[j]
             OBJ.scale=(float(rad),float(rad),float(rad))
-            #OBJ=Object.New('Mesh',"S_"+fullname)   
+            #OBJ=Object.New('Mesh',"S_"+fullname)
 #            if mat == None : mat = self.addMaterial("matsp"+str(j),colors[j])
 #            OBJ.setMaterials([mat])
 #            OBJ.colbits = 1<<0
@@ -2063,7 +2063,7 @@ class blenderHelper(Helper):
         mat = None
 #        if len(colors) == 1:
 #            mat = self.retrieveColorMat(colors[0])
-#            if mat == None and colors[0] is not None:        
+#            if mat == None and colors[0] is not None:
 #                mat = self.addMaterial('mat_'+name,colors[0])
         delete = True
         if "delete" in kw :
@@ -2074,14 +2074,14 @@ class blenderHelper(Helper):
             elif i >= len(radii) :
                 rad = radii[0]
             else :
-                rad = radii[i]            
+                rad = radii[i]
             if i < len(sphs):
                 sphs[i].location=(float(centers[i][0]),float(centers[i][1]),float(centers[i][2]))
                 sphs[i].scale=(float(rad),float(rad),float(rad))
-#                if mat == None : 
-#                    if colors is not None and i < len(colors) and colors[i] is not None : 
+#                if mat == None :
+#                    if colors is not None and i < len(colors) and colors[i] is not None :
 #                        mat = self.addMaterial("matsp"+str(i),colors[i])
-#                if colors is not None and i < len(colors) and colors[i] is not None : 
+#                if colors is not None and i < len(colors) and colors[i] is not None :
 #                    self.colorMaterial(mat,colors[i])
                 #texture[1010] = mat
                 self.toggleDisplay(sphs[i],True)
@@ -2090,31 +2090,31 @@ class blenderHelper(Helper):
                 sphs[i].location=(float(centers[i][0]),float(centers[i][1]),float(centers[i][2]))
                 sphs[i].scale=(float(rad),float(rad),float(rad))
 #                if mat == None :
-#                    if colors is not None and  i < len(colors) and colors[i] is not None : 
+#                    if colors is not None and  i < len(colors) and colors[i] is not None :
 #                        mat = self.addMaterial("matsp"+str(i),colors[i])
 #                sphs[i].setMaterials([mat])
                 self.addObjectToScene(scene,sphs[i],parent=parent)
         if len(centers) < len(sphs) and delete :
             #delete the other ones ?
             for i in range(len(centers),len(sphs)):
-                if delete : 
+                if delete :
                     obj = sphs.pop(i)
                     self.deleteObject(obj)
                 else :
                     self.toggleDisplay(sphs[i],False)
         return sphs
-        
+
 #    def clonesAtomsSphere(self,name,iMe,x,scn,armObj,scale,Res=32,R=None,join=0):
 #        pass
-#         
+#
 #    def duplicateIndices(self,indices,n):
 #        newindices = [ (i[0],i[1],i[1]+n,i[0]+n) for i in indices ]
 #        return newindices
-#    
+#
 #    def duplicateCoords(self,coords):
 #        newcoords = [(x[0],x[1],x[2]-0.1) for x in coords]
 #        return newcoords
-#    
+#
     def PointCloudObject(self,name,**kw):
         #print "cloud", len(coords)
         coords=kw['vertices']
@@ -2122,7 +2122,7 @@ class blenderHelper(Helper):
         if 'faces' in kw:
             if kw['faces']:
                 faces = [(x,x+1,x+2) for x in range(1,len(me.verts)-3) ]
-        
+
         res = bpy.ops.object.add(type='MESH')
         obj = bpy.context.object
         obj.name = name+"ds"
@@ -2131,8 +2131,8 @@ class blenderHelper(Helper):
         me.from_pydata(coords, [], faces)
         me.update()
         me.calc_normals()
-       
-        if 'parent' in kw and kw['parent'] is not None: 
+
+        if 'parent' in kw and kw['parent'] is not None:
             parent = self.getObject(kw['parent'])
             obj.parent = parent
         return obj,me
@@ -2149,7 +2149,7 @@ class blenderHelper(Helper):
             p1,p2=self.ApplyMatrix([pt1,pt2],matrices)
             v.extend([p1,p2])
             e.append([i,i+1])
-            i+=2        
+            i+=2
         res = bpy.ops.object.add(type='MESH')
         obj = bpy.context.object
         obj.name = name+"ds"
@@ -2157,8 +2157,8 @@ class blenderHelper(Helper):
         me.name = name
         me.from_pydata(v, e, f)
         me.update()
-        me.calc_normals()       
-        if 'parent' in kw and kw['parent'] is not None: 
+        me.calc_normals()
+        if 'parent' in kw and kw['parent'] is not None:
             parent = self.getObject(kw['parent'])
             obj.parent = parent
         return obj,me
@@ -2170,7 +2170,7 @@ class blenderHelper(Helper):
         v=[]
         f=[]
         e=[]
-        n=[]        
+        n=[]
 #        i=0
 #       why -90 ?
         vi=0
@@ -2180,17 +2180,17 @@ class blenderHelper(Helper):
             #p1,p2=self.ApplyMatrix([pt1,pt2],m)
             if transpose :
                 m =self.transposeMatrix(m)
-            p1=self.ApplyMatrix([pt1],m)[0]            
+            p1=self.ApplyMatrix([pt1],m)[0]
             mr=m[:]
             mr[:3,:3]=[0.,0.,0.]
-            p2=self.ApplyMatrix([pt2],mr)[0]            
+            p2=self.ApplyMatrix([pt2],mr)[0]
             v.append(p1)
             n.append(p2)#should only get the rotation part of the  matrix
 #            v.extend([p1,p2*2.0])
 #            f.append([vi,vi+1,vi+1,vi])
 #            e.append([vi,vi+1])
             vi+=2
-#            i+=2        
+#            i+=2
         res = bpy.ops.object.add(type='MESH')
         obj = bpy.context.object
         obj.name = name+"ds"
@@ -2203,7 +2203,7 @@ class blenderHelper(Helper):
         me.calc_normals()
         for i,v in enumerate(points) :
             v.normal = self.FromVec(n[i])
-        if 'parent' in kw and kw['parent'] is not None: 
+        if 'parent' in kw and kw['parent'] is not None:
             parent = self.getObject(kw['parent'])
             obj.parent = parent
         return obj,me
@@ -2229,12 +2229,12 @@ class blenderHelper(Helper):
         v=[]
         f=[]
         e=[]
-        n=[]        
+        n=[]
         vi=0
         for i,m in enumerate(matrices):
             if transpose :
                 m =self.transposeMatrix(m)
-            new_quad=self.ApplyMatrix(quad,m)            
+            new_quad=self.ApplyMatrix(quad,m)
             v.extend(new_quad)
             f.append([i*4+0,i*4+1,i*4+2,i*4+3])
         res = bpy.ops.object.add(type='MESH')
@@ -2248,11 +2248,11 @@ class blenderHelper(Helper):
 #        me.calc_normals()
 #        for i,v in enumerate(points) :
 #            v.normal = self.FromVec(n[i])
-        if 'parent' in kw and kw['parent'] is not None: 
+        if 'parent' in kw and kw['parent'] is not None:
             parent = self.getObject(kw['parent'])
             obj.parent = parent
         return obj,me
-            
+
 #    def updateCloudObject(self,name,coords):
 #        #print "updateMesh ",geom,geom.mesh
 #        #getDataFrom object or gerNRAW?
@@ -2270,7 +2270,7 @@ class blenderHelper(Helper):
 #        mesh.materials=mats
 #        mesh.update()
 #
-#    
+#
     def polygons(self,name, proxyCol=False, smooth=True, color=None, dejavu=False,
                  material=None, **kw):
         vertices=None
@@ -2288,17 +2288,17 @@ class blenderHelper(Helper):
             if kw['normals'] is not None:
                 normals = kw["normals"]
         frontPolyMode = 'fill'
-        if "frontPolyMode" in kw : 
+        if "frontPolyMode" in kw :
             frontPolyMode = kw["frontPolyMode"]
         shading = 'flat'
-        if "shading" in kw : 
+        if "shading" in kw :
             shading=kw["shading"]#'flat'
         #vlist = []
         polygon=bpy.data.meshes.new(name)
 
-        if kw['vertices'] is not None: 
+        if kw['vertices'] is not None:
             vertices = vertices#kw['vertices']        # add vertices to mesh
-        if kw['faces'] is not None: 
+        if kw['faces'] is not None:
             faces = faces     # add faces to the mesh (also adds edges)
         # if faces length is <= 2 need to add a 0
         if faces and len(faces[0]) == 2 :
@@ -2312,11 +2312,11 @@ class blenderHelper(Helper):
         #smooth face : the vertex normals are averaged to make this face look smooth
         polygon.calc_normals()
 #        if smooth:
-#            if kw['faces'] is not None: 
+#            if kw['faces'] is not None:
 #                for face in polygon.faces:
 #                    face.smooth=1
 #        if type(material) is bool :
-#            doMaterial = material        
+#            doMaterial = material
 #        if doMaterial:
 #            if material is None :
 #                mat = self.addMaterial("mat"+name[:4],(1.,0.,0.))
@@ -2328,14 +2328,14 @@ class blenderHelper(Helper):
 #            self.changeColor(polygon,color)
 #        if frontPolyMode == "line" :
 #            #drawtype,and mat ->wire
-#            mat.setMode("Wire")    
+#            mat.setMode("Wire")
         if dejavu :
             obpolygon = bpy.data.objects.new(name,polygon)
     #        obpolygon.draw_type = 'SMOOTH'
             obpolygon.select = True
-    #        bpy.ops.object.mode_set(mode='OBJECT')        
+    #        bpy.ops.object.mode_set(mode='OBJECT')
             #add the object to the scene...
-          
+
 #            obpolygon = Blender.Object.New("Mesh",name)
 #            obpolygon.link(polygon)
 #            if frontPolyMode == "line" :
@@ -2343,12 +2343,12 @@ class blenderHelper(Helper):
             return obpolygon
 #        else :
         return polygon
-    
+
     def createsNmesh(self, name, vertices, vnormals, faces, color=[1,0,0],
                             material= None, smooth=True, proxyCol=False, **kw):
         """
         This is the main function that create a polygonal mesh.
-        
+
         @type  name: string
         @param name: name of the pointCloud
         @type  vertices: array
@@ -2360,12 +2360,12 @@ class blenderHelper(Helper):
         @type  smooth: boolean
         @param smooth: smooth the mesh
         @type  material: hostApp obj
-        @param material: material to apply to the mesh    
+        @param material: material to apply to the mesh
         @type  proxyCol: booelan
         @param proxyCol: do we need a special object for color by vertex (ie C4D)
         @type  color: array
         @param color: r,g,b value to color the mesh
-    
+
         @rtype:   hostApp obj
         @return:  the polygon object
         """
@@ -2373,25 +2373,25 @@ class blenderHelper(Helper):
         polygon = self.polygons("M_"+name, vertices=vertices, normals=vnormals,
                                 faces=faces, material=material, color=color,
                                 smooth=smooth, proxyCol=proxyCol, **kw)
-        
+
         obpolygon = bpy.data.objects.new(name, polygon)
 #        obpolygon.draw_type = 'SMOOTH'
         obpolygon.select = True
-#        bpy.ops.object.mode_set(mode='OBJECT')        
+#        bpy.ops.object.mode_set(mode='OBJECT')
         #add the object to the scene...
         parent = None
         if "parent" in kw :
             parent = kw["parent"]
-        
+
         self.addObjectToScene(self.getCurrentScene(), obpolygon, parent=parent)
         bpy.context.scene.objects.active = obpolygon
         if smooth:
             bpy.ops.object.shade_smooth()
         else:
             bpy.ops.object.shade_flat()
-            
+
         if type(material) is bool :
-            doMaterial = material        
+            doMaterial = material
         if doMaterial:
             if material is None or type(material) is bool :
                 mat = self.addMaterial("mat_"+name,color)
@@ -2434,8 +2434,8 @@ class blenderHelper(Helper):
             scn.layers[ind] = True
         for unset in set(range(20)).difference(layers):
             scn.layers[unset] = False
-        
-        
+
+
     def updateFaces(self,mesh,faces):
         # eekadoodle prevention
         for i in range(len(faces)):
@@ -2457,8 +2457,8 @@ class blenderHelper(Helper):
             #mesh.faces.add(len(faces))
             for i in range(len(faces)):
                 mesh.faces[start_faces + i].vertices_raw = faces[i]
-        mesh.update(calc_edges = True) # calc_edges prevents memory-corruption            
-        
+        mesh.update(calc_edges = True) # calc_edges prevents memory-corruption
+
     def updateVerts(self,mesh,vertices):
         if len(mesh.vertices) == len(vertices):
             for i in range(len(vertices)):
@@ -2515,13 +2515,13 @@ class blenderHelper(Helper):
             faces = newF
         mesh.from_pydata(vertices, [], faces)
 
-        # smooth 
+        # smooth
         mesh.update()
         if smooth:
             bpy.ops.object.shade_smooth()
         else:
             bpy.ops.object.shade_flat()
-    
+
         if togleDs :
             self.toggleDisplay(obj,display=False)
 #        # Update mesh geometry after adding stuff.
@@ -2534,19 +2534,19 @@ class blenderHelper(Helper):
         #check if len vertices is =
 #        if len(mesh.data.vertices) == len(vertices):
 #            [self.setMeshVerticesCoordinates(v,c) for v,c in zip(mesh.data.vertices,vertices)]
-#        elif len(mesh.data.vertices) < len(vertices): 
+#        elif len(mesh.data.vertices) < len(vertices):
 #            mesh.data.vertices.add(len(vertices)-len(mesh.data.vertices))
 #            #add the new one
 #            #mesh.verts.extend(vertices)            # add vertices to mesh
 #            [self.setMeshVerticesCoordinates(v,c) for v,c in zip(mesh.data.vertices,vertices)]
-#        elif len(mesh.data.vertices) > len(vertices): 
+#        elif len(mesh.data.vertices) > len(vertices):
 #            pass
 ##        if faces is not None:
 ##            if type(faces) is not list:
 ##                faces = faces.tolist()
 ##            if len(mesh.faces) == len(faces) :
 ##                [self.setMeshFace(mesh,f,indexes) for f,indexes in zip(mesh.faces,faces)]
-##            else : 
+##            else :
 ##                mesh.faces.delete(1,list(range(len(mesh.faces))))
 ##                mesh.faces.extend(faces) # add faces to the mesh (also adds edges)
 ##            #set by default the smooth
@@ -2559,9 +2559,9 @@ class blenderHelper(Helper):
 #                mod[Modifier.Settings.RENDER] = True
 #                mod[Modifier.Settings.REALTIME] = True
 #                mod[Modifier.Settings.EDITMODE] = False
-        #        
+        #
 #    def alignNormal(self,poly):
-#        pass    
+#        pass
 #
 #    def getFace(self,face):
 #        return [v.index for v in face.verts]
@@ -2575,7 +2575,7 @@ class blenderHelper(Helper):
 #        bfaces = mesh.faces
 #        faces = list(map(self.getFace,c4dfaces))
 #        return faces
-#        
+#
 #
 #    def getMatFromColorComparison(self,listMat, color):
 #        for i,mat in enumerate(listMat) :
@@ -2584,7 +2584,7 @@ class blenderHelper(Helper):
 #            if col == color :
 #                return i,mat
 #        return 0,None
-#    
+#
 #    def applyMultiMat(self,mesh,colors):
 #        mesh.vertexColors = 1
 #        for k,f in enumerate(mesh.faces):
@@ -2595,7 +2595,7 @@ class blenderHelper(Helper):
 #            if mat is None :
 #                print(ncolor,k)
 #            f.mat = i
-#    
+#
     def color_per_vertex(self,mesh,colors,perVertex=True,perObjectmat=None,pb=False,
                     facesSelection=None,faceMaterial=False):
         mesh=self.getMesh(mesh)
@@ -2634,29 +2634,29 @@ class blenderHelper(Helper):
         unic=False
         ncolor=None
 #        print("c,v,f ",len(colors), len(mverts), len(mfaces))
-        if len(colors) != len(mverts) and len(colors) == len(mfaces): 
+        if len(colors) != len(mverts) and len(colors) == len(mfaces):
             perVertex=False
-        elif len(colors) == len(mverts) and len(colors) != len(mfaces): 
+        elif len(colors) == len(mverts) and len(colors) != len(mfaces):
             perVertex=True
         else :
-            if (len(colors) - len(mverts)) > (len(colors) - len(mfaces)) : 
+            if (len(colors) - len(mverts)) > (len(colors) - len(mfaces)) :
                 perVertex=True
             else :
-                perVertex=False            
+                perVertex=False
 #        print("perVertex", perVertex)
-        if len(colors)==1 : 
+        if len(colors)==1 :
             unic=True
             ncolor = self.convertColor(colors[0],toint=False)
-        
+
         # asign colours to verts
         if not faceMaterial:
             for k, f in enumerate(mfaces):
                 v = vertexColour[k]
                 vi = f.vertices_raw
-                if not unic and not perVertex : 
+                if not unic and not perVertex :
                     if f.index <= len(colors):
                         ncolor = self.convertColor(colors[f.index],toint=False)
-                if unic or not perVertex :  
+                if unic or not perVertex :
 #                    print (colors[f.index],ncolor)
                     v.color1 = ncolor
                     v.color2 = ncolor
@@ -2666,7 +2666,7 @@ class blenderHelper(Helper):
                     v.color1 = self.convertColor(colors[vi[0]],toint=False)
                     v.color2 = self.convertColor(colors[vi[1]],toint=False)
                     v.color3 = self.convertColor(colors[vi[2]],toint=False)
-                    v.color4 = self.convertColor(colors[vi[3]] ,toint=False)                           
+                    v.color4 = self.convertColor(colors[vi[3]] ,toint=False)
                 if pb and (k%70) == 0:
                     progress = float(k) / (len( mesh.faces ))
 #                    Window.DrawProgressBar(progress, 'color mesh')
@@ -2683,22 +2683,22 @@ class blenderHelper(Helper):
 #        except :
 #            print ("v context problem")
         return True
-        
+
     def changeColor(self,mesh,colors,perVertex=True,perObjectmat=None,pb=False,
                     facesSelection=None,faceMaterial=False):
         if type(colors[0]) is float or type(colors[0]) is int and len(colors) == 3 :
-           colors = [colors,]  
+           colors = [colors,]
         res = self.color_per_vertex(mesh,colors,perVertex=perVertex,
                                     perObjectmat=perObjectmat,pb=pb,
                     facesSelection=facesSelection,faceMaterial=faceMaterial)
         if not res or len(colors) == 1:
             #apply mat to the mesh
-            
+
             o = self.getObject(mesh)
             print ("changeColor",mesh,self.getObject(mesh))
             if o is None :
                 o = self.getObjectFromMesh(mesh)
-            print ("changeColor",mesh,o)                
+            print ("changeColor",mesh,o)
             self.changeObjColorMat(o,colors[0])
 
     def colorMaterial(self,mat,color):
@@ -2711,7 +2711,7 @@ class blenderHelper(Helper):
             mat.diffuse_color = (ncolors[0],ncolors[1],ncolors[2])
         except :
             print(("no mat"))
-#  
+#
     def setOneMaterial(self,obj,mat,objmode = False):
         #if not obj.material_slots.__len__():
 #        obj.select = True
@@ -2720,7 +2720,7 @@ class blenderHelper(Helper):
         if type(mat) is list: mat = mat[0]
         bpy.context.scene.objects.active = obj
         if objmode :
-#            if len(obj.material_slots.__len__() == 0) 
+#            if len(obj.material_slots.__len__() == 0)
             bpy.ops.object.mode_set(mode='OBJECT')
         if obj.material_slots.__len__() == 0 :
             bpy.ops.object.material_slot_add()
@@ -2737,15 +2737,15 @@ class blenderHelper(Helper):
             print (self.getName(obj),obj)
 #        #Go to Edit mode
 #        bpy.ops.object.mode_set(mode='EDIT')
-#         
+#
 #        #Select all the vertices
-#        bpy.ops.mesh.select_all(action='SELECT') 
-#         
+#        bpy.ops.mesh.select_all(action='SELECT')
+#
 #        #Assign the material on all the vertices
-#        bpy.ops.object.material_slot_assign() 
-#         
+#        bpy.ops.object.material_slot_assign()
+#
 #        #Return to Object Mode
-#        bpy.ops.object.mode_set(mode='OBJECT')        
+#        bpy.ops.object.mode_set(mode='OBJECT')
 
     def assignMaterial(self,obj,mat,texture=False,**kw):
         #whatabou objec mode
@@ -2772,21 +2772,21 @@ class blenderHelper(Helper):
                     self.setOneMaterial(obj,m,objmode = objmode)
             else :
                 self.setOneMaterial(obj,mat,objmode = objmode)
-    
+
     def changeObjColorMat(self,obj,color):
         if obj is None :
             print ("changeObjColorMat obj is None")
             return
         mats=self.getMaterialObject(obj)
-        if len(mats) == 0 : 
+        if len(mats) == 0 :
             mat = self.retrieveColorMat(color)
-            if mat == None : 
+            if mat == None :
                 mat = self.addMaterial("newColor",color)
             self.setOneMaterial(obj,mat)
         else :
             self.colorMaterial(mats[0],color)
 #        obj.colbits = 1<<0
-#                    
+#
 #    ######ANIMATION FUNCTION########################
 #    def insertKeys(self,obj,step=5):
 #        curFrame=self.getCurrentScene().getRenderingContext().currentFrame()#Blender.Get('curframe')
@@ -2799,7 +2799,7 @@ class blenderHelper(Helper):
 #            if type(o) == str : o=getObject(o)
 #            o.insertIpoKey(Blender.Object.LOCROT)
 #        self.getCurrentScene().getRenderingContext().currentFrame(curFrame+step)
-#    
+#
 #    #############PARTICLE####################################
     #From a pointcloud-yes
     def particle(self,name,coords,group_name=None,radius=None,color=None,hostmatrice=None,**kw):
@@ -2819,9 +2819,9 @@ class blenderHelper(Helper):
         set.physics_type = 'NO'
         set.frame_start = 0
         set.frame_end = 0
-        
+
         set.emit_from = 'VERT'#Particle.EMITFROM[ 'PARTICLE' | 'VOLUME' | 'FACES' | 'VERTS' ]
-        
+
 #        o.glBrown=5.0 #brownian motion brownian_factor
         if "display" in kw :
             if kw["display"] == "cross":
@@ -2832,18 +2832,18 @@ class blenderHelper(Helper):
         return cloud
 
     def getParticles(self,name):
-        ob=self.getObject(name+"_cloudds")        
+        ob=self.getObject(name+"_cloudds")
         return ob
 
-    def updateParticles(self,newPos,PS=None): 
+    def updateParticles(self,newPos,PS=None):
         #ps could be  the name too
         #update he point could that have he paricle...
         self.updatePoly(PS,vertices=newPos)
-        
+
     def volume(self,name="",source_object=None,source_particle=None,
                source_type="particle",box=None,
                bounding_box = [[0.,0.,0.],[1.,1.,1.]],mat =None, **kw):
-        #create a cube bouding box, 
+        #create a cube bouding box,
         #create a volume material with a pointdensity texture
         #attach the PS-Object to the point density
         sType = {"particle":"PARTICLE_SYSTEM","object":"OBJECT"}
@@ -2864,7 +2864,7 @@ class blenderHelper(Helper):
         except :
             print ("probleme volume texture")
             return
-        
+
         pointds.point_source = sType[source_type]
         pointds.object = source_object
         pointds.radius = 1.0
@@ -2874,7 +2874,7 @@ class blenderHelper(Helper):
             for m in mods :
                 if m.type == "PARTICLE_SYSTEM" :
                     psm = m
-                    source_particle = psm.particle_system           
+                    source_particle = psm.particle_system
                     set = source_particle.settings
                     set.use_render_emitter = 0
                     set.render_type = None
@@ -2890,7 +2890,7 @@ class blenderHelper(Helper):
         tslot.blend_type = "MULTIPLY"
         #pointds.color_ramp
         return box,mat,texture
-        
+
 #    #From a pointcloud-yes
 #    def newParticleSystem(self,name,object,n):
 #        o=Blender.Particle.new(object)
@@ -2898,7 +2898,7 @@ class blenderHelper(Helper):
 #        o.particleDistribution=3 #Particle.EMITFROM[ 'PARTICLE' | 'VOLUME' | 'FACES' | 'VERTS' ]
 #        o.amount = n
 #        o.glBrown=5.0
-#        
+#
 #
 #    def addTextFile(self,name="",file=None,text=None):
 #        if file is None and text is None :
@@ -2942,7 +2942,7 @@ class blenderHelper(Helper):
 #            return [self.ToVec(uvs[k]) for k in uvs]
 #
 #    def setUV(self,object,faceIndex,vertexIndex,uv,perVertice=True,uvid=0):
-#        #triangle 
+#        #triangle
 #        ob = self.getObject(object)
 #        #uv is per polygon
 #        mesh=ob.getData(False,True)
@@ -2978,21 +2978,21 @@ class blenderHelper(Helper):
 #        self.toggleEditMode()
         mesh = self.checkIsMesh(poly)
         return self.ToVec(mesh.vertices[vindice].co)
-        
+
     def getMeshVertices(self,poly,transform=False,selected = False):
 #        self.toggleEditMode()
         mesh = self.checkIsMesh(poly)
         points = mesh.vertices
         if selected:
             listeindice = [v.index for v in mesh.vertices if v.select and not v.hide]
-#            listeindice = mesh.verts.selected()       
+#            listeindice = mesh.verts.selected()
             vertices = [self.ToVec(points[v].co) for v in listeindice]
 #            self.restoreEditMode(editmode)
-            return vertices, listeindice        
+            return vertices, listeindice
         else:
             vertices = [self.ToVec(v.co) for v in points]
             return vertices
-        
+
     def getMeshNormales(self,poly,selected = False):
 #        editmode = self.toggleEditMode()
         mesh = self.checkIsMesh(poly)
@@ -3002,7 +3002,7 @@ class blenderHelper(Helper):
             listeindice = [v.index for v in mesh.vertices if v.select and not v.hide]
             vnormals = [self.ToVec(points[v].normal) for v in listeindice]
 #            self.restoreEditMode(editmode)
-            return vnormals, listeindice           
+            return vnormals, listeindice
         else :
             vnormals = [self.ToVec(v.normal) for v in points]
             return vnormals
@@ -3015,7 +3015,7 @@ class blenderHelper(Helper):
             faces = [self.getMeshFace(mfaces[f]) for f in mfaces_indice]
             return faces, mfaces_indice
         else :
-            faces = [self.getMeshFace(f) for f in mfaces]    
+            faces = [self.getMeshFace(f) for f in mfaces]
             return faces
 
     def getMeshFaceNormales(self,poly,selected = False):
@@ -3030,9 +3030,9 @@ class blenderHelper(Helper):
             facesnormals = [self.ToVec(mfaces[f].normal) for f in mfaces_indice]
             return facesnormals,mfaces_indice
         else :
-            facesnormals = [self.ToVec(f.normal) for f in mfaces]    
+            facesnormals = [self.ToVec(f.normal) for f in mfaces]
             return facesnormals
-            
+
     def getMeshEdge(self,e):
         return e.vertices[0],e.vertices[1]
 
@@ -3060,7 +3060,7 @@ class blenderHelper(Helper):
 
     def getFaceEdges(self, poly, faceindice, selected=False):
         mesh = self.checkIsMesh(poly)
-        return mesh.faces[faceindice].edge_keys    
+        return mesh.faces[faceindice].edge_keys
 #
 #    def setMeshFace(self,mesh,f,indexes):
 #        print(indexes)
@@ -3069,7 +3069,7 @@ class blenderHelper(Helper):
 #        for i,v in enumerate(indexes):
 #            listeV.append(mesh.verts[v])
 #        f.v = tuple(listeV)
-#        
+#
     def getMeshFace(self, f):
         return f.vertices#difference with f.vertices_raw?s
 #        if len(f.vertices) == 3:
@@ -3086,7 +3086,7 @@ class blenderHelper(Helper):
             faces = [self.getMeshFace(mfaces[f]) for f in mfaces_indice]
             return faces, mfaces_indice
         else :
-            faces = [self.getMeshFace(f) for f in mfaces]    
+            faces = [self.getMeshFace(f) for f in mfaces]
             return faces
 
     def deleteMeshFaces(self,poly, faces=None):
@@ -3113,14 +3113,14 @@ class blenderHelper(Helper):
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
         #[‘VERT’, ‘EDGE’, ‘FACE’, ‘ALL’, ‘EDGE_FACE’, ‘ONLY_FACE’, ‘EDGE_LOOP’]
-        vertices = self.getMeshVertices(poly) 
-        faces = self.getMeshVertices(poly) 
+        vertices = self.getMeshVertices(poly)
+        faces = self.getMeshVertices(poly)
         bpy.ops.mesh.delete(type='VERT')
         bpy.ops.object.mode_set(mode='OBJECT')
         vertices.extend(vertices_coordinates)
         mesh.from_pydata(vertices, [], faces)
         if togleDs :
-            self.toggleDisplay(obj,display=False) 
+            self.toggleDisplay(obj,display=False)
 
     def addMeshFaces(self, poly, faces_vertices_indices,**kw):
         togleDs = False
@@ -3137,26 +3137,26 @@ class blenderHelper(Helper):
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
         #[‘VERT’, ‘EDGE’, ‘FACE’, ‘ALL’, ‘EDGE_FACE’, ‘ONLY_FACE’, ‘EDGE_LOOP’]
-        vertices = self.getMeshVertices(poly) 
-        faces = self.getMeshVertices(poly) 
+        vertices = self.getMeshVertices(poly)
+        faces = self.getMeshVertices(poly)
         bpy.ops.mesh.delete(type='FACE')
         bpy.ops.object.mode_set(mode='OBJECT')
         faces.extend(faces_vertices_indices)
         mesh.from_pydata(vertices, [], faces)
         if togleDs :
-            self.toggleDisplay(obj,display=False) 
-              
+            self.toggleDisplay(obj,display=False)
+
     def selectFace(self, obj, index, select=True):
         curr = bpy.context.tool_settings.mesh_select_mode
         bpy.context.tool_settings.mesh_select_mode = (curr[0], curr[1], True)
         mesh = self.checkIsMesh(obj)
         mesh.faces[index].select = select
-    
+
     def selectFaces(self, obj, indices, select=True):
         editmode=self.toggleEditMode()
         curr = bpy.context.tool_settings.mesh_select_mode
         bpy.context.tool_settings.mesh_select_mode = (curr[0], curr[1], True)
-        
+
         mesh = self.checkIsMesh(obj)
         for ind in indices:
             if ind >= len(mesh.faces):
@@ -3174,7 +3174,7 @@ class blenderHelper(Helper):
         editmode=self.toggleEditMode()
         curr = bpy.context.tool_settings.mesh_select_mode
         bpy.context.tool_settings.mesh_select_mode = (curr[0], True, curr[2])
-        
+
         mesh = self.getMeshFrom(obj)
         for ind in indices:
             if ind >= len(mesh.edges):
@@ -3187,9 +3187,9 @@ class blenderHelper(Helper):
         bpy.context.tool_settings.mesh_select_mode = (True, curr[1], curr[2])
         mesh = self.getMeshFrom(obj)
         mesh.vertices[index].select = select
-        
-        
-    def selectVertices(self, obj, indices, select=True, **kw):         
+
+
+    def selectVertices(self, obj, indices, select=True, **kw):
         editmode=self.toggleEditMode()
         curr = bpy.context.tool_settings.mesh_select_mode
         bpy.context.tool_settings.mesh_select_mode = (True, curr[1], curr[2])
@@ -3205,7 +3205,7 @@ class blenderHelper(Helper):
         vertices = self.getMeshVertices(mesh)
         faces = self.getMeshFaces(mesh)
         vnormals = self.getMeshNormales(mesh)
-        print ("########################################") 
+        print ("########################################")
         if transform :
             #node = self.getNode(mesh)
             #fnTrans = om.MFnTransform(mesh)
@@ -3213,14 +3213,14 @@ class blenderHelper(Helper):
 #            bpy.context.scene.objects.active = ob
 #            ob = bpy.context.object
             mat = self.getObjectMatrix(ob)#ob.matrix_world #cache problem ?
-            print ("########################################")            
+            print ("########################################")
             print (ob,poly,mat)
             #mat.transpose()# numpy.array(mmat).transpose()#self.m2matrix(mmat)
             #print (ob,poly,mat)
             vertices = self.ApplyMatrix(vertices,mat)
 #        if edit and copy :
 #            self.getCurrentScene().SetActiveObject(poly)
-#            c4d.CallCommand(100004787) #delete the obj       
+#            c4d.CallCommand(100004787) #delete the obj
         if "fn" in kw and kw["fn"] :
             fnormals = self.getMeshFaceNormales(mesh)
             return faces,vertices,vnormals,fnormals
@@ -3230,47 +3230,47 @@ class blenderHelper(Helper):
     def ApplyMatrix(self,coords,mat):
         """
         Apply the 4x4 transformation matrix to the given list of 3d points.
-    
+
         @type  coords: array
         @param coords: the list of point to transform.
         @type  mat: 4x4array
         @param mat: the matrix to apply to the 3d points
-    
+
         @rtype:   array
         @return:  the transformed list of 3d points
         """
-    
+
         #4x4matrix"
 #        mat = numpy.array(mat)
         if self._usenumpy:
             return Helper.ApplyMatrix(self,coords,mat)
-        else :            
+        else :
             return [self.FromVec(c)*mat for c in coords]
 
     def rotation_matrix(self,angle, direction, point=None,trans=None):
         """
         Return matrix to rotate about axis defined by point and direction.
-    
+
         """
         if self._usenumpy:
             return Helper.rotation_matrix(angle, direction, point=point,trans=trans)
-        else :            
+        else :
             direction = self.FromVec(direction[:3])
             direction.normalize()
             m = mathutils.Matrix.Rotation(angle,4,direction)
             M = m.copy()
             if point is not None:
-               point = self.FromVec(point[:3]) 
+               point = self.FromVec(point[:3])
                M.translation = point - (point * m)
             if trans is not None :
                M.translation = trans
-            return M        
-        
+            return M
+
     def triangulate(self,poly):
         #select poly
         baseobj = self.getObjectFromMesh(poly)
         bpy.context.scene.objects.active = baseobj
-        #toggle edit mode 
+        #toggle edit mode
         bpy.ops.object.mode_set(mode='EDIT')
         #select all face
         bpy.ops.mesh.select_all(action="SELECT")
@@ -3281,13 +3281,13 @@ class blenderHelper(Helper):
 #==============================================================================
 # Noise
 #==============================================================================
-    
+
     def get_noise(self,point,ntype,nbasis,dimension=1.0,lacunarity=2.0,offset=1.0,octaves=6,gain=1.0,**kw):
         #multi_fractal(position, H, lacunarity, octaves, noise_basis=noise.types.STDPERLIN)
-  
+
         depth = octaves
-        value = 0.0        
-        x,y,z = point  
+        value = 0.0
+        x,y,z = point
 #        nbasis = self.noise_type[nbasis]
         vlbasis = nbasis
         hardnoise =False
@@ -3296,7 +3296,7 @@ class blenderHelper(Helper):
         distortion = 1.0
         if "distortion" in kw :
             distortion = kw["distortion"]
-            
+
         if ntype == 0 :  value = noise.multi_fractal(        point, dimension, lacunarity, depth, nbasis ) * 0.5
         elif ntype == 1: value = noise.ridged_multi_fractal( point, dimension, lacunarity, depth, offset, gain, nbasis ) * 0.5
         elif ntype == 2: value = noise.hybrid_multi_fractal( point, dimension, lacunarity, depth, offset, gain, nbasis ) * 0.5
@@ -3308,8 +3308,8 @@ class blenderHelper(Helper):
 #        elif ntype == 8: value = self.shattered_hterrain( point[0], point[1], point[2], dimension, lacunarity, depth, offset, distortion, nbasis )
 #        elif ntype == 9: value = self.strata_hterrain( point[0], point[1], point[2], dimension, lacunarity, depth, offset, distortion, nbasis )
         return value
-        
-        
+
+
 #==============================================================================
 # import / expor / read load / save
 #==============================================================================
@@ -3318,26 +3318,26 @@ class blenderHelper(Helper):
         fileName, fileExtension = os.path.splitext(filename)
 #        print (fileName, fileExtension)
         if fileExtension == ".dae" :
-            bpy.ops.wm.collada_import(filepath=filename)#, filter_blender=False, filter_image=False, 
-#                                      filter_movie=False, filter_python=False, filter_font=False, 
-#                                      filter_sound=False, filter_text=False, filter_btx=False, 
-#                                      filter_collada=True, filter_folder=True, filemode=8, 
+            bpy.ops.wm.collada_import(filepath=filename)#, filter_blender=False, filter_image=False,
+#                                      filter_movie=False, filter_python=False, filter_font=False,
+#                                      filter_sound=False, filter_text=False, filter_btx=False,
+#                                      filter_collada=True, filter_folder=True, filemode=8,
 #                                      display_type='FILE_DEFAULTDISPLAY')
         elif fileExtension == ".blend":
-#            bpy.ops.wm.open_mainfile(filepath=filename, filter_blender=True, 
-#                                     filter_image=False, filter_movie=False, 
-#                                     filter_python=False, filter_font=False, 
-#                                     filter_sound=False, filter_text=False, 
-#                                     filter_btx=False, filter_collada=False, 
-#                                     filter_folder=True, filemode=8, 
+#            bpy.ops.wm.open_mainfile(filepath=filename, filter_blender=True,
+#                                     filter_image=False, filter_movie=False,
+#                                     filter_python=False, filter_font=False,
+#                                     filter_sound=False, filter_text=False,
+#                                     filter_btx=False, filter_collada=False,
+#                                     filter_folder=True, filemode=8,
 #                                     load_ui=False, use_scripts=True)
 #            ["Scene/Scene","Object/*"]
-#             bpy.ops.wm.link_append(filepath=filename, directory="Object", filename="*", 
-#                                    files=None, filter_blender=True, filter_image=False, 
-#                                    filter_movie=False, filter_python=False, filter_font=False, 
+#             bpy.ops.wm.link_append(filepath=filename, directory="Object", filename="*",
+#                                    files=None, filter_blender=True, filter_image=False,
+#                                    filter_movie=False, filter_python=False, filter_font=False,
 #                                    filter_sound=False, filter_text=False, filter_btx=False,
-#                                    filter_collada=False, filter_folder=False, filemode=1, 
-#                                    relative_path=False, link=False, autoselect=True, 
+#                                    filter_collada=False, filter_folder=False, filemode=1,
+#                                    relative_path=False, link=False, autoselect=True,
 #                                    active_layer=True, instance_groups=False)
 #             f="/Users/ludo/DEV/Blender/blender-2.62release-OSX_10.6_x86_64/MGLToolsPckgs/AutoFill/cache_ingredients/HIV_1_1_NucleocapsidHostMesh.blend"
 #             bpy.ops.wm.link_append(filepath=f, directory=f+"/Object/",filename="*")
@@ -3346,19 +3346,19 @@ class blenderHelper(Helper):
                     objlist = [{'name':obj} for obj in src.objects]
                 except UnicodeDecodeError as detail:
                     print(detail)
-            bpy.ops.wm.link_append(directory=filename + '/Object/', link=False, autoselect=True, files=objlist) 
+            bpy.ops.wm.link_append(directory=filename + '/Object/', link=False, autoselect=True, files=objlist)
             print (objlist)
 #            with bpy.data.libraries.load(f) as (data_from, data_to):
 #                data_to.objects = data_from.objects
 #                data_to.materials = data_from.materials
-#            for obj in data_to.objects: bpy.context.scene.objects.link(bpy.data.objects[obj])    
+#            for obj in data_to.objects: bpy.context.scene.objects.link(bpy.data.objects[obj])
 
 #    def write(self,listObj,*args, **kw):
 #        pass
 
 
 #==============================================================================
-# raycasing                
+# raycasing
 #==============================================================================
     def raycast(self, obj, point, direction, length, **kw ):
         obj = self.getObject(obj)
@@ -3377,9 +3377,9 @@ class blenderHelper(Helper):
         p_to_dir = mat*p_to_dir
         count = 0
 #        r=helper.oneCylinder("ray",[-0.0931, -0.0578, 0.0336],[0.9315, -0.3362, -10.5780],radiu=0.5)
-        while True:            
+        while True:
             location,normal,index = obj.ray_cast(orig,p_to_dir*length)
-            if index == -1: 
+            if index == -1:
                 #no intersection
                 intersect = False
                 break
@@ -3409,7 +3409,7 @@ class blenderHelper(Helper):
 #        #compute UV unwrapping
 #        #select the object
 #        self.ObjectsSelection([obj,],typeSel="new")
-#        #execute the 
+#        #execute the
 #        import pyubic.blender.uvcalc_smart_project as uvc
 #        Blender.Window.EditMode(1)
 #        #this should create the UV coordinate of the unfold surface
@@ -3438,5 +3438,4 @@ class blenderHelper(Helper):
 #        if mat is None :
 #            self.assignMaterial(obj,[nmat,],texture=True)
 #        #context.bakeToActive = True
-#        
-
+#

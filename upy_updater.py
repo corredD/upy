@@ -278,7 +278,7 @@ class Updater:
             #print (zip_command)
             #os.system('cd '+d+'/..;')
             #os.system(zip_command)
-            shutil.make_archive(f, 'zip', d)# root_dir=None, base_dir=None, verbose=0, dry_run=0, owner=None, group=None, logger=None)
+            shutil.make_archive(f, 'zip', os.path.dirname(d),plug)# root_dir=None, base_dir=None, verbose=0, dry_run=0, owner=None, group=None, logger=None)
         print ("done")
 
 def get_current_version():
