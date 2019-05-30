@@ -154,8 +154,10 @@ def getUClass(host,pref=None):
             from upy.cinema4d.r12.c4dUI import c4dUIDialog as adaptor
         elif c4d_version > 13000  and c4d_version < 14000:
             from upy.cinema4d.r13.c4dUI import c4dUIDialog as adaptor
-        elif c4d_version > 14000:
+        elif c4d_version > 14000 and c4d_version < 20000:
             from upy.cinema4d.r14.c4dUI import c4dUIDialog as adaptor
+        elif c4d_version >= 20000:
+            from upy.cinema4d.r20.c4dUI import c4dUIDialog as adaptor
     elif host=='maya':
         from upy.autodeskmaya.mayaUI import mayaUIDialog as adaptor
     elif host=='softimage':
@@ -234,8 +236,10 @@ def getHClass(host):
             from upy.cinema4d.r12.c4dHelper import c4dHelper as helper
         elif c4d_version > 13000 and c4d_version < 14000:
             from upy.cinema4d.r13.c4dHelper import c4dHelper as helper
-        elif c4d_version > 14000:
+        elif c4d_version > 14000 and c4d_version < 20000:
             from upy.cinema4d.r14.c4dHelper import c4dHelper as helper
+        elif c4d_version > 20000:
+            from upy.cinema4d.r20.c4dHelper import c4dHelper as helper
     elif host=='maya':
         from upy.autodeskmaya.mayaHelper import mayaHelper as helper
     elif host=='softimage':
@@ -359,8 +363,10 @@ def getPClass(host):
             from upy.cinema4d.r12 import c4dPlugin as plugClass
         elif c4d_version > 13000 and c4d_version < 14000:
             from upy.cinema4d.r13 import c4dPlugin as plugClass
-        elif c4d_version > 14000:
+        elif c4d_version > 14000 and c4d_version < 20000:
             from upy.cinema4d.r14 import c4dPlugin as plugClass
+        elif c4d_version > 20000:
+            from upy.cinema4d.r20 import c4dPlugin as plugClass
     elif host=='maya':
         from upy.autodeskmaya import mayaPlugin as plugClass
     elif host=='softimage':

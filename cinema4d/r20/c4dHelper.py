@@ -1,7 +1,7 @@
 """
     Copyright (C) <2010>  Autin L. TSRI
 
-    This file git_upy/cinema4d/r12/c4dHelper.py is part of upy.
+    This file git_upy/cinema4d/r14/c4dHelper.py is part of upy.
 
     upy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 """
 Created on Sun Dec  5 23:30:44 2010
 
+@author: Ludovic Autin - ludovic.autin@gmail.com
 """
 # C4d module
 import c4d
@@ -44,108 +45,12 @@ from types import StringType, ListType
 
 # base helper class
 from upy import hostHelper
-from upy.hostHelper import Helper
 
+# from upy.hostHelper import Helper
 if hostHelper.usenumpy:
     import numpy
 
-from c4d.threading import C4DThread
-
-
-class UserThread(C4DThread):
-    def Main(self, func, *args, **kw):
-        # Put in your code here
-        # which you want to run
-        # in another thread
-        if self.TestBreak():
-            print "Canceled thread-execution."
-            return
-        func(*args, **kw)
-
-    def cb(self, ):
-        if self.TestBreak():
-            return False
-        return True
-
-    def TestDBreak(self):
-        bc = c4d.BaseContainer()
-        c4d.gui.GetInputState(c4d.BFM_INPUT_KEYBOARD, c4d.KEY_ESC, bc)
-        # how to proceed?
-        # break the process ?
-
-
-class c4dSynchro:
-    # period problem
-    def __init__(self, helper=None, use_generator=False):
-        self.callback = None
-        self.object = None
-        self.parentObj = self
-        self.liste_cb = []
-        #        if cb is not None :
-        #            self.doit = cb
-        #            self.parentObj = cb.__self__
-        self.helper = helper
-        if self.helper == None:
-            self.helper = c4dHelper()
-        self.use_generator = use_generator
-        self.attrAcces = c4d.OPYTHON_CODE
-        if not self.use_generator:
-            self.attrAcces = c4d.TPYTHON_CODE
-            # use tag or pythonGenerator?
-            # can we access the text of the generator?
-
-        #    def change_period(self,newP):
-        #        self.period = newP
-        #        self.remove_callback()
-        #        self.set_callback()
-
-    def add_callback(self, cb):
-        self.liste_cb.append(cb)
-
-    def set_callback(self):
-        # create an empty
-        self.object = self.helper.getObject("synchro")
-        if self.object is None:
-            if self.use_generator:
-                self.object = c4d.BaseObject(1023866)  # python generator ?
-                self.objectcb = self.object
-            else:
-                self.object = c4d.BaseObject(c4d.Onull)  # python generator ?
-                pytag = self.object.MakeTag(1022749)
-                self.objectcb = pytag
-                # add the tag
-            self.object.SetName("synchro")
-            self.helper.AddObject(self.object)
-        self.objectcb[self.attrAcces] = self.callback
-        # need to change this to doit ...and pass the object
-
-    def remove_callback(self, cb):
-        i = self.liste_cb.index(cb)
-        self.liste_cb.pop(i)
-        if not len(self.liste_cb):
-            self.helper.deleteObject(self.object)
-
-    def create_str_for_cb(self, ):
-        c4d.helper = self.helper
-        c4d.synchro = self.parentObj
-        c4d.synchro_cb = self.liste_cb
-        self.callback = """
-import c4d
-theObj = c4d.synchro
-theCallback = c4d.synchro_cb
-helper = c4d.helper
-def main():
-    helper.doc = doc
-    t=c4d.BaseTime()
-    fps = doc.GetFps()
-    #getCurrent time
-    frame=doc.GetTime().GetFrame(fps)
-    for cb in theCallback:
-        cb(frame)
-"""
-
-    def doit(self, *args, **kw):  # period,time,userData=None):
-        pass
+from upy.cinema4d.r13.c4dHelper import c4dHelper as Helper
 
 
 class c4dHelper(Helper):
@@ -171,7 +76,6 @@ class c4dHelper(Helper):
     # OBJECT ID
     BONE = 1019362
     CYLINDER = 5170
-    CUBE = c4d.Ocube
     CONE = c4d.Ocone
     CIRCLE = 5181
     RECTANGLE = 5186
@@ -216,7 +120,6 @@ class c4dHelper(Helper):
     DESELECTALL = 12113
     SELCHILDREN = 16388
     FITTOVIEW = 430000774
-    REVERSE_NORMAL = 14041
     # need an axis dictionary
 
     # PARTICULE DATA DIC
@@ -232,14 +135,12 @@ class c4dHelper(Helper):
     VERBOSE = 0
     DEBUG = 0
     host = "c4d"
-    renderInstance = True
 
     def __init__(self, master=None, **kw):
         Helper.__init__(self)
         # we can define here some function alias
         self.updateAppli = self.update
         # some synonym,dejaVu compatilbity->should disappear later
-        self._render_instance = True
         self.Cube = self.box
         self.Box = self.box
         self.Geom = self.newEmpty
@@ -247,8 +148,6 @@ class c4dHelper(Helper):
         self.IndexedPolygons = self.polygons
         self.Points = self.PointCloudObject
         self.hext = "c4d"
-        self.synchro_cb = c4dSynchro(helper=self)
-
         self.noise_type = {
             "boxNoise": c4d.NOISE_BOX_NOISE,
             "buya": c4d.NOISE_BUYA,
@@ -282,85 +181,11 @@ class c4dHelper(Helper):
             "wavyTurbulence": c4d.NOISE_WAVY_TURB,
             "zada": c4d.NOISE_ZADA,
         }
-        self.track_axis_dic = {
-            "-Z": [5, [0., 0., -1]],
-            "+Z": [4, [0., 0., 1]],
-            "-Y": [3, [0., -1., 0.]],
-            "+Y": [2, [0., 1., 0.]],
-            "-X": [1, [-1., 0., 0.]],
-            "+X": [0, [1., 0., 0.]],
-        }
-        self.quad = {"+Z": [[-1, -1, 0], [-1, 1, 0], [1, 1, 0], [1, -1, 0], ],  # XY
-                     "+Y": [[-1, 0, -1], [-1, 0, 1], [1, 0, 1], [1, 0, -1]],  # XZ
-                     "-X": [[0, -1, 1], [0, 1, 1], [0, 1, -1], [0, -1, -1]],  # YZ
-                     "-Z": [[-1, -1, 0], [1, -1, 0], [1, 1, 0], [-1, 1, 0]],  # XY
-                     "-Y": [[-1, 0, 1], [1, 0, 1], [1, 0, -1], [-1, 0, -1]],  # XZ
-                     "+X": [[0, -1, 1], [0, 1, 1], [0, 1, -1], [0, -1, -1]],  # YZ
-                     }
-        self.eq = {"+X": [self.track_axis_dic["+Y"][1], -math.pi / 2.0],
-                   "+Y": [self.track_axis_dic["-X"][1], math.pi / 2.0],
-                   "+Z": [self.track_axis_dic["-Z"][1], 0.0],
-                   "-X": [self.track_axis_dic["-Y"][1], -math.pi / 2.0],
-                   "-Y": [self.track_axis_dic["-X"][1], math.pi / 2.0],
-                   "-Z": [self.track_axis_dic["-Z"][1], -math.pi / 2.0]}
-
-    #        eq={"+X":"+Z",
-    #            "+Y":"+X",
-    #            "+Z":"+Z",
-    #            "-X":"+Z",
-    #            "-Y":"-X",
-    #            "-Z":"+Z"}
-
-    def start_thread(self, job):
-        thread = UserThread()
-        thread.Start()
-        # Do some other operations here
-        thread.Wait(True)  #
-
-    def testForEscape(self, ):
-        bc = c4d.BaseContainer()
-        c4d.gui.GetInputState(c4d.BFM_INPUT_KEYBOARD, c4d.KEY_ESC, bc)
-        return bc.GetLong(c4d.BFM_INPUT_VALUE)
-
-    def synchronize(self, cb):
-        self.synchro_cb.add_callback(cb)
-        self.synchro_cb.create_str_for_cb()
-        self.synchro_cb.set_callback()
-
-    def unsynchronize(self, cb):
-        self.synchro_cb.remove_callback(cb)
-
-    #    @classmethod
-    def getCurrentScene(self):
-        if hasattr(self, "doc"):
-            if self.doc.IsAlive():
-                return self.doc
-            else:
-                return c4d.documents.GetActiveDocument()
-        else:
-            # self.doc = c4d.documents.GetActiveDocument()
-            return c4d.documents.GetActiveDocument()
-
-        #    @classmethod
-
-    def getCurrentSceneName(self):
-        doc = self.getCurrentScene()
-        return doc.GetDocumentName()
+        self.convertion = "-Z"  # or XZ
+        self.renderInstance = 1 #0 1 oe 2 instance, render instance, multiinstance
 
     def fit_view3D(self):
         c4d.CallCommand(self.FITTOVIEW)
-
-    def drawQuestion(self, title="", question=""):
-        """ Draw a Question message dialog, requiring a Yes/No answer
-        @type  title: string
-        @param title: the windows title
-        @type  question: string
-        @param question: the question to display
-
-        @rtype:   bool
-        @return:  the answer
-        """
-        return c4d.gui.QuestionDialog(question)
 
     def progressBar(self, progress=None, label=None):
         """ update the progress bar status by progress value and label string
@@ -368,6 +193,7 @@ class c4dHelper(Helper):
         @param progress: the new progress
         @type  label: string
         @param label: the new message to put in the progress status
+        NOT WORKING IN R13
         """
         # the progessbar use the StatusSetBar
         if progress is not None:
@@ -422,92 +248,12 @@ class c4dHelper(Helper):
         except:
             return None
 
-    def getMeshFrom(self, obj):
-        return self.getMesh(obj)
-
-    def getFirstMesh(self, m, **kw):
-        im = True
-        if "instance_master" in kw:
-            im = kw["instance_master"]
-        if m is None:
-            return None
-        #        print ("getFirstMesh",m,m.GetType(),im)
-        if m.GetType() == c4d.Opolygon:
-            return m
-        elif m.GetType() == c4d.Onull:
-            return self.getFirstMesh(m.GetDown(), instance_master=im)
-        elif m.GetType() == c4d.Oinstance:
-            #            print ("do instance ?",im,m)
-            if im:
-                return self.getFirstMesh(m[c4d.INSTANCEOBJECT_LINK])
-            else:
-                #                print ("instance ",m)
-                return m
-        else:
-            # print ("what ? getFirstMesh",m,m.GetType())
-            return m  # can be cylinder#cself.getFirstMesh(m.GetDown())
-
-    def getMesh(self, m, **kw):
-        im = True  # go until instance master if any
-        if "instance_master" in kw:
-            im = kw["instance_master"]
-        if type(m) is str:
-            m = self.getCurrentScene().SearchObject(m)
-        if m is not None:
-            return self.getFirstMesh(m, instance_master=im)
-        else:
-            return None
-
-    def getName(self, o):
-        if type(o) is str:
-            o = self.getObject(o)
-        name = ""
-        if o is not None:
-            try:
-                name = o.GetName()
-            except:
-                # maybe a DejAvu
-                try:
-                    name = o.name
-                except:
-                    name = ""
-            return name
-        else:
-            return name
-
-    def getObjectName(self, o, **kw):
-        return self.getName(self, o)
-
     def setName(self, o, name):
         if name is None:
             return
         if type(o) is str:
             o = self.getObject(o)
         o.SetName(name)
-
-    def getObject(self, name):
-        obj = None
-        if type(name) != str and type(name) != unicode: return name
-        #        print "getObject"
-        #        print  self.getCurrentScene().GetName()
-        try:
-            obj = self.getCurrentScene().SearchObject(str(name))
-        except:
-            obj = None
-        return obj
-
-    def getChilds(self, obj):
-        if obj is None:
-            return None
-        if type(obj) == str and type(obj) == unicode:
-            obj = self.getObject(obj)
-        if hasattr(obj, 'GetChilds'):
-            return obj.GetChilds()
-        else:
-            if hasattr(obj, 'GetChildren'):
-                return obj.GetChildren()
-            else:
-                return obj.GetDown()
 
     def deleteObject(self, obj):
         sc = self.getCurrentScene()
@@ -542,11 +288,12 @@ class c4dHelper(Helper):
 
     def newInstance(self, name, object, location=None, c4dmatrice=None, matrice=None,
                     parent=None, material=None, **kw):
-        instance = c4d.BaseObject(c4d.Oinstance)
+        instance = c4d.InstanceObject()
+        #instance = c4d.BaseObject(c4d.Oinstance)
         instance[1001] = object
         instance.SetName(name)  # .replace(":","_")
-        # render instance tag ?
-        instance[c4d.INSTANCEOBJECT_RENDERINSTANCE] = self.renderInstance
+        instance[c4d.INSTANCEOBJECT_RENDERINSTANCE_MODE] = self.renderInstance
+        #instance[c4d.INSTANCEOBJECT_RENDERINSTANCE] = self.renderInstance
         if c4dmatrice != None:
             # type of matre
             instance.SetMg(c4dmatrice)
@@ -560,41 +307,6 @@ class c4dHelper(Helper):
         self.addObjectToScene(None, instance, parent=parent)
         return instance
 
-    def getMasterInstance(self, instance, **kw):
-        """
-        Return the object use for the instanciation
-        """
-        instance = self.getObject(instance)
-        if self.getType(instance) != self.INSTANCE:
-            return None
-        return instance[c4d.INSTANCEOBJECT_LINK]
-
-    def updateMasterInstance(self, instance, objects, add=True, hide=True, **kw):
-        """
-        Update the reference of the passed instance by adding/removing-hiding objects
-
-        * overwrited by children class for each host
-
-        >>> sph = helper.Sphere("sph1")
-        >>> instance_sph = helper.newInstance("isph1",sph,location = [10.0,0.0,0.0])
-
-
-        @type  instance: string/hostObj
-        @param instance: name of the instance
-        @type  objects: list hostObject/string
-        @param objects: the list of object to remove/add to the instance reference
-        @type  add: bool
-        @param add: if True add the objec else remove
-        @type  hide: bool
-        @param hide: hide instead of remove
-        @type kw: dictionary
-        @param kw: you can add your own keyword, but it should be interpreted by all host
-        """
-        instance = self.getObject(instance)
-        newObject = self.getObject(objects[0])
-        if self.getType(instance) != self.INSTANCE:
-            return None
-        instance[c4d.INSTANCEOBJECT_LINK] = newObject
 
     def newClone(self, name, object, location=None, c4dmatrice=None, matrice=None,
                  parent=None, material=None, **kw):
@@ -612,12 +324,6 @@ class c4dHelper(Helper):
         if material is not None:
             self.assignMaterial(clone, material)
         return clone
-
-    def getTrackAxis(self, v):
-        for a in self.track_axis_dic:
-            if self.FromVec(self.track_axis_dic[a][1]) == self.FromVec(v):
-                return self.track_axis_dic[a][0]
-        return 0
 
     def setObjectMatrix(self, object, matrice=None, hostmatrice=None,
                         transpose=False, local=False, **kw):
@@ -650,47 +356,6 @@ class c4dHelper(Helper):
                 object.SetMl(cml * mx)
             else:
                 object.SetMg(cmg * mx)
-
-    def GetAbsPosUntilRoot(self, obj):
-        stop = False
-        pos = self.FromVec((0., 0., 0.))
-        if obj is None:
-            return pos
-        parent = obj.GetUp()
-        while not stop:
-            pos = pos + parent.GetAbsPos()
-            parent = parent.GetUp()
-            if parent is None:
-                stop = True
-        return pos
-
-    def addObjectToScene(self, doc, ob, parent=None, centerRoot=True, rePos=None):
-        if type(ob) is list:
-            obj = ob[0]
-        else:
-            obj = ob
-        if doc is None:
-            doc = self.getCurrentScene()
-        if self.getObject(obj.GetName()) == None:
-            if parent != None:
-                if type(parent) == str: parent = self.getObject(parent)
-                doc.InsertObject(obj, parent=parent)
-                if centerRoot:
-                    currentPos = obj.GetAbsPos()
-                    if rePos != None:
-                        parentPos = self.FromVec(rePos)
-                    else:
-                        parentPos = self.GetAbsPosUntilRoot(obj)  # parent.GetAbsPos()
-                    obj.SetAbsPos(currentPos - parentPos)
-            else:
-                doc.InsertObject(obj)
-        else:
-            if parent != None:
-                parent = self.getObject(parent)
-                self.reParent(obj, parent)
-                # add undo support
-                # doc.add_undo(c4d.UNDO_NEW, obj)
-                # doc.end_undo()
 
     def AddObject(self, ob, parent=None, centerRoot=True, rePos=None):
         if type(ob) is list:
@@ -760,18 +425,6 @@ class c4dHelper(Helper):
             suntag = lamp.MakeTag(self.SUNTAG)
         self.addObjectToScene(sc, lamp, centerRoot=False)
         return lamp
-
-    def reParent(self, obj, parent):
-        if obj == None or parent == None:
-            return
-        if type(obj) == list or type(obj) == tuple:
-            [self.reParent(o, parent) for o in obj]
-        else:
-            obj = self.getObject(obj)
-            parent = self.getObject(parent)
-
-            obj.InsertUnder(parent)
-        #            self.getCurrentScene().add_undo(c4d.UNDO_NEW, obj)
 
     def setInstance(self, name, object, location=None, c4dmatrice=None, matrice=None):
         instance = c4d.BaseObject(c4d.Oinstance)
@@ -861,22 +514,16 @@ class c4dHelper(Helper):
             mx.off = pmx.off + self.FromVec(position)
             obj.SetMg(mx)
 
-    def scaleObj(self, obj, sc):
-        if type(sc) is float:
-            sc = [sc, sc, sc]
-        obj.SetAbsScale(self.FromVec(sc, pos=False))
+        #    def scaleObj(self,obj,sc):
+        #        if type(sc) is float :
+        #            sc = [sc,sc,sc]
+        #        obj.SetAbsScale(self.FromVec(sc))
 
-    def rotateObj(self, obj, rot, **kw):
-        # take radians, give degrees
-        # should rotate the primitive and not the parent
-        primitive = False
-        if "primitive" in kw:
-            primitive = kw["primitive"]
-        if primitive:
-            obj = self.getMesh(obj)
-        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_X] = float(rot[1])  # rotation about Y #H
-        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_Y] = float(rot[2])  # rotation about X #P
-        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_Z] = float(rot[0])  # rotation about Z #B
+        #    def rotateObj(self,obj,rot):
+        #        #take radians, give degrees
+        #        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_X]=float(rot[1]) #rotation about Y #H
+        #        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_Y]=float(rot[2]) #rotation about X #P
+        #        obj[c4d.ID_BASEOBJECT_ROTATION, c4d.VECTOR_Z]=float(rot[0]) #rotation about Z #B
 
     def getSize(self, obj):
         # take degree
@@ -927,25 +574,23 @@ class c4dHelper(Helper):
         else:
             return display[obj.GetEditorMode()], display[obj.GetRenderMode()], bool(obj[906])
 
-    #####################MATERIALS FUNCTION########################
-    def addMaterial(self, name, color):
-        import c4d
-        import c4d.documents
-        name = str(name)
-        doc = c4d.documents.GetActiveDocument()
-        # create standard material
-        __mat = doc.SearchMaterial(name)
-        if __mat != None:
-            self.colorMaterial(__mat, color)
-            return __mat
-        else:
-            __mat = c4d.BaseMaterial(c4d.Mmaterial)
-            # set the default color
-            __mat[2100] = c4d.Vector(float(color[0]), float(color[1]), float(color[2]))
-            __mat[c4d.ID_BASELIST_NAME] = name  # 900
-            # insert the material into the current document
-            doc.InsertMaterial(__mat)
-            return __mat
+            #####################MATERIALS FUNCTION########################
+        #    def addMaterial(self,name,color):
+        #          import c4d
+        #          import c4d.documents
+        #          doc = c4d.documents.GetActiveDocument()
+        #          # create standard material
+        #          __mat = doc.SearchMaterial(name)
+        #          if __mat != None :
+        #              return __mat
+        #          else :
+        #              __mat = c4d.BaseMaterial(c4d.Mmaterial)
+        #              # set the default color
+        #              __mat[2100] = c4d.Vector(float(color[0]),float(color[1]),float(color[2]))
+        #              __mat[c4d.ID_BASELIST_NAME] = name #900
+        #              # insert the material into the current document
+        #              doc.InsertMaterial(__mat)
+        #              return __mat
 
     def assignMaterial(self, object, mat, texture=False, **kw):
         if type(object) is list:
@@ -988,7 +633,6 @@ class c4dHelper(Helper):
 
     def createTexturedMaterial(self, name, filename):
         # create the material
-        # check if material exist ? update
         Mat = c4d.BaseMaterial(c4d.Mmaterial)
         Mat.SetName(name)
         # link the texture to the material
@@ -1001,55 +645,6 @@ class c4dHelper(Helper):
         c4d.EventAdd()
         c4d.documents.GetActiveDocument().InsertMaterial(Mat)
         return Mat
-
-    def getMaterialProperty(self, material, **kw):
-        """
-        Change a material properties.
-
-        * overwrited by children class for each host
-
-        @type  material: string/Material
-        @param material: the material to modify
-            - color
-            - specular
-            - ...
-        """
-        mat = self.getMaterial(material)
-        res = {}
-        if mat is None:
-            return
-        if "specular" in kw:
-            res["specular"] = mat[c4d.MATERIAL_USE_SPECULAR]
-        if "specular_color" in kw:
-            res["specular_color"] = self.ToVec(mat[c4d.MATERIAL_SPECULAR_COLOR], pos=False)
-        if "specular_width" in kw:
-            res["specular_width"] = mat[c4d.MATERIAL_SPECULAR_WIDTH]
-        if "color" in kw:
-            res["color"] = self.ToVec(mat[c4d.MATERIAL_COLOR_COLOR], pos=False)
-        if "diffuse" in kw:
-            res["diffuse"] = self.ToVec(mat[c4d.MATERIAL_COLOR_COLOR], pos=False)
-        return res
-
-    def changeMaterialProperty(self, material, **kw):
-        """
-        Change a material properties.
-
-        * overwrited by children class for each host
-
-        @type  material: string/Material
-        @param material: the material to modify
-            - color
-            - specular
-            - ...
-        """
-        mat = self.getMaterial(material)
-        if mat is None:
-            return
-        if "specular" in kw:
-            if type(kw["specular"]) == bool:
-                mat[c4d.MATERIAL_USE_SPECULAR] = kw["specular"]
-        if "specular_width" in kw:
-            mat[c4d.MATERIAL_SPECULAR_WIDTH] = kw["specular_width"]
 
     def create_layers_material(self, name):
         import c4d
@@ -1222,7 +817,9 @@ class c4dHelper(Helper):
 
     def oneCylinder(self, name, head, tail, radius=None, instance=None, material=None,
                     parent=None, color=None):
-        laenge, mx = self.getTubeProperties(head, tail)
+        #        laenge,mx=self.getTubeProperties(head,tail)
+        laenge, ma = self.getTubePropertiesMatrix(head, tail)
+        mx = self.FromMat(ma.transpose())
         if instance is None:
             stick = self.Cylinder(name, parent=parent)[0]
         else:
@@ -1249,7 +846,9 @@ class c4dHelper(Helper):
         return stick
 
     def updateOneCylinder(self, name, head, tail, radius=None, material=None, color=None):
-        laenge, mx = self.getTubeProperties(head, tail)
+        #        laenge,mx=self.getTubeProperties(head,tail)
+        laenge, ma = self.getTubePropertiesMatrix(head, tail)
+        mx = self.FromMat(ma.transpose())
         stick = self.getObject(name)
         stick.SetMg(mx)
         axe = self.getCylinderAxis(stick)
@@ -1265,34 +864,6 @@ class c4dHelper(Helper):
         if material is not None:
             texture[1010] = material
         return stick
-
-    def Cylinder(self, name, radius=1., length=1., res=3, pos=[0., 0., 0.], parent=None, **kw):
-        #        QualitySph={"0":16,"1":3,"2":4,"3":8,"4":16,"5":32}
-        baseCyl = c4d.BaseObject(self.CYLINDER)
-        baseCyl.SetName(name)
-        baseCyl[5000] = radius
-        baseCyl[5005] = length
-        # if str(res) not in QualitySph.keys():
-        # Default axes is +Y
-        baseCyl[c4d.PRIM_CYLINDER_SEG] = res
-        if "axis" in kw:  # orientation
-            dic = {"+X": 0, "-X": 1, "+Y": 2, "-Y": 3, "+Z": 4, "-Z": 5}
-            if type(kw["axis"]) is str:
-                axis = dic[kw["axis"]]
-            else:
-                #                axis = dic[self.rerieveAxis([kw["axis"][2],kw["axis"][1],kw["axis"][0]])]
-                axis = dic[self.rerieveAxis(kw["axis"])]
-            baseCyl[c4d.PRIM_AXIS] = axis
-        #        else :#default is +Y
-        #            baseCyl[c4d.PRIM_AXIS]=1
-        # else :
-        #    baseCyl[c4d.PRIM_CYLINDER_SEG] = QualitySph[str(res)]
-        # sy.PRIM_CYLINDER_HSUB
-        baseCyl.SetAbsPos(self.FromVec(pos))
-        baseCyl.MakeTag(c4d.Tphong)
-        # addObjectToScene(getCurrentScene(),baseCyl)
-        self.addObjectToScene(self.getCurrentScene(), baseCyl, parent=parent)
-        return baseCyl, baseCyl
 
     def Cone(self, name, radius=1., length=1., res=9, pos=[0., 0., 0.], parent=None, **kw):
         baseCone = c4d.BaseObject(self.CONE)
@@ -1310,7 +881,7 @@ class c4dHelper(Helper):
                 axis = kw["axis"]
             baseCone[c4d.PRIM_AXIS] = axis
         else:
-            baseCone[c4d.PRIM_AXIS] = 2  # +Y default
+            baseCone[c4d.PRIM_AXIS] = 1
         # else :
         #    baseCyl[c4d.PRIM_CYLINDER_SEG] = QualitySph[str(res)]
         # sy.PRIM_CYLINDER_HSUB
@@ -1320,51 +891,24 @@ class c4dHelper(Helper):
         self.addObjectToScene(self.getCurrentScene(), baseCone, parent=parent)
         return baseCone, baseCone
 
-    def Sphere(self, name, radius=1.0, res=10, parent=None, color=None, mat=None, pos=[0., 0., 0.]):
-        QualitySph = {"0": 6, "1": 4, "2": 5, "3": 6, "4": 8, "5": 16}
-        baseSphere = c4d.BaseObject(c4d.Osphere)
-        baseSphere[self.PRIM_SPHERE_RAD] = radius
-        baseSphere[1111] = res
-        baseSphere.MakeTag(c4d.Tphong)
-        baseSphere.SetName(name)
-        if mat is not None:
-            mat = self.getMaterial(mat)
-            self.assignMaterial(baseSphere, mat)
-        else:
-            if color != None:
-                # color = [1.,1.,0.]
-                mat = self.addMaterial(name, color)
-                self.assignMaterial(baseSphere, mat)
-        baseSphere.SetAbsPos(self.FromVec(pos))
-        self.addObjectToScene(self.getCurrentScene(), baseSphere, parent=parent)
-        return [baseSphere, baseSphere]
+    #    def updateSphereMesh(self,mesh,verts=None,faces=None,basemesh=None,
+    #                         scale=1.):
+    #        mesh=self.getMesh(mesh)
+    #        print "updateSphereMesh",mesh,mesh.GetName(),scale
+    ##        print mesh[905]
+    #        mesh[905]=self.FromVec([scale,scale,scale])
+    #        mesh.Message(c4d.MSG_UPDATE)
 
-    def updateSphereMesh(self, mesh, verts=None, faces=None, basemesh=None,
-                         scale=1., **kw):
-        im = True
-        if "instance_master" in kw:
-            im = kw["instance_master"]
-        mesh = self.getMesh(mesh, instance_master=im)
-        print mesh, mesh.GetName(), scale, im
-        #        print mesh[905]
-        mesh[905] = self.FromVec([scale, scale, scale], pos=False)
-        mesh.Message(c4d.MSG_UPDATE)
-
-    def updateSphereObj(self, obj, coord):
-        self.updateObjectPos(obj, coord)
-
-    def updateObjectPos(self, object, position):
-        object = self.getObject(object)
-        if object is None:
-            return
-        if len(position) == 1:
-            c = position[0]
-        else:
-            c = position
-        # print "upadteObj"
-        newPos = self.FromVec(c)
-        parentPos = self.GetAbsPosUntilRoot(object)  # parent.GetAbsPos()
-        object.SetAbsPos(newPos - parentPos)
+    #    def updateSphereObj(self,obj,coord):
+    #        self.updateObjectPos(obj,coord)
+    #
+    #    def updateObjectPos(self,object,position):
+    #        if len(position) == 1 : c = position[0]
+    #        else : c = position
+    #        #print "upadteObj"
+    #        newPos=self.FromVec(c)
+    #        parentPos = self.GetAbsPosUntilRoot(object)#parent.GetAbsPos()
+    #        object.SetAbsPos(newPos-parentPos)
 
     #    def clonesAtomsSphere(self,name,x,iMe,doc,mat=None,scale=1.0,
     #                          Res=32,R=None,join=0):
@@ -1397,175 +941,135 @@ class c4dHelper(Helper):
     #            k=k+1
     #        return spher
 
-    def Spheres(self, name, vertices=[], radii=[], colors=[], **kw):
-        """match DejaVu API """
-        # need a base sphere
-        base = self.Sphere(name + "_base")[0]
-        return self.instancesSphere(name, vertices, radii, base,
-                                    colors, None)
-
-    def instancesSphere(self, name, centers, radii, meshsphere,
-                        colors, scene, parent=None):
-        sphs = []
-        mat = None
-        if len(colors) == 1:
-            mat = self.retrieveColorMat(colors[0])
-            if mat == None and colors[0] is not None:
-                mat = self.addMaterial('mat_' + name, colors[0])
-        color_count=0
-        for i in range(len(centers)):
-            sphs.append(c4d.BaseObject(c4d.Oinstance))
-            sphs[i][1001] = meshsphere
-            sphs[i].SetName(name + str(i))
-            sphs[i].SetAbsPos(self.FromVec(centers[i]))
-            # sphs[i].SetAbsPos(c4d.Vector(float(centers[i][0]),float(centers[i][1]),float(centers[i][2])))
-            if len(radii) == 1:
-                rad = radii[0]
-            elif i >= len(radii):
-                rad = radii[0]
-            else:
-                rad = radii[i]
-            sphs[i][905] = c4d.Vector(float(rad), float(rad), float(rad))
-            texture = sphs[i].MakeTag(c4d.Ttexture)
-            # if mat == None :
-            if colors is not None and colors[color_count] is not None and len(colors) != 1:
-                mat = self.addMaterial(name+"matsp" + str(i), colors[color_count])
-            texture[1010] = mat  # mat[bl.retrieveColorName(sphColors[i])]
-            self.addObjectToScene(scene, sphs[i], parent=parent)
-            color_count+=1
-            if (color_count>=len(colors)):
-                color_count=0
-        return sphs
-
-    def updateInstancesSphere(self, name, sphs, centers, radii, meshsphere,
-                              colors, scene, parent=None, delete=True, **kw):
-        mat = None
-        if len(colors) == 1:
-            mat = self.retrieveColorMat(colors[0])
-            if mat == None and colors[0] is not None:
-                mat = self.addMaterial('mat_' + name, colors[0])
-        delete = False
-        if "delete" in kw:
-            delete = kw["delete"]
-        for i in range(len(centers)):
-            if len(radii) == 1:
-                rad = radii[0]
-            elif i >= len(radii):
-                rad = radii[0]
-            else:
-                rad = radii[i]
-            if i < len(sphs):
-                sphs[i].SetAbsPos(self.FromVec(centers[i]))
-                sphs[i][905] = c4d.Vector(float(rad), float(rad), float(rad))
-                texture = sphs[i].GetTag(c4d.Ttexture)
-                if mat == None:
-                    if colors is not None and i < len(colors) and colors[i] is not None:
-                        mat = self.addMaterial("matsp" + str(i), colors[i])
-                if colors is not None and i < len(colors) and colors[i] is not None:
-                    self.colorMaterial(mat, colors[i])
-                texture[1010] = mat
-                self.toggleDisplay(sphs[i], True)
-            else:
-                sphs.append(c4d.BaseObject(c4d.Oinstance))
-                sphs[i][1001] = meshsphere
-                sphs[i].SetName(name + str(i))
-                sphs[i].SetAbsPos(self.FromVec(centers[i]))
-                sphs[i][905] = c4d.Vector(float(rad), float(rad), float(rad))
-                texture = sphs[i].MakeTag(c4d.Ttexture)
-                if mat == None:
-                    if colors is not None and i < len(colors) and colors[i] is not None:
-                        mat = self.addMaterial("matsp" + str(i), colors[i])
-                texture[1010] = mat  # mat[bl.retrieveColorName(sphColors[i])]
-                self.addObjectToScene(scene, sphs[i], parent=parent)
-        if len(centers) < len(sphs):
-            # delete the other ones ?
-            for i in range(len(centers), len(sphs)):
-                if delete:
-                    obj = sphs.pop(i)
-                    print "delete", obj
-                    self.deleteObject(obj)
-                else:
-                    self.toggleDisplay(sphs[i], False)
-        return sphs
+    #    def instancesSphere(self,name,centers,radii,meshsphere,
+    #                        colors,scene,parent=None):
+    #        sphs=[]
+    #        mat = None
+    #        if len(colors) == 1:
+    #            mat = self.retrieveColorMat(colors[0])
+    #            if mat == None and colors[0] is not None:
+    #                mat = self.addMaterial('mat_'+name,colors[0])
+    #        for i in range(len(centers)):
+    #            sphs.append(c4d.BaseObject(c4d.Oinstance))
+    #            sphs[i][1001]=meshsphere
+    #            sphs[i].SetName(name+str(i))
+    #            sphs[i].SetAbsPos(self.FromVec(centers[i]))
+    #            #sphs[i].SetAbsPos(c4d.Vector(float(centers[i][0]),float(centers[i][1]),float(centers[i][2])))
+    #            if len(radii) == 1 :
+    #                rad = radii[0]
+    #            elif i >= len(radii) :
+    #                rad = radii[0]
+    #            else :
+    #                rad = radii[i]
+    #            sphs[i][905]=c4d.Vector(float(rad),float(rad),float(rad))
+    #            texture = sphs[i].MakeTag(c4d.Ttexture)
+    #            if mat == None :
+    #                if colors is not None and  i < len(colors) and colors[i] is not None :
+    #                    mat = self.addMaterial("matsp"+str(i),colors[i])
+    #            texture[1010] = mat#mat[bl.retrieveColorName(sphColors[i])]
+    #            self.addObjectToScene(scene,sphs[i],parent=parent)
+    #        return sphs
+    #
+    #    def updateInstancesSphere(self,name,sphs,centers,radii,meshsphere,
+    #                        colors,scene,parent=None,delete=True,**kw):
+    #        mat = None
+    #        if len(colors) == 1:
+    #            mat = self.retrieveColorMat(colors[0])
+    #            if mat == None and colors[0] is not None:
+    #                mat = self.addMaterial('mat_'+name,colors[0])
+    #        delete = True
+    #        if "delete" in kw :
+    #            delete = kw["delete"]
+    #        for i in range(len(centers)):
+    #            if len(radii) == 1 :
+    #                rad = radii[0]
+    #            elif i >= len(radii) :
+    #                rad = radii[0]
+    #            else :
+    #                rad = radii[i]
+    #            if i < len(sphs):
+    #                sphs[i].SetAbsPos(self.FromVec(centers[i]))
+    #                sphs[i][905]=c4d.Vector(float(rad),float(rad),float(rad))
+    #                texture = sphs[i].GetTag(c4d.Ttexture)
+    #                if mat == None :
+    #                    if colors is not None and i < len(colors) and colors[i] is not None :
+    #                        mat = self.addMaterial("matsp"+str(i),colors[i])
+    #                if colors is not None and i < len(colors) and colors[i] is not None :
+    #                    self.colorMaterial(mat,colors[i])
+    #                texture[1010] = mat
+    #                self.toggleDisplay(sphs[i],True)
+    #            else :
+    #                sphs.append(c4d.BaseObject(c4d.Oinstance))
+    #                sphs[i][1001]=meshsphere
+    #                sphs[i].SetName(name+str(i))
+    #                sphs[i].SetAbsPos(self.FromVec(centers[i]))
+    #                sphs[i][905]=c4d.Vector(float(rad),float(rad),float(rad))
+    #                texture = sphs[i].MakeTag(c4d.Ttexture)
+    #                if mat == None :
+    #                    if colors is not None and  i < len(colors) and colors[i] is not None :
+    #                        mat = self.addMaterial("matsp"+str(i),colors[i])
+    #                texture[1010] = mat#mat[bl.retrieveColorName(sphColors[i])]
+    #                self.addObjectToScene(scene,sphs[i],parent=parent)
+    #        if len(centers) < len(sphs) and delete :
+    #            #delete the other ones ?
+    #            for i in range(len(centers),len(sphs)):
+    #                if delete :
+    #                    obj = sphs.pop(i)
+    #                    print "delete",obj
+    #                    self.deleteObject(obj)
+    #                else :
+    #                    self.toggleDisplay(sphs[i],False)
+    #        return sphs
+    #
+    #
+    #    def spheresMesh(self,name,x,mat=None,scale=1.0,Res=32,R=None,join=0):
+    #        if scale == 0.0 : scale =1.
+    #        scale = scale *2.
+    #        spher=[]
+    #        if Res == 0 : Res = 10.
+    #        else : Res = Res *5.
+    #        k=0
+    #        if mat == None : mat=self.create_Atoms_materials()
+    #        #print len(x)
+    #        for j in range(len(x)): spher.append(None)
+    #        for j in range(len(x)):
+    #            #at=res.atoms[j]
+    #            at=x[j]
+    #            atN=at.name
+    #            #print atN
+    #            fullname = at.full_name()
+    #            #print fullname
+    #            atC=at._coords[0]
+    #            #if R !=None : rad=R
+    #            #elif AtmRadi.has_key(atN[0]) : rad=AtmRadi[atN[0]]
+    #            #else : rad=AtmRadi['H']
+    #            #print  at.vdwRadius
+    #            rad=at.vdwRadius
+    #            #print rad
+    #            spher[j] = c4d.BaseObject(c4d.Osphere)
+    #            spher[j].SetName(fullname.replace(":","_"))
+    #            spher[j][PRIM_SPHERE_RAD] = float(rad)*float(scale)
+    #            spher[j].SetAbsPos(c4d.Vector(float(atC[0]),float(atC[1]),float(atC[2])))
+    #            spher[j].MakeTag(c4d.Tphong)
+    #            # create a texture tag on the PDBgeometry object
+    #            #texture = spher[j].MakeTag(c4d.Ttexture)
+    #            #create the dedicayed material
+    #            #print mat[atN[0]]
+    #            #texture[1010] = mat[atN[0]]
+    #            #spher.append(me)
+    #        k=k+1
+    #        return spher
 
     def getTubeProperties(self, coord1, coord2):
         # need ot overwrite in C4D
-        # print coord1,coord1[0],type(coord1[0])
-        coord1 = self.ToVec(coord1)
-        coord2 = self.ToVec(coord2)
-        x1 = float(coord1[0])
-        y1 = float(coord1[1])
-        z1 = float(coord1[2])
-        x2 = float(coord2[0])
-        y2 = float(coord2[1])
-        z2 = float(coord2[2])
-        laenge = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2))
-        if laenge == 0.0:
-            return 0, c4d.Matrix(c4d.Vector(0), c4d.Vector(1, 0, 0), c4d.Vector(0, 1, 0), c4d.Vector(0, 0, 1))
-        wsz = atan2((y1 - y2), (z1 - z2))
-        wz = acos((x1 - x2) / laenge)
-        offset = c4d.Vector(float(z1 + z2) / 2, float(y1 + y2) / 2, float(x1 + x2) / 2)
-        v_2 = c4d.Vector(float(z1 - z2), float(y1 - y2), float(x1 - x2))
-        v_2.Normalize()
-        v_1 = c4d.Vector(float(1.), float(0.), float(2.))
-        v_3 = c4d.Vector.Cross(v_1, v_2)
-        v_3.Normalize()
-        v_1 = c4d.Vector.Cross(v_2, v_3)
-        v_1.Normalize()
-        mx = c4d.Matrix(offset, v_1, v_2, v_3)
-        return laenge, mx
-
-    def instancesCylinder(self, name, points, faces, radii,
-                          mesh, colors, scene, parent=None, **kw):
-        cyls = []
-        mat = None
-        if len(colors) == 1:
-            mat = self.retrieveColorMat(colors[0])
-            if mat == None and colors[0] is not None:
-                mat = self.addMaterial('mat_' + name, colors[0])
-        for i in range(len(faces)):
-            cyl = self.oneCylinder(name + str(i), points[faces[i][0]],
-                                   points[faces[i][1]], radius=radii[i],
-                                   instance=mesh, material=mat, parent=parent)
-            cyls.append(cyl)
-        return cyls
-
-    def updateInstancesCylinder(self, name, cyls, points, faces, radii,
-                                mesh, colors, scene, parent=None, delete=True, **kw):
-        mat = None
-        if len(colors) == 1:
-            mat = self.retrieveColorMat(colors[0])
-            if mat == None and colors[0] is not None:
-                mat = self.addMaterial('mat_' + name, colors[0])
-        for i in range(len(faces)):
-            col = None
-            if i < len(colors):
-                col = colors[i]
-            if i < len(cyls):
-                self.updateOneCylinder(cyls[i], points[faces[i][0]],
-                                       points[faces[i][1]], radius=radii[i],
-                                       material=mat, color=col)
-                self.toggleDisplay(cyls[i], True)
-            else:
-                cyl = self.oneCylinder(name + str(i), points[faces[i][0]],
-                                       points[faces[i][1]], radius=radii[i],
-                                       instance=mesh, material=mat, parent=parent)
-                cyls.append(cyl)
-
-        if len(faces) < len(cyls) and delete:
-            # delete the other ones ?
-            for i in range(len(faces), len(cyls)):
-                if delete:
-                    obj = cyls.pop(i)
-                    self.deleteObject(obj)
-                else:
-                    self.toggleDisplay(cyls[i], False)
-        return cyls
+        #        print coord1,coord1[0],type(coord1[0])
+        length, mx = self.getTubePropertiesMatrix(coord1,coord2)
+        return length, self.FromMat(mx.transpose())
 
     def updateTubeMesh(self, mesh, cradius=1.0, quality=0, **kw):
         # change the radius to cradius
         mesh = self.getMesh(mesh)
-        # print mesh.GetName(), cradius
+        print mesh.GetName(), cradius
         #        mesh=geom.mesh.GetDown()#should be the cylinder
         # mesh[5000]=cradius
         #        cradius = cradius*1/0.2
@@ -1584,19 +1088,18 @@ class c4dHelper(Helper):
         mesh.Message(c4d.MSG_UPDATE)
         # pass
 
-    def updateTubeObj(self, *args, **kw):  # obj,coord1,coord2,bicyl=False):
-        # if self.DEBUG :
-        # print "updateTubeObj", args
-        o = args[0]
-        o = self.getObject(o)
-        coord1 = args[1]
-        coord2 = args[2]
-        laenge, mx = self.getTubeProperties(coord1, coord2)
-        o.SetMl(mx)
-        o[905, 1001] = float(laenge)
-        parentPos = self.GetAbsPosUntilRoot(o)  # parent.GetAbsPos()
-        currentPos = o.GetAbsPos()
-        o.SetAbsPos(currentPos - parentPos)
+    #    def updateTubeObj(self,*args,**kw):#obj,coord1,coord2,bicyl=False):
+    #        #if self.DEBUG :
+    #        #print "updateTubeObj", args
+    #        o = args[0]
+    #        coord1 = args[1]
+    #        coord2 = args[2]
+    #        laenge,mx=self.getTubeProperties(coord1,coord2)
+    #        o.SetMl(mx)
+    #        o[905,1001]=float(laenge)
+    #        parentPos = self.GetAbsPosUntilRoot(o)#parent.GetAbsPos()
+    #        currentPos = o.GetAbsPos()
+    #        o.SetAbsPos(currentPos - parentPos)
 
     #    def oldTube(set,atms,points,faces,doc,mat=None,res=32,size=0.25,sc=1.,join=0,instance=None,hiera = 'perRes'):
     #     bonds, atnobnd = set.bonds
@@ -1734,8 +1237,11 @@ class c4dHelper(Helper):
         if not pos:
             return c4d.Vector(float(points[0]), float(points[1]), float(points[2]))
         else:
-            return c4d.Vector(float(points[2]), float(points[1]), float(points[0]))
-            # return c4d.Vector(float(points[0]),float(points[1]),float(points[2]))
+            if self.convertion == "-Z":
+                return c4d.Vector(float(points[0]), float(points[1]), -float(points[2]))
+            else:
+                return c4d.Vector(float(points[2]), float(points[1]), float(points[0]))
+                # return c4d.Vector(float(points[0]),float(points[1]),float(points[2]))
 
     def ToVec(self, v, pos=True):
         if type(v) != c4d.Vector:
@@ -1743,7 +1249,10 @@ class c4dHelper(Helper):
         if not pos:
             return [v.x, v.y, v.z]
         else:
-            return [v.z, v.y, v.x]
+            if self.convertion == "-Z":
+                return [v.x, v.y, -v.z]
+            else:
+                return [v.z, v.y, v.x]
 
     def getCoordinateMatrix(self, pos, direction):
         offset = pos
@@ -1780,54 +1289,53 @@ class c4dHelper(Helper):
             texture[1010] = mat
         return loft
 
-    def sweepnurbs(self, name, mat=None, parent=None):
-        loft = c4d.BaseObject(c4d.Osweep)
-        loft.SetName(name)
-        loft.MakeTag(c4d.Tphong)
-        loft[c4d.SWEEPOBJECT_RAILDIRECTION] = 0
-        # create the dedicayed material
-        #        if mat == None :
-        #                texture[1010] = self.create_loft_material(name='mat_'+name)
-        #        else : texture[1010] = mat
-        self.addObjectToScene(None, loft, parent=parent)
-        if mat is not None:
-            texture = loft.MakeTag(c4d.Ttexture)
-            texture[1010] = mat
-        return loft
+    #    def sweepnurbs(self,name,mat=None,parent=None):
+    #        loft=c4d.BaseObject(c4d.Osweep)
+    #        loft.SetName(name)
+    #        loft.MakeTag(c4d.Tphong)
+    #        #create the dedicayed material
+    ##        if mat == None :
+    ##                texture[1010] = self.create_loft_material(name='mat_'+name)
+    ##        else : texture[1010] = mat
+    #        self.addObjectToScene(None,loft,parent=parent)
+    #        if mat is not None :
+    #            texture = loft.MakeTag(c4d.Ttexture)
+    #            texture[1010] = mat
+    #        return loft
 
     def addShapeToNurb(self, loft, shape, position=-1):
         list_shape = loft.GetChilds()
         shape.insert_after(list_shape[position])
 
-    # def createShapes2D()
-    #    sh=c4d.BaseObject(dshape)
+        # def createShapes2D()
+        #    sh=c4d.BaseObject(dshape)
 
-    def extrudeSpline(self, spline, **kw):
-        extruder = None
-        shape = None
-        spline_clone = None
-        if "extruder" in kw:
-            extruder = kw["extruder"]
-        if extruder is None:
-            extruder = self.sweepnurbs("ex_" + spline.GetName())
-        if "shape" in kw:
-            if type(kw["shape"]) == str:
-                shape = self.build_2dshape("sh_" + kw["shape"] + "_" + spline.GetName(),
-                                           kw["shape"])[0]
-            else:
-                shape = kw["shape"]
-        if shape is None:
-            shape = self.build_2dshape("sh_circle" + spline.GetName())[0]
-        if "clone" in kw and kw["clone"]:
-            spline_clone = spline.GetClone()
-            self.resetTransformation(spline_clone)
-            self.reParent(spline_clone, extruder)
-        else:
-            self.reParent(spline, extruder)
-        self.reParent(shape, extruder)
-        if spline_clone is not None:
-            return extruder, shape, spline_clone
-        return extruder, shape
+    #    def extrudeSpline(self,spline,**kw):
+    #        extruder = None
+    #        shape = None
+    #        spline_clone = None
+    #        if "extruder" in kw:
+    #            extruder = kw["extruder"]
+    #        if extruder is None :
+    #            extruder=self.sweepnurbs("ex_"+spline.GetName())
+    #        if "shape" in kw:
+    #            if type(kw["shape"]) == str :
+    #                shape = self.build_2dshape("sh_"+kw["shape"]+"_"+spline.GetName(),
+    #                                           kw["shape"])
+    #            else :
+    #                shape = kw["shape"]
+    #        if shape is None :
+    #            shape = self.build_2dshape("sh_circle"+spline.GetName())
+    #        if "clone" in kw and kw["clone"] :
+    #            spline_clone = spline.GetClone()
+    #            self.resetTransformation(spline_clone)
+    #            self.reParent(spline_clone,extruder)
+    #        else :
+    #            self.reParent(spline,extruder)
+    #        self.reParent(shape,extruder)
+    #        if spline_clone is not None :
+    #            return extruder,shape,spline_clone
+    #        return extruder,shape
 
     def spline(self, name, points, close=0, type=1, extrude_obj=None,
                scene=None, parent=None):
@@ -1856,23 +1364,23 @@ class c4dHelper(Helper):
         spline.Message(c4d.MSG_UPDATE)
         return True
 
-    def build_2dshape(self, name, type="circle", **kw):
-        shapedic = {"circle": {"obj": self.CIRCLE, "size": [c4d.PRIM_CIRCLE_RADIUS, ]},
-                    "rectangle": {"obj": self.RECTANGLE,
-                                  "size": [c4d.PRIM_RECTANGLE_WIDTH, c4d.PRIM_RECTANGLE_HEIGHT]}
-                    }
-        shape = c4d.BaseObject(shapedic[type]["obj"])
-        shape[c4d.PRIM_PLANE] = 0  # 0 XY, 1 ZY, 2 XZ
-        dopts = [1., 1.]
-        if "opts" in kw:
-            dopts = kw["opts"]
-        if len(shapedic[type]["size"]) == 1:
-            shape[shapedic[type]["size"][0]] = dopts[0]
-        else:
-            for i in range(len(shapedic[type]["size"])):
-                shape[shapedic[type]["size"][i]] = dopts[i]
-        self.addObjectToScene(None, shape)
-        return shape, None
+    #    def build_2dshape(self,name,type="circle",**kw):
+    #        shapedic = {"circle":{"obj":self.CIRCLE,"size":[c4d.PRIM_CIRCLE_RADIUS,]},
+    #                    "rectangle":{"obj":self.RECTANGLE,
+    #                    "size":[c4d.PRIM_RECTANGLE_WIDTH,c4d.PRIM_RECTANGLE_HEIGHT]}
+    #                    }
+    #        shape = c4d.BaseObject(shapedic[type]["obj"])
+    #        shape[c4d.PRIM_PLANE]=0#0 XY, 1 ZY, 2 XZ
+    #        dopts = [1.,1.]
+    #        if "opts" in kw :
+    #            dopts = kw["opts"]
+    #        if len(shapedic[type]["size"]) == 1 :
+    #            shape[shapedic[type]["size"][0]] = dopts[0]
+    #        else :
+    #            for i in range(len(shapedic[type]["size"])) :
+    #                shape[shapedic[type]["size"][i]] = dopts[i]
+    #        self.addObjectToScene(None,shape)
+    #        return shape
 
     def createShapes2Dspline(self, doc=None, parent=None):
         circle = c4d.BaseObject(self.CIRCLE)
@@ -1971,17 +1479,6 @@ class c4dHelper(Helper):
             return text, extruder
         else:
             return text
-
-    def Circle(self, name, rad=1., **kw):
-        circle = c4d.BaseObject(c4d.Osplinecircle)
-        circle.SetName(name)
-        circle[2012] = float(rad)
-        circle[2300] = 0
-        parent = None
-        if "parent" in kw and kw["parent"] is not None:
-            parent = kw["parent"]
-        self.addObjectToScene(self.getCurrentScene(), circle, parent=parent)
-        return circle
 
     def createShapes2D(self, doc=None, parent=None):
         if doc is None:
@@ -2538,150 +2035,9 @@ class c4dHelper(Helper):
     #                else : #need to update
     #                    updateLines(lines, chains=ch)
 
-
-    def matrixToEdgeMesh(self, name, matrices, **kw):  # edge size ?
-        pt1 = [0., -5., 0.]
-        pt2 = [0., 5., 0.]  # edgelength
-        v = []
-        f = []
-        e = []
-        i = 0
-        for m in matrices:
-            p1, p2 = self.ApplyMatrix([pt1, pt2], m)
-            v.extend([p1, p2])  # edge we want
-            e.append([i, i + 1])
-            i += 2
-            # everyt thre matrices make tow triangle ?
-            face1 = [i, i + 1, i + 2]
-            face2 = [i, i + 3, i + 4]
-            f.extend([face1, face2])
-        # need to create triangle
-        obj = c4d.PolygonObject(len(v), 0)
-        obj.SetName(name)
-        cd4vertices = map(self.FromVec, v)
-        # map(obj.SetPoint,range(len(v)),cd4vertices)
-        [obj.SetPoint(k, self.FromVec(av)) for k, av in enumerate(v)]
-        [obj.SetPolygon(k, self.FromFace(af)) for k, af in enumerate(f)]
-        c4d.EventAdd()
-        #        vtag.SetName(tagName)
-        self.addObjectToScene(self.getCurrentScene(), obj)
-        if 'parent' in kw and kw['parent'] is not None:
-            parent = self.getObject(kw['parent'])
-            obj.parent = parent
-        return obj, me
-
-    def matrixToVNMesh(self, name, matrices, vector=[0., 1., 0.], **kw):  # edge size ?
-        # blender user verex normal for rotated the instance
-        pt1 = [0., 0., 0.]  # pos
-        pt2 = vector  # [0.,1.,0.]#normal should be given ?
-        v = []
-        f = []
-        e = []
-        n = []
-        #        i=0
-        #       why -90 ?
-        for m in matrices:
-            #            p1=m[:3, 3]
-            #            m[:3, 3]=[0.,0.,0.]
-            p1, p2 = self.ApplyMatrix([pt1, pt2], m)
-            v.append(p1)
-            n.append(p2)
-        #            i+=2
-        obj = c4d.PolygonObject(len(v), 0)
-        obj.SetName(name)
-        cd4vertices = map(self.FromVec, v)
-        map(obj.SetPoint, range(len(v)), cd4vertices)
-        vtag = c4d.NormalTag(len(v))  # starting c4d R13
-        obj.InsertTag(vtag)
-        c4d.EventAdd()
-        vcnt = vtag.GetDataCount()
-        # get the pointer to the vertex map array
-        vmap = vtag.GetAllHighlevelData()
-        vmap = [no for no in n]
-        #            vmap=map(lambda x,y,j=j: setVColor(x,j,y),vmap,vcolors)
-        vtag.SetAllHighlevelData(vmap)
-        vtag.Message(c4d.MSG_UPDATE)
-        c4d.EventAdd()
-        #        vtag.SetName(tagName)
-        self.addObjectToScene(self.getCurrentScene(), obj)
-        for i, v in enumerate(points):
-            v.normal = self.FromVec(n[i])
-        if 'parent' in kw and kw['parent'] is not None:
-            parent = self.getObject(kw['parent'])
-            obj.parent = parent
-        return obj, me
-
-    def transposeMatrix(self, matrice):
-        if matrice is not None:
-            matrice = numpy.array(matrice)
-            if isinstance(matrice, numpy.ndarray):
-                mat = matrice.transpose().tolist()
-                return mat
-            else:
-                return matrice  # = mat#numpy.array(matrice)
-            #            blender_mat=mathutils.Matrix(mat)#from Blender.Mathutils
-            #            blender_mat.transpose()
-            #            return blender_mat
-        return matrice
-
-    def matrixToFaces(self, name, matrices, vector=[0., 1., 0.], transpose=True, **kw):  # edge size ?
-        av = [vector[0], vector[1], vector[2]]
-        #        av=[vector[2],vector[1],vector[0]]
-        axe = self.rerieveAxis(av)
-        # axe="+Y"
-
-        quad = numpy.array(self.quad[axe]) * 10.0
-        mX = self.rotation_matrix(self.eq[axe][1], self.eq[axe][0])
-        quad = self.ApplyMatrix(quad, mX)
-        #        av=self.rotatePoint(av,[0.,0.,0.],[1.0,0.0,0.0,math.pi/2.0])
-        # rotate the quad onlong cross.
-        #        av=self.rotatePoint([vector[2],vector[1],vector[0]],[0.,0.,0.],[0.0,1.0,0.0,-math.pi/2.0])
-        print ("matrixToFacesMesh", axe, av, vector, quad)
-        rnorm = False
-        if axe[0] == "-":
-            rnorm = True
-        #        f=[0,1,2,3]
-        v = []
-        f = []
-        e = []
-        n = []
-        vi = 0
-        for i, m in enumerate(matrices):
-            if transpose:
-                m = self.transposeMatrix(m)
-            new_quad = self.ApplyMatrix(quad, m)
-            v.extend(new_quad)
-            f.append([i * 4 + 0, i * 4 + 1, i * 4 + 2, i * 4 + 3])
-        return v, f, rnorm
-
-    def matrixToFacesMesh(self, name, matrices, vector=[0., 1., 0.], transpose=True, **kw):  # edge size ?
-        # blender user verex normal for rotated the instance
-        # quad up vector should use the inpu vector
-        # from Vector ?
-        # quad local axis is X-Y->-Z,should rotate
-        v, f, rnorm = self.matrixToFaces(name, matrices, vector=vector, transpose=transpose, **kw)
-        polygon = c4d.PolygonObject(len(v), len(f))
-        polygon.SetName(name + "_me")
-        [polygon.SetPoint(k, self.FromVec(vv)) for k, vv in enumerate(v)]
-        [polygon.SetPolygon(k, self.FromFace(ff)) for k, ff in enumerate(f)]
-
-        polygon.Message(c4d.MSG_UPDATE)
-        c4d.EventAdd()
-        self.addObjectToScene(None, polygon)
-        self.toggleDisplay(polygon, False)
-        if 'parent' in kw and kw['parent'] is not None:
-            self.reParent(polygon, kw['parent'])
-        if rnorm == True:
-            # select it
-            self.setCurrentSelection([polygon])
-            c4d.CallCommand(self.REVERSE_NORMAL)
-            polygon.Message(c4d.MSG_UPDATE)
-            c4d.EventAdd()
-        return polygon, polygon
-
     def PointCloudObject(self, name, **kw):
         # need to add the AtomArray modifier....
-        pointWidth = 0.1
+        pointWidth = 1.0
         doatom = True
         if kw.has_key("pointWidth"):
             pointWidth = float(kw["pointWidth"])
@@ -2743,11 +2099,11 @@ class c4dHelper(Helper):
             if self.getType(polygon) != self.POLYGON:
                 print "not a polygon", polygon.GetName()
                 return
-        if vertices != None:
+        if vertices is not None:
             [polygon.SetPoint(k, self.FromVec(v)) for k, v in enumerate(vertices)]
         #            for k,v in enumerate(vertices) :
         #                polygon.SetPoint(k, self.FromVec(v))
-        if faces != None:
+        if faces is not None:
             [polygon.SetPolygon(k, self.FromFace(f)) for k, f in enumerate(faces)]
         polygon.Message(c4d.MSG_UPDATE)
         c4d.EventAdd()
@@ -2763,7 +2119,7 @@ class c4dHelper(Helper):
         c4d.CallCommand(100004787)  # delete the obj
         obj = self.createsNmesh(name, vertices, None, faces, smooth=False, material=texture[1010], proxyCol=proxyCol)
         self.addObjectToScene(doc, obj[0], parent=parent)
-        if proxyCol and colors != None:
+        if proxyCol and colors is not None:
             pObject = self.getObject(name + "_color")
             doc.SetActiveObject(pObject)
             c4d.CallCommand(100004787)  # delete the obj
@@ -2778,7 +2134,7 @@ class c4dHelper(Helper):
         c4d.CallCommand(100004787)  # delete the obj
         obj = self.createsNmesh(name, vertices, None, faces, smooth=False, material=texture[1010], proxyCol=proxyCol)
         self.addObjectToScene(doc, obj[0], parent=parent)
-        if proxyCol and colors != None:
+        if proxyCol and colors is not None:
             pObject = self.getObject(name + "_color")
             doc.SetActiveObject(pObject)
             c4d.CallCommand(100004787)  # delete the obj
@@ -2798,25 +2154,21 @@ class c4dHelper(Helper):
           return obj
     """
 
-    def updateMesh(self, o, vertices=None, faces=None, smooth=False, **kw):
-        if type(o) == str:
-            o = self.getObject(o)
-        if o == None: return
-        #        objdcache=obj.GetDeformCache()
-        #        objcache=obj.GetCache()
-        #        if objdcache is not None:
-        #            obj = objdcache
-        #        elif objcache is not None:
-        #            obj = objcache
-        oldN = o.GetPointCount()
-        newN = len(vertices)
-        if faces is not None:
-            nF = len(faces)
-        else:
-            nF = 0
-        o.ResizeObject(newN, nF)
-        self.updatePoly(o, faces=faces, vertices=vertices)
-        # sys.stderr.write('\nnb v %d %d f %d' % (oldN,len(vertices),len(faces)))
+    #    def updateMesh(self,obj,vertices=None,faces = None, smooth=False,**kw):
+    #        if type(obj) == str:
+    #            obj = self.getObject(obj)
+    #        if obj == None : return
+    ##        objdcache=obj.GetDeformCache()
+    ##        objcache=obj.GetCache()
+    ##        if objdcache is not None:
+    ##            obj = objdcache
+    ##        elif objcache is not None:
+    ##            obj = objcache
+    #        oldN=obj.GetPointCount()
+    #        newN=len(vertices)
+    #        obj.ResizeObject(newN,len(faces))
+    #        self.updatePoly(obj,faces=faces,vertices=vertices)
+    #        sys.stderr.write('\nnb v %d %d f %d' % (oldN,len(vertices),len(faces)))
 
     def updateMeshProxy(self, obj, proxyCol=False, parent=None, mol=None):
         doc = getCurrentScene()
@@ -2862,212 +2214,144 @@ class c4dHelper(Helper):
         polygon.SetPolygon(id=g, polygon=poly)
         return [A, B, C, D]
 
-    def polygons(self, name, proxyCol=False, smooth=False, color=None, material=None, **kw):
-        import time
-        t1 = time.time()
-        vertices = kw["vertices"]
-        faces = kw["faces"]
-        #        if faces is not None :
-        #            faces = self.triangulateFaceArray(faces)
-        normals = kw["normals"]
-        frontPolyMode = 'fill'
-        if kw.has_key("frontPolyMode"):
-            frontPolyMode = kw["frontPolyMode"]
-        if kw.has_key("shading"):
-            shading = kw["shading"]  # 'flat'
-        #          if frontPolyMode == "line" : #wire mode
-        #              material = self.getCurrentScene().SearchMaterial("wire")
-        #              if material == None:
-        #                  material = self.addMaterial("wire",(0.5,0.5,0.5))
-        polygon = c4d.PolygonObject(len(vertices), len(faces))
-        polygon.SetName(name)
-        k = 0
+    #    def polygons(self,name,proxyCol=False,smooth=False,color=[[1,0,0],], material=None, **kw):
+    #        import time
+    #        t1 = time.time()
+    #        vertices = kw["vertices"]
+    #        faces = kw["faces"]
+    #        normals = kw["normals"]
+    #        frontPolyMode='fill'
+    #        if kw.has_key("frontPolyMode"):
+    #            frontPolyMode = kw["frontPolyMode"]
+    #        if kw.has_key("shading") :
+    #            shading=kw["shading"]#'flat'
+    ##          if frontPolyMode == "line" : #wire mode
+    ##              material = self.getCurrentScene().SearchMaterial("wire")
+    ##              if material == None:
+    ##                  material = self.addMaterial("wire",(0.5,0.5,0.5))
+    #        polygon = c4d.PolygonObject(len(vertices), len(faces))
+    #        polygon.SetName(name)
+    #        k=0
+    #
+    #        [polygon.SetPoint(k, self.FromVec(v)) for k,v in enumerate(vertices)]
+    #        [polygon.SetPolygon(k, self.FromFace(f)) for k,f in enumerate(faces)]
+    #
+    #        t2=time.time()
+    #        polygon.MakeTag(c4d.Tphong) #shading ?
+    #          # create a texture tag on the PDBgeometry object
+    #        doMaterial = True
+    #        if type(material) is bool or not proxyCol:
+    #            doMaterial = material
+    #        elif material is None :
+    #            doMaterial = False
+    #        if not proxyCol :#and doMaterial:
+    #            texture = polygon.MakeTag(c4d.Ttexture)
+    #              #create the dedicayed material
+    #            if material == None :
+    #                texture[1010] = self.addMaterial("mat_"+name,color[0])
+    #            else : texture[1010] = material
+    ##          else :
+    ##            if color is not None:
+    ##                self.changeColor(polygon,color,proxyObject=True)
+    #        polygon.Message(c4d.MSG_UPDATE)
+    #        return polygon
 
-        [polygon.SetPoint(k, self.FromVec(v)) for k, v in enumerate(vertices)]
-        [polygon.SetPolygon(k, self.FromFace(f)) for k, f in enumerate(faces)]
 
-        t2 = time.time()
-        polygon.MakeTag(c4d.Tphong)  # shading ?
-        # create a texture tag on the PDBgeometry object
-        doMaterial = True
-        if type(material) is bool or not proxyCol:
-            doMaterial = material
-        elif material is None:
-            doMaterial = False
-        if not proxyCol:  # and doMaterial:
-            if material != None:
-                texture = polygon.MakeTag(c4d.Ttexture)
-                texture[1010] = material
-            #                texture[1010] = self.addMaterial("mat_"+name,color[0])
-            #            else : texture[1010] = material
-            #          else :
-        # need to test with autoPack
-        if material is None and color is not None and len(color) == 1:
-            texture = polygon.MakeTag(c4d.Ttexture)
-            texture[1010] = self.addMaterial("mat_" + name, color[0])
-        #                self.changeColor(polygon,color,proxyObject=True)
-        polygon.Message(c4d.MSG_UPDATE)
-        return polygon
+    #    def createsNmesh(self,name,vertices,vnormals,faces,smooth=False,
+    #                     material=None,proxyCol=False,color=[[1,0,0],],**kw):
+    #        """
+    #        This is the main function that create a polygonal mesh.
+    #
+    #        @type  name: string
+    #        @param name: name of the pointCloud
+    #        @type  vertices: array
+    #        @param vertices: list of x,y,z vertices points
+    #        @type  vnormals: array
+    #        @param vnormals: list of x,y,z vertex normals vector
+    #        @type  faces: array
+    #        @param faces: list of i,j,k indice of vertex by face
+    #        @type  smooth: boolean
+    #        @param smooth: smooth the mesh
+    #        @type  material: hostApp obj
+    #        @param material: material to apply to the mesh
+    #        @type  proxyCol: booelan
+    #        @param proxyCol: do we need a special object for color by vertex (ie C4D)
+    #        @type  color: array
+    #        @param color: r,g,b value to color the mesh
+    #
+    #        @rtype:   hostApp obj
+    #        @return:  the polygon object
+    #        """
+    #        if len(color) == 3 :
+    #            if type(color[0]) is not list :
+    #                color = [color,]
+    #        PDBgeometry = self.polygons(name, vertices=vertices,normals=vnormals,
+    #                                      faces=faces,material=material,color=color,
+    #                                      smooth=smooth,proxyCol=proxyCol)
+    #        parent = None
+    #        if "parent" in kw:
+    #            parent = kw["parent"]
+    #        self.addObjectToScene(None,PDBgeometry,parent=parent)
+    #        return [PDBgeometry,PDBgeometry]
+    ##
+    #    def instancePolygon(self,name, matrices=None,hmatrices=None, mesh=None,parent=None,
+    #                        transpose=False,globalT=True,**kw):
+    #        if hmatrices is not None :
+    #            matrices = hmatrices
+    #        if matrices == None : return None
+    #        if mesh == None : return None
+    #        instance = []
+    #        #print len(matrices)#4,4 mats
+    #        for i,mat in enumerate(matrices):
+    #            inst = self.getObject(name+str(i))
+    #            if inst is None :
+    #                inst = c4d.BaseObject(c4d.Oinstance)
+    #                inst.SetName(name+str(i))
+    #                self.AddObject(inst,parent=parent)
+    #            instance.append(inst)
+    #            instance[-1][1001]=mesh
+    #            if hmatrices is not None :
+    #                mx = mat
+    #            elif matrices is not None :
+    #                if type(mat) != c4d.Matrix:
+    #                    mx = self.matrix2c4dMat(mat,transpose=transpose)
+    #                else :
+    #                    mx = mat
+    #            if globalT :
+    #                instance[-1].SetMg(mx)
+    #            else :
+    #                instance[-1].SetMl(mx)
+    #            #instance[-1].MakeTag(c4d.Ttexture)
+    #        return instance
 
-    def createsNmesh(self, name, vertices, vnormals, faces, smooth=False,
-                     material=None, proxyCol=False, color=None, **kw):
-        """
-        This is the main function that create a polygonal mesh.
-
-        @type  name: string
-        @param name: name of the pointCloud
-        @type  vertices: array
-        @param vertices: list of x,y,z vertices points
-        @type  vnormals: array
-        @param vnormals: list of x,y,z vertex normals vector
-        @type  faces: array
-        @param faces: list of i,j,k indice of vertex by face
-        @type  smooth: boolean
-        @param smooth: smooth the mesh
-        @type  material: hostApp obj
-        @param material: material to apply to the mesh
-        @type  proxyCol: booelan
-        @param proxyCol: do we need a special object for color by vertex (ie C4D)
-        @type  color: array
-        @param color: r,g,b value to color the mesh, [[1,0,0],]
-
-        @rtype:   hostApp obj
-        @return:  the polygon object
-        """
-        if color is not None and len(color) == 3:
-            if type(color[0]) is not list:
-                color = [color, ]
-        PDBgeometry = self.polygons(name, vertices=vertices, normals=vnormals,
-                                    faces=faces, material=material, color=color,
-                                    smooth=smooth, proxyCol=proxyCol)
-        parent = None
-        if "parent" in kw:
-            parent = kw["parent"]
-        self.addObjectToScene(None, PDBgeometry, parent=parent)
-        return [PDBgeometry, PDBgeometry]
-
-    def instancePolygon(self, name, matrices=None, hmatrices=None, mesh=None, parent=None,
-                        transpose=False, globalT=True, dupliVert=True, **kw):
-        name = str(name)
-        if hmatrices is not None:
-            matrices = hmatrices
-        if matrices == None: return None
-        if mesh == None: return None
-        instance = []
-        #        self.dupliVert = False
-        if self.instance_dupliFace:
-            v = [0., 1., 0.]
-            if "axis" in kw and kw["axis"] is not None:
-                v = kw["axis"]
-            print ("axis", v)
-            o = self.getObject(name + "ds")
-            if o is None:
-                o, m = self.matrixToFacesMesh(name, matrices, vector=v, transpose=transpose,
-                                              parent=parent)
-                # create cloner Object
-                cloner = c4d.BaseObject(self.CLONER)
-                cloner[c4d.ID_BASELIST_NAME] = name + "ds"
-                cloner[c4d.ID_MG_MOTIONGENERATOR_MODE] = 0  # object
-                self.addObjectToScene(None, cloner, parent=parent)
-                cloner[c4d.MG_OBJECT_LINK] = o
-                cloner[c4d.MG_POLY_MODE_] = 2  # Face is 2
-                # self._render_instance
-                cloner[c4d.MGCLONER_VOLUMEINSTANCES] = int(self._render_instance)
-                #                cloner[c4d.MG_POLY_UPVECTOR]=self.getTrackAxis(v)
-                self.reParent(mesh, cloner)
-                instance = [o]
-            else:
-                v, f, rnorm = self.matrixToFaces(name, matrices, vector=vector, transpose=transpose, **kw)
-                self.updatePoly(o, faces=f, vertices=v)
-            return o
-            # rotation checkbox->use normal
-        elif self.dupliVert:
-            v = [0., 1., 0.]
-            if "axis" in kw:
-                v = kw["axis"]
-            print ("axis", v)
-            o = self.getObject(name)
-            if o is None:
-                o, m = self.matrixToEdgeMesh(name, matrices, vector=v)
-                cloner = c4d.BaseObject(self.CLONER)
-                cloner[c4d.ID_BASELIST_NAME] = name + "ds"
-                cloner[c4d.ID_MG_MOTIONGENERATOR_MODE] = 0  # object
-                self.addObjectToScene(None, cloner, parent=parent)
-                cloner[c4d.MG_OBJECT_LINK] = o
-                cloner[c4d.MG_POLY_MODE_] = 0  # edgis is 1
-                cloner[c4d.MG_POLY_UPVECTOR] = self.getTrackAxis(v)
-                if parent is not None:
-                    self.reParent(mesh, cloner)
-            else:
-                # update
-                pass
-                # rotation checkbox->use normal
-        else:
-            # print len(matrices)#4,4 mats
-            for i, mat in enumerate(matrices):
-                inst = self.getObject(name + str(i))
-                if inst is None:
-                    inst = c4d.BaseObject(c4d.Oinstance)
-                    inst.SetName(name + str(i))
-                    self.AddObject(inst, parent=parent)
-                instance.append(inst)
-                instance[-1][1001] = mesh
-                if hmatrices is not None:
-                    mx = mat
-                elif matrices is not None:
-                    if type(mat) != c4d.Matrix:
-                        mx = self.matrix2c4dMat(mat, transpose=transpose)
-                    else:
-                        mx = mat
-                if globalT:
-                    instance[-1].SetMg(mx)  # scaling ?
-                else:
-                    instance[-1].SetMl(mx)
-                    # instance[-1].MakeTag(c4d.Ttexture)
-        return instance
-
-    def updateInstancePolygon(self, name, instance, matrices=None, hmatrices=None, mesh=None,
-                              parent=None, transpose=False, globalT=True):
-        name = str(name)
-        if matrices == None: return None
-        if mesh == None: return None
-        # instance = []
-        # print len(matrices)#4,4 mats
-        if instance is None:
-            instance = []
-        if hmatrices is not None:
-            matrices = hmatrices
-        if self.instance_dupliFace:
-            o = self.getObject(name + "_me")
-            v, f, rnorm = self.matrixToFaces(name, matrices, vector=vector, transpose=transpose, **kw)
-            self.updatePoly(o, faces=f, vertices=v)
-            if rnorm == True:
-                # select it
-                self.setCurrentSelection([o])
-                c4d.CallCommand(self.REVERSE_NORMAL)
-                polygon.Message(c4d.MSG_UPDATE)
-                c4d.EventAdd()
-        elif self.dupliVert:
-            pass
-        else:
-            for i, mat in enumerate(matrices):
-                inst = self.getObject(name + str(i))
-                if i > len(instance) or inst is None:
-                    inst = c4d.BaseObject(c4d.Oinstance)
-                    inst.SetName(name + str(i))
-                    self.AddObject(inst, parent=parent)
-                    instance.append(inst)
-                inst[1001] = mesh
-                if hmatrices is not None:
-                    mx = mat
-                elif matrices is not None:
-                    mx = self.matrix2c4dMat(mat, transpose=transpose)
-                if globalT:
-                    inst.SetMg(mx)
-                else:
-                    inst.SetMl(mx)
-                    # instance[-1].MakeTag(c4d.Ttexture)
-        return instance
+    #    def updateInstancePolygon(self,name,instance, matrices=None,hmatrices=None,mesh=None,
+    #                              parent=None,transpose=False,globalT=True):
+    #        if matrices == None : return None
+    #        if mesh == None : return None
+    #        #instance = []
+    #        #print len(matrices)#4,4 mats
+    #        if instance is None:
+    #            instance = []
+    #        if hmatrices is not None :
+    #            matrices = hmatrices
+    #        for i,mat in enumerate(matrices):
+    #            inst = self.getObject(name+str(i))
+    #            if i > len(instance) or inst is None:
+    #                inst = c4d.BaseObject(c4d.Oinstance)
+    #                inst.SetName(name+str(i))
+    #                self.AddObject(inst,parent=parent)
+    #                instance.append(inst)
+    #            inst[1001]=mesh
+    #            if hmatrices is not None :
+    #                mx = mat
+    #            elif matrices is not None :
+    #                mx = self.matrix2c4dMat(mat,transpose=transpose)
+    #            if globalT :
+    #                inst.SetMg(mx)
+    #            else :
+    #                inst.SetMl(mx)
+    #            #instance[-1].MakeTag(c4d.Ttexture)
+    #        return instance
 
     def setVColor(self, j, ncolor):
         _colsc = 1.0
@@ -3215,14 +2499,6 @@ class c4dHelper(Helper):
             vBakeTexTag[c4d.BAKETEXTURE_RELAXCOUNT] = 2
             vBakeTexTag.Message(c4d.MSG_UPDATE)
             c4d.EventAdd()
-        tags = mesh.GetTags()
-        ntexture = 0
-        for tag in tags:
-            if type(tag) == c4d.TextureTag:
-                ntexture += 1
-        if ntexture < 3:
-            while mesh.GetTag(c4d.Ttexture) != None:
-                mesh.KillTag(c4d.Ttexture)
         self.CreateVertexRGBmaps(mesh, proxy, vcolors)
         doc = c4d.documents.GetActiveDocument()
         doc.AddUndo(c4d.UNDO_NEW, mesh)
@@ -3238,7 +2514,7 @@ class c4dHelper(Helper):
             if material is None:
                 material = self.addMaterial(mat, col)
             mat = material
-        mat[2100] = c4d.Vector(col[0], col[1], col[2])
+        mat[2100] = c4d.Vector(float(col[0]), float(col[1]), float(col[2]))
 
     def c4dColor(self, col):
         # c4d color rgb range[0-1]
@@ -3247,87 +2523,86 @@ class c4dHelper(Helper):
         #                col = map( lambda x: x/255., col)
         return col
 
-    def changeColor(self, obj, colors, perVertex=False, proxyObject=True, doc=None, pb=False,
-                    facesSelection=None, faceMaterial=False):
-        #        print colors
-        if colors is None:
-            return
-        if colors[0] is not list and len(colors) == 3:
-            colors = [colors, ]
-        #        print colors
-        doc = self.getCurrentScene()
-        if type(obj) == str:
-            obj = self.getMesh(obj)
-        print ("COLORING...", obj, self.getName(obj), self.getType(obj), self.getType(obj) != self.POLYGON, proxyObject)
-        if self.getType(obj) != self.POLYGON:
-            proxyObject = False
-        defaultColor = (0.25, 0.25, 0.25)
-        doProxy = False
-        # verfify perVertex flag
-        unic = False
-        ncolor = self.convertColor(colors[0], toint=False)
-        if len(colors) == 1:
-            unic = True
-            ncolor = self.convertColor(colors[0], toint=False)
-        proxy = None
-        vcolor = None
-        # lets not doing it for see
-        if proxyObject:
-            nf = obj.GetPolygonCount()
-            nv = obj.GetPointCount()
-            mfaces = obj.GetAllPolygons()
-            if facesSelection is not None:
-                if type(facesSelection) is bool:
-                    fsel, face_sel_indice = self.getMeshFace(obj, selected=True)
-                else:
-                    face_sel_indice = facesSelection
-                    fsel = []
-                    for i in face_sel_indice:
-                        fsel.append(mfaces[i])
-                vsel = []
-                for f in fsel:
-                    for v in f:
-                        if v not in vsel:
-                            vsel.append(v)
-                mfaces = fsel
-                nf = len(fsel)
-                nv = len(vsel)
-            if len(colors) != nv and \
-                            len(colors) == nf:
-                perVertex = False
-            if len(colors) == nv and \
-                            len(colors) != nf:
-                perVertex = True
-            # get the list of color in c4d format
-            vcolor = [c4d.Vector(0.25, 0.25, 0.25)] * obj.GetPointCount()  # default color is grey
-            # if DEBUG :
-            # print "nb Faces ",len(faces)
-            if pb:
-                self.resetProgressBar()
-                self.progressBar(label="color per Vertex : convert Color to C4D")
-            for i, g in enumerate(mfaces):  # faces
-                if not unic and not perVertex:
-                    ncolor = self.convertColor(colors[i], toint=False)
-                elif unic:
-                    ncolor = self.convertColor(colors[0], toint=False)
-                for j in [g.a, g.b, g.c, g.d]:  # vertices
-                    if not unic and perVertex:
-                        ncolor = self.convertColor(colors[j], toint=False)
-                    #                    print j,ncolor
-                    vcolor[j] = c4d.Vector(float(ncolor[0]),
-                                           float(ncolor[1]),
-                                           float(ncolor[2]))
-                if pb:
-                    self.progressBar(progress=float(i) / float(len(faces)))
-            if pb:
-                self.progressBar(label="color per Vertex : create Vmap Tag")
-            self.colorbyvertex(obj, proxy, vcolor)
-            if pb:
-                self.resetProgressBar()
-        else:
-            self.changeObjColorMat(obj, ncolor)
-            texture = obj.GetTags()[0]  # should be the textureFlag
-
+    #    def changeColor(self,obj,colors,perVertex=False,proxyObject=True,doc=None,pb=False,
+    #                    facesSelection=None,faceMaterial=False):
+    ##        print colors
+    #        if colors[0] is not list and len(colors) == 3 :
+    #           colors = [colors,]
+    ##        print colors
+    #        if doc == None :
+    #            doc = self.getCurrentScene()
+    #        if type(obj) == str:
+    #            obj = self.getMesh(obj)
+    #        print obj,self.getName(obj)
+    #        if self.getType(obj) != self.POLYGON:
+    #            proxyObject=False
+    #        defaultColor=(0.25,0.25,0.25)
+    #        doProxy = False
+    #        #verfify perVertex flag
+    #        unic=False
+    #        ncolor=self.convertColor(colors[0],toint=False)
+    #        if len(colors)==1 :
+    #            unic=True
+    #            ncolor = self.convertColor(colors[0],toint=False)
+    #        proxy = None
+    #        vcolor = None
+    #        #lets not doing it for see
+    #        if proxyObject :
+    #            nf=obj.GetPolygonCount()
+    #            nv=obj.GetPointCount()
+    #            mfaces = obj.GetAllPolygons()
+    #            if  facesSelection is not None :
+    #                if type(facesSelection) is bool :
+    #                    fsel,face_sel_indice = self.getMeshFace(obj,selected=True)
+    #                else :
+    #                    face_sel_indice = facesSelection
+    #                    fsel=[]
+    #                    for i in face_sel_indice:
+    #                        fsel.append(mfaces[i])
+    #                vsel=[]
+    #                for f in fsel:
+    #                    for v in f:
+    #                        if v not in vsel:
+    #                            vsel.append(v)
+    #                mfaces = fsel
+    #                nf = len(fsel)
+    #                nv = len(vsel)
+    #            if len(colors) != nv and \
+    #                len(colors) == nf:
+    #                    perVertex=False
+    #            if len(colors) == nv and \
+    #                len(colors) != nf:
+    #                    perVertex=True
+    #            #get the list of color in c4d format
+    #            vcolor = [c4d.Vector(0.25,0.25,0.25)]*obj.GetPointCount() #default color is grey
+    #            #if DEBUG :
+    #            #print "nb Faces ",len(faces)
+    #            if pb :
+    #                self.resetProgressBar()
+    #                self.progressBar(label="color per Vertex : convert Color to C4D")
+    #            for i,g in enumerate(mfaces):#faces
+    #                if not unic and not perVertex :
+    #                    ncolor = self.convertColor(colors[i],toint=False)
+    #                elif unic :
+    #                    ncolor = self.convertColor(colors[0],toint=False)
+    #                for j in [g.a,g.b,g.c,g.d]:#vertices
+    #                    if not unic and perVertex :
+    #                        ncolor = self.convertColor(colors[j],toint=False)
+    ##                    print j,ncolor
+    #                    vcolor[j] = c4d.Vector(float(ncolor[0]),
+    #                                            float(ncolor[1]),
+    #                                            float(ncolor[2]))
+    #                if pb :
+    #                    self.progressBar(progress = float(i)/float(len(faces)))
+    #            if pb :
+    #               self.progressBar(label="color per Vertex : create Vmap Tag")
+    #            self.colorbyvertex(obj,proxy,vcolor)
+    #            if pb :
+    #                self.resetProgressBar()
+    #        else :
+    #            self.changeObjColorMat(obj,ncolor)
+    #            texture = obj.GetTags()[0] #should be the textureFlag
+    #
     def changeObjColorMat(self, obj, color):
         doc = self.getCurrentScene()
         #        texture = obj.GetTags()[0]
@@ -3340,19 +2615,6 @@ class c4dHelper(Helper):
             texture[c4d.TEXTURETAG_MATERIAL] = rMat
         else:
             self.colorMaterial(rMat, color)
-
-    def updateArmature(self, basename, x, listeName=None, scn=None, root=None, **kw):
-        for j in range(len(x)):
-            name = basename + 'bone' + str(j)
-            if listeName is not None:
-                name = listeName[j]
-            bone = self.getObject(name)
-            if bone is None:
-                continue
-            atC = x[j]
-            mx = c4d.Matrix()
-            mx.off = self.FromVec(atC)
-            bone.SetMg(mx)
 
     def armature(self, basename, x, listeName=None, scn=None, root=None, **kw):
         bones = []
@@ -3407,11 +2669,6 @@ class c4dHelper(Helper):
         self.ObjectsSelection(bones, "add")
         # 3- bind the bones / geoms
         c4d.CallCommand(self.BIND)
-
-    def updateMetaball(self, name, vertices=None):
-        if vertices is None:
-            return
-        self.updatePoly(name + "_cloud", vertices=vertices)
 
     def metaballs(self, name, listePt, listeR, scn=None, root=None, **kw):
         doc = self.getCurrentScene()
@@ -3485,13 +2742,13 @@ class c4dHelper(Helper):
         # import numpy
         box = c4d.BaseObject(c4d.Ocube)  # Object.New('Mesh',name)
         box.SetName(name)
-        if cornerPoints != None:
+        if cornerPoints is not None:
             for i in range(3):
                 size[i] = cornerPoints[1][i] - cornerPoints[0][i]
             for i in range(3):
                 center[i] = (cornerPoints[0][i] + cornerPoints[1][i]) / 2.
         box.SetAbsPos(self.FromVec(center))
-        box[1100] = self.FromVec(size)
+        box[1100] = self.FromVec(size, pos=False)
         # aMat=addMaterial("wire")
         texture = box.MakeTag(c4d.Ttexture)
         if mat == None:
@@ -3509,13 +2766,13 @@ class c4dHelper(Helper):
                   mat=None):
         # import numpy
         box = self.getObject(box)
-        if cornerPoints != None:
+        if cornerPoints is not None:
             for i in range(3):
                 size[i] = cornerPoints[1][i] - cornerPoints[0][i]
             for i in range(3):
                 center[i] = (cornerPoints[0][i] + cornerPoints[1][i]) / 2.
         box.SetAbsPos(self.FromVec(center))
-        box[1100] = self.FromVec(size)
+        box[1100] = self.FromVec(size, pos=False)
         # aMat=addMaterial("wire")
 
     #        texture = box.MakeTag(c4d.Ttexture)
@@ -3544,7 +2801,7 @@ class c4dHelper(Helper):
         # import numpy
         plane = c4d.BaseObject(c4d.Oplane)  # Object.New('Mesh',name)
         plane.SetName(name)
-        if cornerPoints != None:
+        if cornerPoints  is not None:
             for i in range(3):
                 size[i] = cornerPoints[1][i] - cornerPoints[0][i]
             for i in range(3):
@@ -3663,33 +2920,20 @@ class c4dHelper(Helper):
                                 object = self.makeEditable(ch[0], copy=False)
             return object
 
-    def getMeshVertices(self, poly, selected=False, **kw):
-        if type(poly) == str:
-            poly = self.getObject(poly)
-        c4dvertices = poly.GetAllPoints()
-        transform = False
-        if "transform" in kw:
-            transform = kw["transform"]
-        mat = None
-        if transform:
-            mat = self.getTransformation(poly)
-        if selected:
-            sel = poly.GetPointS()
-            nv = poly.GetPointCount()
-            point_index = [i for i, e in enumerate(sel.GetAll(nv)) if e == 1]
-            if transform:
-                vertices = [self.ToVec(c4dvertices[v] * mat) for v in point_index]
-            else:
-                vertices = [self.ToVec(c4dvertices[v]) for v in point_index]
-            return vertices, point_index
-        else:
-            if transform:
-                vertices = [self.ToVec(v * mat) for v in c4dvertices]  # map(self.ToVec,c4dvertices)
-            else:
-                vertices = [self.ToVec(v) for v in c4dvertices]  # map(self.ToVec,c4dvertices)
-            return vertices
+        #    def getMeshVertices(self,poly,selected=False):
+        #        c4dvertices = poly.GetAllPoints()
+        #        if selected :
+        #            sel= poly.GetPointS()
+        #            nv = poly.GetPointCount()
+        #            point_index = [i for i,e in enumerate(sel.GetAll(nv)) if e == 1]
+        #            vertices = [self.ToVec(c4dvertices[v]) for v in point_index]
+        #            return vertices,point_index
+        #        else :
+        #            vertices = map(self.ToVec,c4dvertices)
+        #            return vertices
+        #
 
-    def getMeshNormales(self, poly, selected=False, **kw):
+    def getMeshNormales(self, poly, selected=False):
         c4dvnormals = poly.CreatePhongNormals()
         vnormals = vertices[:]
         for i, f in enumerate(faces):
@@ -3699,10 +2943,10 @@ class c4dHelper(Helper):
                 vnormals[j] = self.ToVec(c4dvnormals[(i * 4) + k])
         return vnormals
 
-    def getMeshEdge(self, c4dedge, **kw):
+    def getMeshEdge(self, c4dedge):
         return None  # [c4dedge.a,c4dedge.b]
 
-    def getMeshEdges(self, poly, selected=False, **kw):
+    def getMeshEdges(self, poly, selected=False):
         return None
 
     #        c4dedges = object.GetEdge()
@@ -3721,7 +2965,7 @@ class c4dHelper(Helper):
             else:
                 return [c4dface.a, c4dface.b, c4dface.c, c4dface.d]
 
-    def getFaces(self, object, selected=False, **kw):
+    def getFaces(self, object, selected=False):
         print object, object.GetName()
         c4dfaces = object.GetAllPolygons()
         if selected:
@@ -3735,7 +2979,7 @@ class c4dHelper(Helper):
             faces = [self.getFace(f) for f in c4dfaces]
             return faces
 
-    def getMeshFaces(self, poly, selected=False, **kw):
+    def getMeshFaces(self, poly, selected=False):
         return self.getFaces(poly, selected=selected)
 
 
@@ -4178,14 +3422,14 @@ class c4dHelper(Helper):
         # uid = PS.GetPData(i, channelid)
         ids = PS.AllocParticles(N)
         if "hostmatrice" in kw and kw["hostmatrice"] is not None:
-            c4dC = [self.FromVec(c) * hostmatrice for c in coords]
+            c4dC = [self.FromVec(c) * kw["hostmatrice"] for c in coords]
         else:
             c4dC = map(self.FromVec, coords)
         map(PS.SetPosition, ids, c4dC)
         life = [c4d.BaseTime(360000.0)] * N
         map(PS.SetLife, ids, life)
         if "radius" in kw and kw["radius"] is not None:
-            map(PS.SetSize, ids, radius)  # or vdwRadius?
+            map(PS.SetSize, ids, kw["radius"])  # or vdwRadius?
         else:
             map(PS.SetSize, ids, [1.0] * N)  # or vdwRadius?
         map(PS.SetMass, ids, [1.0] * N)  # or atom mass?
@@ -4194,7 +3438,7 @@ class c4dHelper(Helper):
         if name != "all" or ("group_name" in kw and kw["group_name"] is not None):
             # check if already exist
             group_name = name
-            tpg = self.checkTPG(PS, group_name)
+            tpg = self.checkTPG(PS, name)
             if tpg is None:
                 tpg = PS.AllocParticleGroup()
                 PS.SetPGroupHierarchy(root, tpg, c4d.TP_INSERT_UNDERLAST)
@@ -4383,12 +3627,8 @@ class c4dHelper(Helper):
     def pyro(self):
         pass
 
-        ############DYNAMICS ##############################
+    ############DYNAMICS ##############################
 
-        # ==============================================================================
-
-    # Dynamics simulation
-    # ==============================================================================
     def setRigidBody(self, obj, shape="auto", child=False,
                      dynamicsBody="on", dynamicsLinearDamp=0.0,
                      dynamicsAngularDamp=0.0,
@@ -4606,63 +3846,6 @@ class c4dHelper(Helper):
         # print faceIndex
         tag.Message(c4d.MSG_UPDATE)
 
-        # ==============================================================================
-
-    #   obj properties
-    # ==============================================================================
-    def getPropertyObject(self, obj, **keys):
-        """
-        Return the  property "key" of the object obj
-
-        * overwrited by children class for each host
-
-        @type  obj: host Obj
-        @param obj: the object that contains the property
-        @type  key: string
-        @param key: name of the property
-
-        @rtype  : int, float, str, dict, list
-        @return : the property value
-        """
-        res = []
-        key = keys['key']
-        # print ("get object parameters ",keys,key)
-        if "pos" in key:
-            res.append(self.ToVec(self.getTranslation(obj)))
-        if "scale" in key:
-            res.append(self.ToVec(self.getScale(obj), pos=False))
-
-        if "rotation" in key:
-            mo = self.getTransformation(obj)
-            m = self.ToMat(mo)  # .transpose()
-            mws = m.transpose()  # Transpose ?
-            rotMatj = mws[:]
-            rotMatj[3][:3] *= 0.0
-            res.append(rotMatj)
-        if obj.GetType() == self.SPHERE:
-            for k in key:
-                if k == "radius":
-                    res.append(obj[self.PRIM_SPHERE_RAD])
-        if obj.GetType() == self.CYLINDER:
-            for k in key:
-                if k == "radius":
-                    res.append(obj[5000])
-                elif k == "length":
-                    res.append(obj[5005])
-                elif k == "axis":
-                    listeAxis = ["+X", "-X",
-                                 "+Y", "-Y",
-                                 "+Z", "-Z"]
-                    dic = {"+X": [1., 0., 0.], "-X": [-1., 0., 0.], "+Y": [0., 1., 0.], "-Y": [0., -1., 0.],
-                           "+Z": [0., 0., 1.], "-Z": [0., 0., -1.]}
-                    ax = obj[c4d.PRIM_AXIS]
-                    res.append(dic[listeAxis[ax]])
-        if obj.GetType() == self.CUBE:
-            for k in key:
-                if k == "length":
-                    res.append(obj[c4d.PRIM_CUBE_LEN])
-        return res
-
         # ===============================================================================
 
     # userData property for object, persistent in scene saved
@@ -4681,29 +3864,6 @@ class c4dHelper(Helper):
             if bc[c4d.DESC_NAME] == key:
                 return self.retrievePropertiesFromContainer(bc, typ)
         return None
-
-    def setProperty(self, obj, key, value):
-        cool_value_types = (int, float, str, dict, list)
-
-        def check_property_values(value, name):
-            "Recursively check property types and values"
-            if not isinstance(value, (int, float, str, dict, list)):
-                raise TypeError, "expected a %s for the property: %s" % \
-                                 (", ".join("%s" % t.__name__ for t in cool_value_types), name)
-
-            if isinstance(value, dict):
-                for key, val in value.iteritems():
-                    check_properties(val, name + "['%s']" % key)
-                #            if isinstance(value, (list, str)) and len(value) > 10000:
-                #                raise ValueError, "property: %s is a %s which is "\
-                #                      "too long. Max size: 10000 "%(name, str(type(value)))
-
-        if not isinstance(key, str):
-            raise TypeError, "expected a str for the key argument"
-
-        check_property_values(value, key)
-        # GetCustomDatatypeDefault
-        obj.properties[key] = value
 
     # from r13 documentation
     def AddLongDataType(obj):
@@ -4826,10 +3986,16 @@ class c4dHelper(Helper):
         # M = matrix(matr)
         # euler = C.matrixToEuler(mat[0:3,0:3])
         # mx=c4d.tools.hpb_to_matrix(c4d.Vector(euler[0],euler[1]+(3.14/2),euler[2]), c4d.tools.ROT_HPB)
-        v_1 = self.FromVec(r.reshape(4, 4)[2, :3])
-        v_2 = self.FromVec(r.reshape(4, 4)[1, :3])
-        v_3 = self.FromVec(r.reshape(4, 4)[0, :3])
-        offset = self.FromVec(t)
+        if self.convertion == "-Z":
+            v_1 = self.FromVec(r.reshape(4, 4)[0, :3])
+            v_2 = self.FromVec(r.reshape(4, 4)[1, :3])
+            v_3 = self.FromVec(r.reshape(4, 4)[2, :3] * -1.)
+            offset = self.FromVec(t)
+        else:
+            v_1 = self.FromVec(r.reshape(4, 4)[2, :3])
+            v_2 = self.FromVec(r.reshape(4, 4)[1, :3])
+            v_3 = self.FromVec(r.reshape(4, 4)[0, :3])
+            offset = self.FromVec(t)
         mx = c4d.Matrix(offset, v_1, v_2, v_3)
         # mx.off = offset
         return mx
@@ -4838,89 +4004,107 @@ class c4dHelper(Helper):
         #            import numpy
         # Scale Problem, but shouldnt as I decompose???
         # why do I transpose ?? => fortran matrix ..
-        if self._usenumpy:
-            v_1 = self.FromVec(matrice[2, :3])
-            v_2 = self.FromVec(matrice[1, :3])
-            v_3 = self.FromVec(matrice[0, :3])
-            offset = self.FromVec(matrice[3, :3])
+
+        if self.convertion == "-Z":
+            if self._usenumpy:
+                v_1 = self.FromVec(matrice[0, :3])
+                v_2 = self.FromVec(matrice[1, :3])
+                v_3 = self.FromVec(matrice[2, :3] * -1)
+                offset = self.FromVec(matrice[3, :3])
+            else:
+                v_1 = self.FromVec(matrice[0][:3])
+                v_2 = self.FromVec(matrice[1][:3])
+                v_3 = self.FromVec(matrice[2][:3] * -1)
+                offset = self.FromVec(matrice[3][:3])
         else:
-            v_1 = self.FromVec(matrice[2][:3])
-            v_2 = self.FromVec(matrice[1][:3])
-            v_3 = self.FromVec(matrice[0][:3])
-            offset = self.FromVec(matrice[3][:3])
+            if self._usenumpy:
+                v_1 = self.FromVec(matrice[2, :3])
+                v_2 = self.FromVec(matrice[1, :3])
+                v_3 = self.FromVec(matrice[0, :3])
+                offset = self.FromVec(matrice[3, :3])
+            else:
+                v_1 = self.FromVec(matrice[2][:3])
+                v_2 = self.FromVec(matrice[1][:3])
+                v_3 = self.FromVec(matrice[0][:3])
+                offset = self.FromVec(matrice[3][:3])
         mx = c4d.Matrix(offset, v_1, v_2, v_3)
+        #
+        #            if transpose :
+        #                mat = numpy.array(matrice).transpose().reshape(16,)
+        #            else :
+        #                mat = numpy.array(matrice).reshape(16,)
+        #            r,t,s = self.Decompose4x4(mat)
+        #    #        print s
+        #            #Order of euler angles: heading first, then attitude/pan, then bank
+        #            axis = self.ApplyMatrix(numpy.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]),r.reshape(4,4))
+        #            #r = numpy.identity(4).astype('f')
+        #            #M = matrix(matr)
+        #            #euler = C.matrixToEuler(mat[0:3,0:3])
+        #            #mx=c4d.tools.hpb_to_matrix(c4d.Vector(euler[0],euler[1]+(3.14/2),euler[2]), c4d.tools.ROT_HPB)
+        #            v_1 = self.FromVec(r.reshape(4,4)[2,:3])
+        #            v_2 = self.FromVec(r.reshape(4,4)[1,:3])
+        #            v_3 = self.FromVec(r.reshape(4,4)[0,:3])
+        #            offset = self.FromVec(t)
+        #            mx = c4d.Matrix(offset,v_1, v_2, v_3)
+        #            #mx.off = offset
         return mx
 
-    def DecomposeMesh(self, poly, edit=True, copy=True, tri=True, transform=True, fn=False):
-        # make it editable
-        poly = self.getMesh(poly)
-        #        print ("Decompose",poly,poly.GetType(),poly.GetType() == c4d.Opolygon)
-
-        if edit:
-            poly = self.makeEditable(poly, copy=copy)
-            # here problem when name is identic with parent and mesh
-            poly = self.getMesh(self.getObject(self.getName(poly)))
-        # triangulate
-        if tri:
-            self.triangulate(poly)
-        # get infos
-
-        # check the polycache
-        cach = poly.GetCache()
-        if cach is None:
-            cach = poly.GetDeformCache()
-        if cach is not None:
-            poly = cach
-        print poly, self.getName(poly)
-        faces = self.getFaces(poly)
-        vertices = self.getMeshVertices(poly, selected=False)
-        # this require that the phong tag is present
-        phong = poly.GetTag(c4d.Tphong)
-        if phong is None:
-            poly.MakeTag(c4d.Tphong)
-        c4dvnormals = poly.CreatePhongNormals()  # len(f)*4
-        if not c4dvnormals:
-            print poly, self.getName(poly)
-        vnormals = vertices[:]
-        fnormals = []
-        # import numpy
-
-        for i, f in enumerate(faces):
-            # one face : 3/4 vertices
-            if self._usenumpy:
-                fns = numpy.zeros((len(f), 3))
-            else:
-                fns = []
-            for k, j in enumerate(f):
-                # print i,j,(i*4)+k
-                vnormals[j] = self.ToVec(c4dvnormals[(i * 4) + k])
-                if self._usenumpy:
-                    fns[k][:] = vnormals[j][:]
-                else:
-                    fns.append(vnormals[j][:])
-            fnormals.append(fns[-1])
-        #            if  self._usenumpy: fnormals.append(numpy.average(fns,0))
-        #            else  : fnormals.append(fns[-1])
-        # remove the copy if its exist? or keep it ?
-        # need to apply the transformation
-        #        vnormals=self.FixNormals(vertices,faces, vnormals,fn=fnormals)# v,f,vn
-        if transform:
-            # transpose ?
-            mat = self.getTransformation(poly)
-            # c4dmat = poly.GetMg()
-            # mat,imat = self.c4dMat2numpy(c4dmat)
-            vertices = self.ApplyMatrix(vertices, self.ToMat(mat))
-            m = numpy.identity(4)
-            m[:3, :3] = numpy.array(self.ToMat(mat))[:3, :3]
-            vnormals = self.ApplyMatrix(vnormals, m)  # rotation only ?
-        # fix the normals ?
-        if edit and copy:
-            self.getCurrentScene().SetActiveObject(poly)
-            c4d.CallCommand(100004787)  # delete the obj
-        if fn:
-            return faces, vertices, vnormals, fnormals
-        else:
-            return faces, vertices, vnormals
+    #    def DecomposeMesh(self,poly,edit=True,copy=True,tri=True,transform=True,fn=False):
+    #        #make it editable
+    #        if edit :
+    #            poly = self.makeEditable(poly,copy=copy)
+    #        #triangulate
+    #        if tri:
+    #            self.triangulate(poly)
+    #        #get infos
+    #
+    #        #check the polycache
+    #        cach = poly.GetCache()
+    #        if cach is None :
+    #            cach = poly.GetDeformCache()
+    #        if cach is not None :
+    #            poly = cach
+    #        print poly,self.getName(poly)
+    #        faces = self.getFaces(poly)
+    #        vertices = self.getMeshVertices(poly,selected=False)
+    #        #this require that the phong tag is present
+    #        phong = poly.GetTag(c4d.Tphong)
+    #        if phong is None :
+    #            poly.MakeTag(c4d.Tphong)
+    #        c4dvnormals = poly.CreatePhongNormals()
+    #        if not c4dvnormals :
+    #            print poly,self.getName(poly)
+    #        vnormals=vertices[:]
+    #        fnormals=[]
+    #        #import numpy
+    #
+    #        for i,f in enumerate(faces):
+    #            #one face : 4 vertices
+    #            if self._usenumpy:
+    #                fns=numpy.zeros((len(f),3))
+    #            else :
+    #                fns=[]
+    #            for k,j in enumerate(f):
+    #                #print i,j,(i*4)+k
+    #                vnormals[j] = self.ToVec(c4dvnormals[(i*4)+k])
+    #                if self._usenumpy: fns[k][:] = vnormals[j][:]
+    #                else : fns.append(vnormals[j][:])
+    #            if  self._usenumpy: fnormals.append(numpy.average(fns,0))
+    #            else  : fnormals.append(fns[-1])
+    #        #remove the copy if its exist? or keep it ?
+    #        #need to apply the transformation
+    #        if transform :
+    #            mat = self.getTransformation(poly)
+    #            #c4dmat = poly.GetMg()
+    #            #mat,imat = self.c4dMat2numpy(c4dmat)
+    #            vertices = self.ApplyMatrix(vertices,self.ToMat(mat))
+    #        if edit and copy :
+    #            self.getCurrentScene().SetActiveObject(poly)
+    #            c4d.CallCommand(100004787) #delete the obj
+    #        if fn :
+    #            return faces,vertices,vnormals,fnormals
+    #        else :
+    #            return faces,vertices,vnormals
 
     def ApplyMatrix(self, coords, mat):
         """
@@ -4940,35 +4124,6 @@ class c4dHelper(Helper):
             mat = self.FromMat(mat)
             return [mat.Mul(self.FromVec(c)) for c in coords]
 
-    def rotation_matrix(self, angle, direction, point=None, trans=None):
-        """
-        Return matrix to rotate about axis defined by point and direction.
-
-        """
-        if self._usenumpy:
-            return Helper.rotation_matrix(angle, direction, point=point, trans=trans)
-        else:
-            direction = self.FromVec(direction[:3])
-            direction.Normalize()
-            M = c4d.utils.RotAxisToMatrix(direction, angle)
-            # M = m.copy()
-            if point is not None:
-                point = self.FromVec(point[:3])
-                M.off = point - (point * M)
-            if trans is not None:
-                M.off = trans
-            return M
-
-    def zToMat(self, m):
-        if type(m) != c4d.Matrix:
-            return m
-        M = numpy.identity(4)
-        M[0, :3] = self.ToVec(m.v1, pos=False)
-        M[1, :3] = self.ToVec(m.v2, pos=False)
-        M[2, :3] = self.ToVec(m.v3, pos=False)
-        M[3, :3] = self.ToVec(m.off, pos=False)
-        return M
-
     def ToMat(self, m, transpose=True):
         if type(m) != c4d.Matrix:
             return m
@@ -4978,10 +4133,16 @@ class c4dHelper(Helper):
              [0.0, 1., 0.0, 0.0],
              [0.0, 0., 1.0, 0.0],
              [0.0, 0., 0.0, 1.0]]
-        M[2][:3] = self.ToVec(m.v1)
-        M[1][:3] = self.ToVec(m.v2)
-        M[0][:3] = self.ToVec(m.v3)
-        M[3][:3] = self.ToVec(m.off)
+        if self.convertion == "-Z":
+            M[0][:3] = self.ToVec(m.v1)
+            M[1][:3] = self.ToVec(m.v2)
+            M[2][:3] = self.ToVec(m.v3 * -1.0)
+            M[3][:3] = self.ToVec(m.off)
+        else:
+            M[2][:3] = self.ToVec(m.v1)
+            M[1][:3] = self.ToVec(m.v2)
+            M[0][:3] = self.ToVec(m.v3)
+            M[3][:3] = self.ToVec(m.off)
         if transpose:
             return M  # .transpose()
         else:
@@ -4999,10 +4160,16 @@ class c4dHelper(Helper):
         # print "ok convertMAtrix"
         from numpy import matrix
         M = numpy.identity(4)
-        M[2, :3] = self.ToVec(c4dmat.v1)
-        M[1, :3] = self.ToVec(c4dmat.v2)
-        M[0, :3] = self.ToVec(c4dmat.v3)
-        trans = self.ToVec(c4dmat.off)
+        if self.convertion == "-Z":
+            M[0, :3] = self.ToVec(c4dmat.v1)
+            M[1, :3] = self.ToVec(c4dmat.v2)
+            M[2, :3] = self.ToVec(c4dmat.v3 * -1.0)
+            trans = self.ToVec(c4dmat.off)
+        else:
+            M[2, :3] = self.ToVec(c4dmat.v1)
+            M[1, :3] = self.ToVec(c4dmat.v2)
+            M[0, :3] = self.ToVec(c4dmat.v3)
+            trans = self.ToVec(c4dmat.off)
         if center != None:
             for i in range(3):
                 trans[i] = trans[i] - center[i]
@@ -5031,61 +4198,16 @@ class c4dHelper(Helper):
         else:
             m = obj.GetMg()
         #        R = self.ToMat(m,transpose=transpose)
-        R[2, :3] = self.ToVec(m.v1)  # thi work with numpy
+        R[2, :3] = self.ToVec(m.v1)
         R[1, :3] = self.ToVec(m.v2)
         R[0, :3] = self.ToVec(m.v3)
         # euler = c4d.utils.MatrixToHPB(c4dmat) #heading,att,bank need to inverse y/z left/righ hand problem
         # print "euler",euler
         # matr = numpy.array(self.eulerToMatrix([euler.x,euler.z,euler.y]))
         if transpose:
-            return R.transpose()  # this wilnot work
+            return R.transpose()
         else:
             return R
-
-    def read(self, filename, **kw):
-        #        fileName, fileExtension = os.path.splitext(filename)
-        doc = self.getCurrentScene()
-        #        print self
-        #        print doc ,doc.IsAlive()
-        #        print c4d.documents.GetActiveDocument(),c4d.documents.GetActiveDocument().IsAlive()
-        c4d.documents.MergeDocument(doc, str(filename), c4d.SCENEFILTER_OBJECTS | c4d.SCENEFILTER_MATERIALS)
-
-    #        else :
-    #            c4d.documents.LoadFile(filename)
-    #            doc2 = self.getCurrentScene()
-    #            #save in c4d
-    #            c4d.documents.SaveDocument(doc2,fileName+".c4d",c4d.SAVEDOCUMENTFLAGS_DONTADDTORECENTLIST,c4d.FORMAT_C4DEXPORT)
-    #            #close
-    #            c4d.documents.KillDocument(doc2)
-    #            #merge
-    #            c4d.documents.MergeDocument(doc,fileName+".c4d",c4d.SCENEFILTER_OBJECTS|c4d.SCENEFILTER_MATERIALS)
-
-    def write(self, filename, listObj, formatType="host", **kw):
-        #        FORMAT_C4DEXPORT	C4D export.
-        #        FORMAT_XMLEXPORT	XML export.
-        #        FORMAT_VRML1EXPORT	VRML export.
-        #        FORMAT_VRML2EXPORT	VRML export.
-        #        FORMAT_DXFEXPORT	DXF export.
-        #        FORMAT_3DSEXPORT	3DS export.
-        #        FORMAT_OBJEXPORT	OBJ export.
-        #        FORMAT_Q3DEXPORT	QuickDraw 3D export
-        #        FORMAT_D3DEXPORT	Direct3D import
-        fType = {"host": c4d.FORMAT_C4DEXPORT,}
-        fileName, fileExtension = os.path.splitext(filename)
-        doc = self.getCurrentScene()
-        format = fType[formatType]
-        if listObj is None or not listObj:
-            c4d.documents.SaveDocument(doc, filename, c4d.SAVEDOCUMENTFLAGS_0, format)
-        else:
-            newdoc = c4d.documents.IsolateObjects(doc, listObj)
-            c4d.documents.SaveDocument(newdoc, filename, c4d.SAVEDOCUMENTFLAGS_0, format)
-
-    def ObjectToColladaNode(self, o):
-        # conver C4D ob and child to a collada node that can be used by instance_node
-        pass
-
-    def writeCollada(self, collada_xml, filename, **kw):
-        collada_xml.write(filename)
 
     def instancesToCollada(self, parent_object, collada_xml=None, instance_node=True, **kw):
         try:
@@ -5099,12 +4221,22 @@ class c4dHelper(Helper):
             return
         inst_parent = parent_object  # self.getCurrentSelection()[0]
         ch = self.getChilds(inst_parent)
+        transpose = True
+        if "transpose" in kw:
+            transpose = kw["transpose"]
         # instance master
-        inst_master = self.getMasterInstance(ch[0])
-        # grabb v,f,n of inst_master
-        f, v, vn = self.DecomposeMesh(inst_master, edit=False, copy=False, tri=True,
-                                      transform=True)
-
+        if "mesh" in kw and kw["mesh"] is not None:
+            inst_master = kw["mesh"]
+            f, v, vn = self.DecomposeMesh(kw["mesh"], edit=False, copy=False, tri=True,
+                                          transform=False)
+        else:
+            inst_master = self.getMasterInstance(ch[0])
+            print "master is ", inst_master
+            # grabb v,f,n of inst_master
+            f, v, vn = self.DecomposeMesh(inst_master, edit=False, copy=False, tri=True,
+                                          transform=False)
+            # special case when come from x-z swap
+            v = [[vv[2], vv[1], vv[0]] for vv in v]  # go back to regular
         iname = self.getName(inst_master)
         pname = self.getName(inst_parent)
         if collada_xml is None:
@@ -5114,23 +4246,24 @@ class c4dHelper(Helper):
         mat = self.getMaterialObject(inst_master)
         if len(mat):
             mat = mat[0]
-        props = self.getMaterialProperty(mat, diffuse=1, specular_color=1)
+        props = self.getMaterialProperty(mat, color=1)  # ,specular_color=1)
+        print "colors is ", props
         effect = material.Effect("effect" + iname, [], "phong",
-                                 diffuse=props["diffuse"],
-                                 specular=props["specular_color"])
-        mat = material.Material("material" + iname, iname + "_material", effect)
-        matnode = scene.MaterialNode("material" + iname, mat, inputs=[])
+                                 diffuse=props["color"])
+        #                                 specular = props["specular_color"])
+        mat = material.Material("material" + iname, iname + "material", effect)
         collada_xml.effects.append(effect)
         collada_xml.materials.append(mat)
+        matnode = scene.MaterialNode(iname + "material" + "ref", mat, inputs=[])
         # the geom
-        # invert Z
+        # invert Z ? for C4D?
         vertzyx = numpy.array(v)  # * numpy.array([1,1,-1])
         z, y, x = vertzyx.transpose()
-        vertxyz = numpy.vstack([x, y, z]).transpose() * numpy.array([1, 1, -1])
+        vertxyz = numpy.vstack([x, y, z]).transpose()  # * numpy.array([1,1,-1])
         vert_src = source.FloatSource(iname + "_verts-array", vertxyz.flatten(), ('X', 'Y', 'Z'))
         norzyx = numpy.array(vn)
         nz, ny, nx = norzyx.transpose()
-        norxyz = numpy.vstack([nx, ny, nz]).transpose() * numpy.array([1, 1, -1])
+        norxyz = numpy.vstack([nx, ny, nz]).transpose()  # * numpy.array([1,1,-1])
         normal_src = source.FloatSource(iname + "_normals-array", norxyz.flatten(), ('X', 'Y', 'Z'))
         geom = geometry.Geometry(collada_xml, "geometry" + iname, iname, [vert_src, normal_src])
         input_list = source.InputList()
@@ -5145,7 +4278,7 @@ class c4dHelper(Helper):
         # instance here ?
         # creae the instance maser node :
         if instance_node:
-            master_geomnode = scene.GeometryNode(geom, [matnode])
+            master_geomnode = scene.GeometryNode(geom, [matnode])  # doesn work ?
             master_node = scene.Node("node_" + iname, children=[master_geomnode, ])  # ,transforms=[tr,rz,ry,rx,s])
         g = []
         for c in ch:
@@ -5154,19 +4287,28 @@ class c4dHelper(Helper):
                 geomnode = scene.NodeNode(master_node)
             else:
                 geomnode = scene.GeometryNode(geom, [matnode])
-            matrix = self.zToMat(self.getTransformation(c))  # .transpose()#.flatten()
-            scale, shear, euler, translate, perspective = decompose_matrix(matrix.transpose())
+            matrix = self.ToMat(self.getTransformation(c))  # .transpose()#.flatten()
+            if transpose:
+                matrix = numpy.array(matrix).transpose()
+            scale, shear, euler, translate, perspective = decompose_matrix(matrix)
             scale = self.getScale(c)
             p = translate  # matrix[3,:3]/100.0#unit problem
             tr = scene.TranslateTransform(p[0], p[1], -p[2])
+            #        rx=scene.RotateTransform(1,0,0,numpy.degrees(euler[0]))
+            #        ry=scene.RotateTransform(0,1,0,numpy.degrees(euler[1]))
+            #        rz=scene.RotateTransform(0,0,1,numpy.degrees(euler[2]))
             rx = scene.RotateTransform(-1, 0, 0, numpy.degrees(euler[0]))
             ry = scene.RotateTransform(0, -1, 0, numpy.degrees(euler[1]))
             rz = scene.RotateTransform(0, 0, 1, numpy.degrees(euler[2]))
             s = scene.ScaleTransform(scale[0], scale[1], scale[2])
             # n = scene.NodeNode(master_node,transforms=[tr,rz,ry,rx,s])
-            n = scene.Node(self.getName(c), children=[geomnode, ],
-                           transforms=[tr, rz, ry, rx, s])  # scene.MatrixTransform(matrix)
+            #            gnode = scene.Node(self.getName(c)+"_inst", children=[geomnode,])
+            n = scene.Node(self.getName(c), children=[geomnode, ], transforms=[tr, rz, ry, rx,
+                                                                               s])  # scene.MatrixTransform(matrix)[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]
+            #            n = scene.Node(self.getName(c), children=[geomnode,],
+            #                           transforms=[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]) #scene.MatrixTransform(matrix)[scene.MatrixTransform(numpy.array(matrix).reshape(16,))]
             g.append(n)
+
         node = scene.Node(pname, children=g)  # ,transforms=[scene.RotateTransform(0,1,0,90.0)])
         if "parent_node" in kw:
             kw["parent_node"].children.append(node)
@@ -5182,42 +4324,6 @@ class c4dHelper(Helper):
             collada_xml.nodes.append(master_node)
         return collada_xml
 
-    def raycast(self, obj, start, end, length, **kw):
-        obj = self.getObject(obj)
-        mat = self.getTransformation(obj).__invert__()
-        coll = c4d.utils.GeRayCollider()
-        coll.Init(obj)
-        start = self.FromVec(start)
-        end = self.FromVec(end)
-        #        print start,end,end-start
-        intersect = coll.Intersect(mat * start, mat * (end - start), length)  # [, only_test=False])
-        if not intersect:
-            return intersect, 0
-        if "count" in kw:
-            return intersect, coll.GetIntersectionCount()
-        if "fnormal" in kw:
-            ray_result = coll.GetNearestIntersection()
-            n = ray_result["f_normal"].GetNormalized()
-            return intersect, self.ToVec(n)
-        if "hitpos" in kw:
-            ray_result = coll.GetNearestIntersection()
-            return intersect, self.ToVec(ray_result["hitpos"])
-        return intersect
-
-    #        self.rc = utils.GeRayCollider()#helper ?
-    #        self.rc.Init(input_mesh)
-
-    def removeNormalTag(self, obj, **kw):
-        obj = self.getObject(obj)
-        #        tags = obj.GetTags(c4d.Tnormal)
-        obj.KillTag(c4d.Tnormal)
-
-
-# tokill=[]
-#        for i,t in enumerate(tags):
-#            if isinstance(t,c4d.NormalTag):
-#                tokill.append(i)
-#        [obj.KillTag(i) for i in tokill]
 
 import time
 
