@@ -64,7 +64,7 @@ class c4dUI(gui.GeDialog):
     tab=False
     notebook = None
     ystep = 0
-    scrolling = False
+    scrolling = True
     
     def addVariablePropToSc (self, *args):
         #ghost function 
@@ -542,35 +542,35 @@ class c4dUI(gui.GeDialog):
         @rtype:   int
         @return:  the new horizontal position, used for blender
         """          
-        grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_MASK
+        grFlag  = c4d.BFH_SCALEFIT# |c4d.BFV_MASK
         if bloc["scrolling"]:
-            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
-                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT,)
+            self.ScrollGroupBegin(id=50000, flags= c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT,
+                             scrollflags= c4d.SCROLLGROUP_NOSCROLLER|c4d.SCROLLGROUP_NOBLIT)#c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
 #                             inith=100,initw=1000)              
             grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT
-#            self.GroupBegin(id=50001,cols=1,flags=grFlag)    
+        else :
+            self.ScrollGroupBegin(id=50000, flags= c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT,
+                             scrollflags= c4d.SCROLLGROUP_NOSCROLLER|c4d.SCROLLGROUP_NOBLIT)#c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT)
+#                             inith=100,initw=1000)               
         if bloc["collapse"] :
             collapse = c4d.BFV_BORDERGROUP_FOLD#|c4d.BFV_GRIDGROUP_EQUALCOLS
         else :
-            collapse = c4d.BFV_BORDERGROUP_FOLD|c4d.BFV_BORDERGROUP_FOLD_OPEN#|c4d.BFV_GRIDGROUP_EQUALCOLS
-        self.GroupBegin(id=bloc["id"],title=bloc["name"],cols=1,
-                                flags=grFlag,#c4d.BFV_MASK,
+            collapse = c4d.BFV_BORDERGROUP_FOLD|c4d.BFV_BORDERGROUP_FOLD_OPEN
+        self.GroupBegin(id=bloc["id"],title=bloc["name"],cols=1,#rows=len(bloc["elems"]),
+                                flags= c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT,
                                 groupflags=collapse)
-        self.GroupBorder(c4d.BORDER_THIN_IN|c4d.BORDER_WITH_TITLE|c4d.BORDER_MASK)
+        self.GroupBorder(c4d.BORDER_ROUND|c4d.BORDER_THIN_IN|c4d.BORDER_WITH_TITLE|c4d.BORDER_MASK)#|c4d.BORDER_MASK
 #            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
         for k,blck in enumerate(bloc["elems"]):
             self.startBlock(m=len(blck))
-#            self.GroupBegin(id=int(k*25),title=str(k),cols=len(blck),
-#                                                   flags=c4d.BFH_SCALEFIT)
-#            self.GroupBorderSpace(self.left, self.top, self.right, self.bottom)
             for index, item in enumerate(blck):
                 self._drawElem(item,x,y)
             self.endBlock()
-#        self.endBlock()
         self.endBlock()
-        if bloc["scrolling"]:
-            self.endBlock()#scroll
-#            self.endBlock()#main
+        self.endBlock()
+        #if bloc["scrolling"]:
+        #    self.endBlock()#scroll
+        #     self.endBlock()#main
         return y
 
     def drawTab(self,bloc,x,y):
@@ -705,16 +705,16 @@ class c4dUI(gui.GeDialog):
 
     def startLayout(self):
         grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_MASK
+        grFlag  = c4d.BFH_SCALEFIT| c4d.BFV_SCALEFIT | c4d.BFV_GRIDGROUP_EQUALROWS
         if self.scrolling:
-            self.ScrollGroupBegin(id=50000, flags=c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT,
-                             scrollflags=c4d.SCROLLGROUP_VERT|c4d.SCROLLGROUP_AUTOVERT,
-                             inith=self.h,initw=self.w)  
-            grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT
-        
-#        self.GroupBegin(id=1,flags=grFlag ,
-#                   cols=1)
+            self.ScrollGroupBegin(id=2, flags=grFlag,
+                             scrollflags=c4d.SCROLLGROUP_VERT)  
+            #grFlag  = c4d.BFH_SCALEFIT |c4d.BFV_SCALEFIT      
+        self.GroupBegin(id=1,flags=grFlag ,cols=1)#initw ?
+        #self.GroupBorder(c4d.BORDER_ROUND|c4d.BORDER_THIN_IN)
+
     def endLayout(self):
-#        self.GroupEnd()
+        self.GroupEnd()
         if self.scrolling:
             self.GroupEnd()
 

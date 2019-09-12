@@ -2972,7 +2972,10 @@ class c4dHelper(Helper):
                 cloner[c4d.MG_OBJECT_LINK] = o
                 cloner[c4d.MG_POLY_MODE_] = 2  # Face is 2
                 # self._render_instance
-                cloner[c4d.MGCLONER_VOLUMEINSTANCES] = int(self._render_instance)
+                if hasattr(c4d,"MGCLONER_VOLUMEINSTANCES") :
+                    cloner[c4d.MGCLONER_VOLUMEINSTANCES] = int(self._render_instance)
+                else :
+                    cloner[c4d.MGCLONER_VOLUMEINSTANCES_MODE] = 2 #multi-instqnce?
                 #                cloner[c4d.MG_POLY_UPVECTOR]=self.getTrackAxis(v)
                 self.reParent(mesh, cloner)
                 instance = [o]
