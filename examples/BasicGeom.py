@@ -209,16 +209,16 @@ isph = helper.newEmpty("InstanceOfSpheres",location=[0.,0.,0.],parent = instance
 f,verts,n = helper.DecomposeMesh(inst,edit=True,copy=True,tri=True,transform=True)
 print (f,verts,n)
 for i,v in enumerate(verts):
-    instsph = helper.newInstance("instanceOfSph"+str(i),s,location=v,
-                          parent = isph)
+    instsph = helper.newInstance("instanceOfSph"+str(i),s,location=v,parent = isph)
     helper.scaleObj(instsph,[ 0.1, 0.1,0.1])
 ##list instance from list of matrices
 itetra = helper.newEmpty("InstanceOfTetra",location=[0.0, 0.,0.],parent = instance)
+instT = helper.newInstance("iTetra",tetra,location=[ 0.0, 0.0,0.], parent = instance)
 listM = []
 for i in range(len(listPts)):
     m = helper.rotation_matrix(random()*math.pi, [random(),random(),random()],trans=modifiedVertex[i])
     listM.append(m)
-ipoly = helper.instancePolygon("instOfTetra", matrices=listM, mesh=tetra,parent = itetra)
+ipoly = helper.instancePolygon("instOfTetra", matrices=listM, mesh=instT,parent = itetra,transpose=False)
 helper.setTranslation(itetra,[ 6.0, -14,0.])#?
 
 ##execfile("/Users/ludo/DEV/upy/trunk/upy/examples/BasicGeom.py")

@@ -121,37 +121,7 @@ class blenderHelper(Helper):
                   }
 
         self.noise_type ={
-              "boxNoise":noise.types.BLENDER,
-              "buya":noise.types.STDPERLIN,
-              "cellNoise":noise.types.CELLNOISE,
-              "cellVoronoi":noise.types.VORONOI_CRACKLE,
-              "cranal":noise.types.STDPERLIN,
-              "dents":noise.types.STDPERLIN,
-              "displacedTurbulence":noise.types.STDPERLIN,
-              "electrico":noise.types.STDPERLIN,
-              "fbm":noise.types.STDPERLIN,
-              "fire":noise.types.STDPERLIN,
-              "gas":noise.types.STDPERLIN,
-              "hama":noise.types.STDPERLIN,
-              "luka":noise.types.STDPERLIN,
-              "modNoie":noise.types.STDPERLIN,
-              "naki":noise.types.STDPERLIN,
-              "noise":noise.types.STDPERLIN,
-              "none":noise.types.STDPERLIN,
-              "nutous":noise.types.NEWPERLIN,
-              "ober":noise.types.NEWPERLIN,
-              "pezo":noise.types.NEWPERLIN,
-              "poxo":noise.types.NEWPERLIN,
-              "sema":noise.types.NEWPERLIN,
-              "sparseConvolution":noise.types.NEWPERLIN,
-              "stupl":noise.types.NEWPERLIN,
-              "turbulence":noise.types.NEWPERLIN,
-              "vlNoise":noise.types.NEWPERLIN,
-              "voronoi1":noise.types.VORONOI_F1,
-              "voronoi2":noise.types.VORONOI_F2,
-              "voronoi3":noise.types.VORONOI_F3,
-              "wavyTurbulence":noise.types.VORONOI_F4,
-              "zada":noise.types.VORONOI_F4,
+   
              }
 #            usenumpy
 
@@ -1666,6 +1636,7 @@ class blenderHelper(Helper):
         if pos is None :
             pos = [0.,0.,0.]
         pos[0] = pos[0]-6.0#not center
+        self.setObjectMode()
         res = bpy.ops.object.text_add(location = (float(pos[0]),float(pos[1]),float(pos[2])))
         obj = bpy.context.object
         obj.name = name
@@ -1675,11 +1646,11 @@ class blenderHelper(Helper):
         if parent is not None:
             obj.parent = parent
         #toggle to edit mode
-        self.toggleEditMode()
+        self.setEditMode()
         #should remove the default text
         bpy.ops.font.delete()
         bpy.ops.font.text_insert(text=string)
-        self.restoreEditMode()
+        self.setObjectMode()
         if lookAt:
             self.constraintLookAt(name)
         if "extrude" in kw :
